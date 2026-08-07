@@ -1,21 +1,54 @@
+# ─────────────────────────────────────────────────────────────
+#  Render 배포 설정
+#
+#  기본값은 [A] 무료 Static Site 입니다.
+#  서버에 저장해서 PC·휴대폰이 같은 값을 보게 하려면
+#  아래 [A] 블록을 주석 처리하고 [B] 블록의 주석을 풀면 됩니다.
+# ─────────────────────────────────────────────────────────────
+
 services:
+  # ── [A] 무료 · 정적 사이트 ─────────────────────────────────
+  #   · 완전 무료, 서버가 잠들지 않음, 접속이 빠름
+  #   · 수정한 단가는 그 기기 브라우저에 저장됨 (기기 간 공유는 백업/복원 파일로)
   - type: web
+    runtime: static
     name: everest-cost
-    runtime: node
     plan: free
-    region: singapore
-    buildCommand: npm ci --omit=dev
-    startCommand: node server/index.js
-    healthCheckPath: /healthz
+    buildCommand: npm ci && npm run build:static
+    staticPublishPath: ./public
     autoDeploy: true
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: DATA_DIR
-        value: /var/data
-    # 수정한 단가를 재배포 후에도 유지하려면 유료 플랜에서 디스크를 붙이세요.
-    # 무료 플랜에서는 아래 disk 블록을 지우고 DATA_DIR 도 제거하면 됩니다.
-    disk:
-      name: everest-cost-data
-      mountPath: /var/data
-      sizeGB: 1
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /dataset.json
+        name: Cache-Control
+        value: no-cache
+      - path: /vendor/*
+        name: Cache-Control
+        value: public, max-age=604800
+
+  # ── [B] 서버 모드 (기기 간 값 공유) ────────────────────────
+  #   무료 플랜도 가능하지만 15분간 접속이 없으면 잠들고(첫 요청 시 수십 초),
+  #   무료에는 디스크를 붙일 수 없어 재배포 시 서버 저장분이 초기화됩니다.
+  #   값을 영구 보존하려면 유료 플랜 + 디스크가 필요합니다.
+  #
+  # - type: web
+  #   runtime: node
+  #   name: everest-cost-server
+  #   plan: free            # 값 보존이 필요하면 starter 이상 + 아래 disk 사용
+  #   region: singapore
+  #   buildCommand: npm ci --omit=dev
+  #   startCommand: node server/index.js
+  #   healthCheckPath: /healthz
+  #   autoDeploy: true
+  #   envVars:
+  #     - key: NODE_VERSION
+  #       value: "22"
+  #     - key: DATA_DIR
+  #       value: /var/data
+  #   disk:                 # 유료 플랜에서만 사용 가능
+  #     name: everest-cost-data
+  #     mountPath: /var/data
+  #     sizeGB: 1

@@ -8,7 +8,8 @@
     "dev": "node --watch server/index.js",
     "build:data": "python3 tools/extract.py && python3 tools/normalize.py",
     "build:xlsx": "node tools/build-xlsx.js",
-    "verify": "node tools/expected.js && python3 tools/verify_xlsx.py public/downloads/에베레스트_원가분석서.xlsx data/_expected.json"
+    "verify": "node tools/expected.js && python3 tools/verify_xlsx.py public/downloads/에베레스트_원가분석서.xlsx data/_expected.json",
+    "build:static": "node tools/build-static.js"
   },
   "repository": {
     "type": "git",

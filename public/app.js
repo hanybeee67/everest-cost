@@ -102,7 +102,12 @@ function paintSync() {
   const box = $('#syncBox'), txt = $('#syncText');
   if (!box) return;
   box.dataset.state = state.sync;
-  txt.textContent = { synced: '서버에 저장됨', dirty: '저장 중…', local: '이 기기에만 저장됨', error: '저장 실패' }[state.sync];
+  txt.textContent = state.sync === 'dirty'
+    ? (state.serverOk ? '서버에 저장 중…' : '이 기기에 저장 중…')
+    : { synced: '서버에 저장됨', local: '이 기기에 저장됨', error: '저장 실패' }[state.sync];
+  box.title = state.sync === 'local'
+    ? '정적 배포 모드입니다. 수정값은 이 브라우저에 저장됩니다 — 다른 기기와 공유하려면 [백업] 파일을 옮겨 [복원] 하세요.'
+    : '수정값이 서버에 저장되어 모든 기기에서 같은 값을 봅니다.';
 }
 
 /* ── 화면 정의 ──────────────────────────────────────── */
@@ -727,19 +732,44 @@ function toast(msg) {
 async function downloadExcel() {
   toast('엑셀을 만드는 중…');
   try {
-    const res = await fetch('/api/export.xlsx', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(state.ov),
-    });
-    if (!res.ok) throw new Error(res.status);
-    const blob = await res.blob();
+    const blob = state.serverOk ? await excelFromServer() : await excelInBrowser();
     const a = el('a');
     a.href = URL.createObjectURL(blob);
     a.download = `에베레스트_원가분석서_${new Date().toISOString().slice(0, 10)}.xlsx`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     toast('내려받기 완료');
-  } catch (_) { toast('엑셀 생성 실패 — 잠시 후 다시 시도하세요'); }
+  } catch (err) {
+    console.error(err);
+    toast('엑셀 생성에 실패했습니다');
+  }
+}
+/* 서버 모드 — 서버가 만들어 준다 */
+async function excelFromServer() {
+  const res = await fetch('/api/export.xlsx', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(state.ov),
+  });
+  if (!res.ok) throw new Error('export ' + res.status);
+  return res.blob();
+}
+/* 정적 모드 — 브라우저에서 직접 만든다 (필요할 때만 라이브러리를 내려받음) */
+async function excelInBrowser() {
+  await loadScript('/vendor/exceljs.min.js', () => self.ExcelJS);
+  await loadScript('/build-xlsx.js', () => self.XlsxBuilder);
+  const wb = self.XlsxBuilder.build(merged());
+  const buf = await wb.xlsx.writeBuffer();
+  return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+function loadScript(src, ready) {
+  if (ready()) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => (ready() ? res() : rej(new Error('load ' + src)));
+    s.onerror = () => rej(new Error('load ' + src));
+    document.head.appendChild(s);
+  });
 }
 function backup() {
   const blob = new Blob([JSON.stringify(state.ov, null, 2)], { type: 'application/json' });
@@ -778,8 +808,9 @@ async function boot() {
     if (!res.ok) throw new Error(res.status);
     payload = await res.json();
   } catch (_) {
+    // 정적 배포(Render Static Site 등) — 서버 없이 dataset.json 만으로 동작
     state.serverOk = false;
-    try { payload = { dataset: await (await fetch('/dataset.json')).json(), overrides: null }; }
+    try { payload = { dataset: await (await fetch('dataset.json')).json(), overrides: null }; }
     catch (e) {
       $('#boot').innerHTML = '<p>데이터를 불러오지 못했습니다. 새로고침해 주세요.</p>';
       return;

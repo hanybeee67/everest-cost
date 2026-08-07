@@ -35,6 +35,7 @@ tools/extract.py         원본 엑셀 2종 → 원시 JSON
 tools/normalize.py       원시 JSON → dataset.json (이름 매칭·검증)
 tools/build-xlsx.js      dataset → 엑셀 원가분석서 생성
 tools/verify_xlsx.py     생성된 엑셀의 전 수식을 실제 계산해 검증
+tools/build-static.js    정적 배포용 파일 모으기 (public/ 만으로 동작하게)
 render.yaml              Render 배포 설정
 ```
 
@@ -71,7 +72,9 @@ npm run verify       # 엑셀 전 수식 검증          (pip install formulas o
 
 - PC는 사이드바 + 표, 모바일은 하단 탭 + 카드로 자동 전환됩니다.
 - 라이트/다크 모드를 지원합니다.
-- 수정값은 **서버에 저장**되고 동시에 브라우저에도 백업됩니다. 서버에 연결되지 않으면 기기 저장으로 자동 전환됩니다.
+- 수정값은 **서버에 저장**되고 동시에 브라우저에도 백업됩니다.
+  서버가 없는 정적 배포에서는 브라우저 저장으로 자동 전환되고, 엑셀도 브라우저에서 직접 만듭니다
+  (좌측 하단 표시로 어느 쪽인지 알 수 있습니다).
 - `백업` 으로 JSON 파일을 내려받아 두면 언제든 `복원` 할 수 있습니다.
 - `엑셀 내려받기` 는 **지금 화면의 값 그대로** 엑셀을 만들어 줍니다.
 
@@ -120,18 +123,69 @@ g당 단가      = 구매가격 ÷ 총중량(g)
 
 ## Render 배포
 
-1. Render 대시보드에서 **New → Blueprint** 를 고르고 이 저장소를 연결하면 `render.yaml` 을 그대로 읽습니다.
-   (직접 만들 경우: Web Service · Node · Build `npm ci --omit=dev` · Start `node server/index.js`)
-2. 헬스체크 경로는 `/healthz` 입니다.
+### 방식 고르기
 
-**수정값 보존**
+| | **[A] Static Site** (추천·무료) | **[B] Web Service** (Node) |
+|---|---|---|
+| 요금 | 완전 무료 | 무료 가능 / 값 보존은 유료 |
+| 서버 잠듦 | 없음 — 항상 바로 열림 | 무료는 15분 후 잠듦 (첫 접속 수십 초) |
+| 수정값 저장 | **그 기기 브라우저**에 저장 | **서버**에 저장 → 모든 기기가 같은 값 |
+| 기기 간 공유 | 백업 파일(JSON)로 옮김 | 자동 |
+| 엑셀 생성 | 브라우저에서 생성 | 서버에서 생성 |
 
-- `render.yaml` 에는 `/var/data` 디스크와 `DATA_DIR=/var/data` 가 들어 있습니다. 디스크를 붙이면 재배포해도 수정값이 남습니다.
-- 무료 플랜에서 디스크를 쓸 수 없다면 `render.yaml` 의 `disk` 블록과 `DATA_DIR` 을 지우세요.
-  이 경우 재배포 시 서버 저장분은 초기화되지만, 브라우저 저장분은 남고 `백업` 파일로 언제든 복원할 수 있습니다.
-- 무료 플랜은 접속이 없으면 서버가 잠들었다가 첫 요청에서 다시 깨어납니다(수십 초 소요).
+원가표를 사장님 혼자 관리하신다면 **[A] 무료 Static Site로 충분**합니다.
+PC에서 고친 단가를 주방 태블릿에서도 그대로 봐야 한다면 [B]가 필요합니다.
 
----
+### [A] 무료 Static Site 로 올리기
+
+1. Render 대시보드 → **New +** → **Static Site**
+2. 이 저장소(`hanybeee67/everest-cost`)를 선택
+3. 아래처럼 채웁니다.
+
+   | 항목 | 값 |
+   |---|---|
+   | Branch | `claude/cost-analysis-redesign-p3vj8z` (병합 후에는 `main`) |
+   | Build Command | `npm ci && npm run build:static` |
+   | Publish Directory | `public` |
+
+4. **Create Static Site** → 2~3분 뒤 `https://everest-cost.onrender.com` 같은 주소가 나옵니다.
+5. (선택) **Redirects/Rewrites** 에 `Source: /*` → `Destination: /index.html` → `Action: Rewrite` 를 추가하면
+   주소를 잘못 입력해도 앱으로 들어옵니다.
+
+> `render.yaml` 이 저장소에 있으므로 **New + → Blueprint** 로 만들면 위 설정이 자동으로 들어갑니다.
+> 필요한 파일은 저장소에 이미 들어 있어서, Build Command 를 비워 두고 Publish Directory 만 `public` 으로 해도 동작합니다.
+
+**휴대폰에서 쓰기** — 주소를 열고 `홈 화면에 추가` 하면 앱처럼 전체 화면으로 실행됩니다.
+
+**기기 간 값 옮기기** — PC에서 `백업` → JSON 파일 저장 → 휴대폰으로 보내서 `복원`.
+
+### [B] Web Service 로 올리기 (기기 간 자동 공유)
+
+1. `render.yaml` 에서 `[A]` 블록을 주석 처리하고 `[B]` 블록의 주석을 풉니다.
+2. Render → **New +** → **Web Service** → 저장소 선택
+
+   | 항목 | 값 |
+   |---|---|
+   | Runtime | Node |
+   | Build Command | `npm ci --omit=dev` |
+   | Start Command | `node server/index.js` |
+   | Health Check Path | `/healthz` |
+
+3. 값을 재배포 후에도 보존하려면 **Starter 이상 플랜 + Disk**(mount `/var/data`)를 붙이고
+   환경변수 `DATA_DIR=/var/data` 를 넣습니다.
+   무료 플랜이면 디스크를 못 붙이므로 재배포 시 서버 저장분이 초기화됩니다
+   (브라우저 저장분과 백업 파일은 남습니다).
+
+### 정적 배포용 파일
+
+`npm run build:static` 이 아래를 `public/` 으로 모아 줍니다. 서버 없이 이것만으로 전부 동작합니다.
+
+```
+public/dataset.json          원본 데이터
+public/calc.js               계산 엔진
+public/build-xlsx.js         엑셀 생성기 (브라우저에서도 동작)
+public/vendor/exceljs.min.js 엑셀 라이브러리 (내려받기 누를 때만 로드)
+```
 
 ## 확인이 필요한 항목
 
