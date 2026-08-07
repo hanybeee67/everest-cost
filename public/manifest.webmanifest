@@ -1,0 +1,12 @@
+{
+  "name": "에베레스트 메뉴 원가 분석",
+  "short_name": "원가분석",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "ko",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

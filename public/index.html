@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>에베레스트 · 메뉴 원가 분석</title>
+<link rel="stylesheet" href="/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
+<link rel="manifest" href="/manifest.webmanifest">
+</head>
+<body>
+
+<div id="boot" class="boot"><div class="spinner"></div><p>원가 데이터를 불러오는 중…</p></div>
+
+<div id="app" hidden>
+
+  <!-- ══════════ 사이드바 (PC) ══════════ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">🏔️</div>
+      <div>
+        <strong>EVEREST</strong>
+        <span>메뉴 원가 분석</span>
+      </div>
+    </div>
+    <nav class="nav" id="navDesktop"></nav>
+    <div class="sidebar-foot">
+      <div class="sync" id="syncBox"><span class="dot"></span><span id="syncText">동기화됨</span></div>
+      <button class="btn btn-primary btn-block" id="btnExcel">엑셀 내려받기</button>
+      <div class="row-2">
+        <button class="btn btn-ghost" id="btnBackup">백업</button>
+        <button class="btn btn-ghost" id="btnRestore">복원</button>
+      </div>
+      <button class="btn btn-ghost btn-block btn-danger" id="btnReset">수정값 초기화</button>
+      <input type="file" id="fileRestore" accept="application/json" hidden>
+    </div>
+  </aside>
+
+  <!-- ══════════ 본문 ══════════ -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1 id="viewTitle">대시보드</h1>
+        <p id="viewDesc"></p>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="btnTheme" title="화면 밝기 전환">◐</button>
+        <button class="icon-btn only-mobile" id="btnMenu" title="메뉴">⋯</button>
+      </div>
+    </header>
+
+    <div class="scroll" id="viewRoot"></div>
+  </main>
+
+  <!-- ══════════ 하단 탭 (모바일) ══════════ -->
+  <nav class="tabbar" id="navMobile"></nav>
+
+  <!-- ══════════ 상세 시트 ══════════ -->
+  <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
+  <section class="sheet" id="sheet" hidden aria-modal="true" role="dialog">
+    <header class="sheet-head">
+      <div>
+        <h2 id="sheetTitle"></h2>
+        <p id="sheetSub"></p>
+      </div>
+      <button class="icon-btn" id="sheetClose" aria-label="닫기">✕</button>
+    </header>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+
+  <!-- ══════════ 모바일 더보기 ══════════ -->
+  <div class="popover" id="morePop" hidden>
+    <button data-act="excel">엑셀 내려받기</button>
+    <button data-act="backup">백업 파일 저장</button>
+    <button data-act="restore">백업 복원</button>
+    <button data-act="reset" class="danger">수정값 초기화</button>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script src="/calc.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

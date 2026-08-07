@@ -1,0 +1,30 @@
+{
+  "name": "everest-cost",
+  "version": "2.0.0",
+  "description": "에베레스트 레스토랑 그룹 · 메뉴 원가 분석 (웹 + 엑셀)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "build:data": "python3 tools/extract.py && python3 tools/normalize.py",
+    "build:xlsx": "node tools/build-xlsx.js",
+    "verify": "node tools/expected.js && python3 tools/verify_xlsx.py public/downloads/에베레스트_원가분석서.xlsx data/_expected.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hanybeee67/everest-cost.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/hanybeee67/everest-cost/issues"
+  },
+  "homepage": "https://github.com/hanybeee67/everest-cost#readme",
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: everest-cost
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --omit=dev
+    startCommand: node server/index.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATA_DIR
+        value: /var/data
+    # 수정한 단가를 재배포 후에도 유지하려면 유료 플랜에서 디스크를 붙이세요.
+    # 무료 플랜에서는 아래 disk 블록을 지우고 DATA_DIR 도 제거하면 됩니다.
+    disk:
+      name: everest-cost-data
+      mountPath: /var/data
+      sizeGB: 1

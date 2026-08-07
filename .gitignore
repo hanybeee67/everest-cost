@@ -1,0 +1,6 @@
+node_modules/
+var/
+data/_raw.json
+data/_expected.json
+.DS_Store
+*.log
