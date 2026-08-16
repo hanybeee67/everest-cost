@@ -10,9 +10,10 @@ const ROOT = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 const OUT = process.argv[2] || path.join(ROOT, 'public', 'downloads', '에베레스트_원가분석_단일파일.html');
+const DATA = process.argv[3] || 'data/dataset.json';
 
 /* ── 재료 모으기 ──────────────────────────────────────── */
-const dataset = JSON.parse(read('data/dataset.json'));
+const dataset = JSON.parse(read(DATA));
 const css     = read('public/app.css');
 const calcJs  = read('shared/calc.js');
 const xlsxJs  = read('tools/build-xlsx.js');
@@ -37,11 +38,11 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
-<title>에베레스트 · 메뉴 원가 분석</title>
+<title>${dataset.meta.brand ? dataset.meta.brand + ' · ' : ''}메뉴 원가 분석</title>
 <link rel="icon" href="${favicon}">
 <!--
   ═══════════════════════════════════════════════════════════════
-   에베레스트 레스토랑 그룹 · 메뉴 원가 분석  (단일 파일 버전)
+   ${dataset.meta.brand || ''} · ${dataset.meta.title || '메뉴 원가 분석'}  (단일 파일 버전)
    생성일 ${new Date().toISOString().slice(0, 10)}
 
    · 이 파일 하나면 끝입니다. 인터넷도, 설치도, 서버도 필요 없습니다.

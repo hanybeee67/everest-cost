@@ -25,8 +25,8 @@ const pct  = (v, d = 1) => (isFinite(v) ? (v * 100).toFixed(d) + '%' : '–');
 
 /* ── 상태 ───────────────────────────────────────────── */
 const state = {
-  base: null,          // 서버가 준 원본 dataset
-  ov:   emptyOv(),     // 사용자 수정값
+  base: null,          // 처음 들어 있던 원본 (되돌리기·변경표시 기준)
+  data: null,          // 지금 편집 중인 데이터 (이걸 저장한다)
   view: 'dash',
   result: null,
   filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '' },
@@ -35,53 +35,83 @@ const state = {
   loadedFromFile: false,
   serverOk: true,
 };
-function emptyOv() {
-  return { ingredients: {}, preps: {}, menus: {}, fixedCosts: {}, settings: {} };
-}
 
-/* ── 원본 + 수정값 병합 ─────────────────────────────── */
-function merged() {
-  const b = state.base, o = state.ov;
-  return {
-    ...b,
-    ingredients: b.ingredients.map((i) => ({ ...i, ...(o.ingredients[i.name] || {}) })),
-    preps: b.preps.map((p) => {
-      const po = o.preps[p.name] || {};
-      return {
-        ...p, ...(po.yield_g != null ? { yield_g: po.yield_g } : {}),
-        items: p.items.map((it, ix) => ({ ...it, ...((po.items || {})[ix] || {}) })),
-      };
-    }),
-    menus: b.menus.map((m) => {
-      const mo = o.menus[m.name] || {};
-      return {
-        ...m, ...(mo.price != null ? { price: mo.price } : {}),
-        lines: m.lines.map((l, ix) => ({ ...l, ...((mo.lines || {})[ix] || {}) })),
-      };
-    }),
-    fixedCosts: b.fixedCosts.map((f) => ({ ...f, ...(o.fixedCosts[f.name] || {}) })),
-    settings: { ...b.settings, ...o.settings },
-  };
-}
-function recalc() { state.result = Calc.compute(merged()); }
+const clone = (o) => JSON.parse(JSON.stringify(o));
 
-/* ── 수정값 반영 ────────────────────────────────────── */
-function setOv(path, value) {
-  let node = state.ov;
-  for (let i = 0; i < path.length - 1; i++) {
-    const k = path[i];
-    if (node[k] == null || typeof node[k] !== 'object') node[k] = {};
-    node = node[k];
-  }
-  node[path[path.length - 1]] = value;
-  recalc();
-  markDirty();
-  scheduleSave();
+/* ── 계산 · 저장 트리거 ─────────────────────────────── */
+function merged() { return state.data; }
+function recalc() { state.result = Calc.compute(state.data); }
+/** 데이터를 바꾼 뒤 반드시 호출 — 다시 계산하고 자동 저장을 예약한다 */
+function commit() { recalc(); markDirty(); scheduleSave(); }
+
+/* ── 원본과 달라졌는지 (노란 테두리 표시용) ─────────── */
+const baseIng  = (n) => (state.base.ingredients || []).find((x) => x.name === n);
+const basePrep = (n) => (state.base.preps || []).find((x) => x.name === n);
+const baseMenu = (n) => (state.base.menus || []).find((x) => x.name === n);
+const baseFix  = (n) => (state.base.fixedCosts || []).find((x) => x.name === n);
+const diff = (now, was) => was === undefined || Number(now) !== Number(was);
+
+/* ── 항목 추가 · 삭제 ───────────────────────────────── */
+function uniqueName(list, want) {
+  let n = want, i = 2;
+  while (list.some((x) => x.name === n)) n = `${want} ${i++}`;
+  return n;
 }
-function isOverridden(path) {
-  let n = state.ov;
-  for (const k of path) { if (n == null || typeof n !== 'object') return false; n = n[k]; }
-  return n !== undefined;
+function addIngredient() {
+  const name = uniqueName(state.data.ingredients, '새 식재료');
+  state.data.ingredients.push({ name, price: 0, pack_qty: 1, unit: 'kg', weight_g: 1000 });
+  commit(); render({ keepScroll: true });
+  focusRowNamed(name);
+}
+function addPrep() {
+  const name = uniqueName(state.data.preps, '새 프렙');
+  state.data.preps.push({ name, yield_g: 1000, yield_rate: 1, items: [] });
+  commit(); render({ keepScroll: true });
+}
+function addMenu(name, category, price) {
+  const nm = uniqueName(state.data.menus, name || '새 메뉴');
+  const cat = category || (state.data.categoryOrder[0] || '기타');
+  if (!state.data.categoryOrder.includes(cat)) state.data.categoryOrder.push(cat);
+  if (!state.data.categoryIcon[cat]) state.data.categoryIcon[cat] = '🍽';
+  state.data.menus.push({
+    name: nm, category: cat, icon: state.data.categoryIcon[cat] || '🍽',
+    en: '', time: '', serving: '1인분 기준', price: Number(price) || 0,
+    lines: [], steps: [], garnish: '',
+  });
+  commit();
+  return nm;
+}
+function addFixedCost() {
+  const name = uniqueName(state.data.fixedCosts, '새 비용 항목');
+  state.data.fixedCosts.push({ name, amount: 0, include: true, note: '' });
+  commit(); render({ keepScroll: true });
+}
+/** 이름을 바꿀 때 이 이름을 참조하던 곳도 같이 고쳐 준다 */
+function renameRef(kind, oldName, newName) {
+  state.data.menus.forEach((m) => m.lines.forEach((l) => {
+    if (l.kind === kind && l.name === oldName) l.name = newName;
+  }));
+  state.data.preps.forEach((p) => p.items.forEach((it) => {
+    if (it.kind === kind && it.name === oldName) it.name = newName;
+  }));
+}
+/** 지우기 전에 어디에서 쓰이는지 알려 준다 */
+function usageOf(kind, name) {
+  const out = [];
+  state.data.menus.forEach((m) => { if (m.lines.some((l) => l.kind === kind && l.name === name)) out.push(m.name); });
+  state.data.preps.forEach((p) => { if (p.items.some((i) => i.kind === kind && i.name === name)) out.push(p.name); });
+  return out;
+}
+function removeAt(list, ix) { list.splice(ix, 1); commit(); render({ keepScroll: true }); }
+
+function focusRowNamed(name) {
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#viewRoot table tbody tr');
+    for (const r of rows) {
+      const inp = r.querySelector('input[type="text"]');
+      if (inp && inp.value === name) { inp.focus(); inp.select(); break; }
+    }
+  }, 30);
 }
 
 /* ── 저장 ───────────────────────────────────────────── */
@@ -97,16 +127,42 @@ function scheduleSave() {
 
 /** 브라우저 저장 — 성공하면 true */
 function saveLocal() {
-  return store.set(LS_KEY, JSON.stringify({ savedAt: new Date().toISOString(), ov: state.ov }));
+  return store.set(LS_KEY, JSON.stringify({ savedAt: new Date().toISOString(), data: state.data }));
 }
-/** 저장된 값 읽기 — 예전 형식(수정값만 저장)도 그대로 읽는다 */
-function readLocal() {
+/** 저장된 것 읽기 — 예전 형식(수정값만 저장)도 그대로 읽어 데이터로 바꿔 준다 */
+function readLocal() { return parseSaved(store.get(LS_KEY)); }
+
+function parseSaved(raw) {
   try {
-    const j = JSON.parse(store.get(LS_KEY) || 'null');
+    const j = typeof raw === 'string' ? JSON.parse(raw || 'null') : raw;
     if (!j) return null;
-    if (j.ov) return { ov: j.ov, savedAt: j.savedAt || null };
-    return { ov: j, savedAt: null };                 // 예전 형식
+    if (j.data) return { data: j.data, savedAt: j.savedAt || null };
+    const ov = j.ov || (j.ingredients || j.menus ? j : null);   // 예전 형식(수정값만)
+    if (ov) return { ov, savedAt: j.savedAt || null };
+    return null;
   } catch (_) { return null; }
+}
+
+/** 예전 「수정값」 형식을 원본에 얹어 전체 데이터로 만든다 */
+function applyOverrides(base, ov) {
+  if (!ov) return clone(base);
+  const o = { ingredients: {}, preps: {}, menus: {}, fixedCosts: {}, settings: {}, ...ov };
+  return {
+    ...clone(base),
+    ingredients: base.ingredients.map((i) => ({ ...i, ...(o.ingredients[i.name] || {}) })),
+    preps: base.preps.map((p) => {
+      const po = o.preps[p.name] || {};
+      return { ...p, ...(po.yield_g != null ? { yield_g: po.yield_g } : {}),
+               items: p.items.map((it, ix) => ({ ...it, ...((po.items || {})[ix] || {}) })) };
+    }),
+    menus: base.menus.map((m) => {
+      const mo = o.menus[m.name] || {};
+      return { ...m, ...(mo.price != null ? { price: mo.price } : {}),
+               lines: m.lines.map((l, ix) => ({ ...l, ...((mo.lines || {})[ix] || {}) })) };
+    }),
+    fixedCosts: base.fixedCosts.map((f) => ({ ...f, ...(o.fixedCosts[f.name] || {}) })),
+    settings: { ...base.settings, ...o.settings },
+  };
 }
 
 async function save() {
@@ -120,9 +176,9 @@ async function save() {
     return;
   }
   try {                                        // 서버 모드
-    const res = await fetch('/api/overrides', {
+    const res = await fetch('/api/data', {
       method: 'PUT', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(state.ov),
+      body: JSON.stringify({ data: state.data }),
     });
     if (!res.ok) throw new Error(res.status);
     state.sync = 'synced';
@@ -180,36 +236,34 @@ function paintSync() {
   }
 }
 
-/* ── 어떤 값으로 시작할지 고르기 ──────────────────────
-   ① 서버 값이 있으면 그것
-   ② 없으면, 파일에 담겨 온 값과 이 브라우저에 저장된 값 중 "더 최근" 것
+/* ── 어떤 데이터로 시작할지 고르기 ────────────────────
+   ① 서버에 저장된 것이 있으면 그것
+   ② 없으면, 파일에 담겨 온 것과 이 브라우저에 저장된 것 중 "더 최근" 것
       (다른 PC에서 받은 파일을 열면 그 파일의 값이, 쓰던 PC에서 다시 열면
        그동안 고친 값이 자연스럽게 이어진다) */
-function readEmbeddedOv() {
+function readEmbeddedSaved() {
   const tag = document.getElementById('ovData');
   if (!tag) return null;
-  try {
-    const j = JSON.parse(tag.textContent || 'null');
-    if (!j || !j.ov) return null;
-    return { ov: j.ov, savedAt: j.savedAt || null };
-  } catch (_) { return null; }
+  return parseSaved(tag.textContent);
 }
-function pickOverrides(serverOv) {
-  if (serverOv && Object.keys(serverOv).some((k) => Object.keys(serverOv[k] || {}).length))
-    return { ...emptyOv(), ...serverOv };
+function toData(saved, base) {
+  return saved.data ? saved.data : applyOverrides(base, saved.ov);
+}
+function pickData(base, serverSaved) {
+  if (serverSaved) return toData(serverSaved, base);
 
-  const fromFile = readEmbeddedOv();
+  const fromFile = readEmbeddedSaved();
   const fromHere = readLocal();
   if (fromFile && fromHere) {
     const tf = Date.parse(fromFile.savedAt || 0) || 0;
     const th = Date.parse(fromHere.savedAt || 0) || 0;
     const win = tf > th ? fromFile : fromHere;
     if (win === fromFile) state.loadedFromFile = true;
-    return { ...emptyOv(), ...win.ov };
+    return toData(win, base);
   }
-  if (fromFile) { state.loadedFromFile = true; return { ...emptyOv(), ...fromFile.ov }; }
-  if (fromHere) return { ...emptyOv(), ...fromHere.ov };
-  return { ...emptyOv(), ...(serverOv || {}) };
+  if (fromFile) { state.loadedFromFile = true; return toData(fromFile, base); }
+  if (fromHere) return toData(fromHere, base);
+  return clone(base);
 }
 
 /* ── 화면 정의 ──────────────────────────────────────── */
@@ -229,7 +283,7 @@ function buildNav() {
   VIEWS.forEach((v) => {
     const b = el('button');
     b.innerHTML = `<span class="ic">${v.icon}</span><span>${v.label}</span>`;
-    if (v.id === 'issue') { const n = el('span', 'badge', String(state.base.issues.length)); b.appendChild(n); }
+    if (v.id === 'issue') { const n = el('span', 'badge', String((state.data.issues || []).length)); b.appendChild(n); }
     b.onclick = () => go(v.id);
     b.dataset.id = v.id;
     d.appendChild(b);
@@ -248,6 +302,13 @@ function go(id) {
 }
 
 /* ── 렌더 ───────────────────────────────────────────── */
+function paintBrand() {
+  const b = $('#brandName');
+  if (b) b.textContent = (state.data.meta.brand || '우리 매장');
+  const t = state.data.meta.brand ? `${state.data.meta.brand} · 메뉴 원가 분석` : '메뉴 원가 분석';
+  if (document.title !== t) document.title = t;
+}
+
 function render(opts = {}) {
   const v = VIEWS.find((x) => x.id === state.view) || VIEWS[0];
   $('#viewTitle').textContent = v.title;
@@ -260,6 +321,7 @@ function render(opts = {}) {
   ({ dash: viewDash, menu: viewMenu, ing: viewIng, prep: viewPrep, fix: viewFix, issue: viewIssue }[state.view] || viewDash)(root);
   root.scrollTop = keep;
   paintSync();
+  paintBrand();
 }
 
 /* ── 공통 조각 ──────────────────────────────────────── */
@@ -303,6 +365,42 @@ function numInput(value, onChange, opts = {}) {
   i.onkeydown = (e) => { if (e.key === 'Enter') i.blur(); };
   return i;
 }
+function textInput(value, onChange, opts = {}) {
+  const i = el('input', 'inp inp-text' + (opts.changed ? ' changed' : ''));
+  i.type = 'text';
+  i.value = value == null ? '' : value;
+  if (opts.placeholder) i.placeholder = opts.placeholder;
+  i.onchange = () => {
+    const v = i.value.trim();
+    if (!v || v === value) { i.value = value; return; }
+    onChange(v);
+  };
+  i.onkeydown = (e) => { if (e.key === 'Enter') i.blur(); };
+  return i;
+}
+function delButton(label, onDel) {
+  const b = el('button', 'del-btn', '✕');
+  b.type = 'button';
+  b.title = label + ' 삭제';
+  b.setAttribute('aria-label', label + ' 삭제');
+  b.onclick = (e) => { e.stopPropagation(); onDel(); };
+  return b;
+}
+function addBar(label, onAdd) {
+  const w = el('div', 'addbar');
+  const b = el('button', 'btn btn-add', '＋ ' + label);
+  b.type = 'button';
+  b.onclick = onAdd;
+  w.appendChild(b);
+  return w;
+}
+function confirmDelete(what, used) {
+  const extra = used && used.length
+    ? `\n\n지금 「${used.slice(0, 4).join(', ')}${used.length > 4 ? ' 외 ' + (used.length - 4) + '건' : ''}」 에서 쓰이고 있습니다.\n지우면 그곳의 원가가 0원으로 계산됩니다.`
+    : '';
+  return confirm(`「${what}」 을(를) 지울까요?${extra}`);
+}
+
 function gradeBadge(g) {
   const b = el('span', 'badge-grade g-' + g.key, `${g.icon} ${g.label}`);
   return b;
@@ -424,9 +522,9 @@ function viewMenu(root) {
 
   const chips = el('div', 'chips');
   chips.style.marginBottom = '14px';
-  const cats = ['all', ...state.base.categoryOrder.filter((c) => r.menus.some((m) => m.category === c))];
+  const cats = ['all', ...state.data.categoryOrder.filter((c) => r.menus.some((m) => m.category === c))];
   cats.forEach((c) => {
-    const b = el('button', 'chip', c === 'all' ? '전체' : `${state.base.categoryIcon[c] || ''} ${c}`);
+    const b = el('button', 'chip', c === 'all' ? '전체' : `${state.data.categoryIcon[c] || ''} ${c}`);
     b.setAttribute('aria-pressed', String(f.cat === c));
     b.onclick = () => { f.cat = c; paint(); };
     chips.appendChild(b);
@@ -464,7 +562,7 @@ function viewMenu(root) {
     const t = table([
       { label: '메뉴' }, { label: '판매가', num: true }, { label: '식재료원가', num: true },
       { label: '원가율', num: true }, { label: '고정비배분', num: true }, { label: '총원가', num: true },
-      { label: '마진', num: true }, { label: '마진율', num: true }, { label: '판정' },
+      { label: '마진', num: true }, { label: '마진율', num: true }, { label: '판정' }, { label: '' },
     ]);
     rows.forEach((m) => {
       const tr = el('tr', 'clickable');
@@ -472,9 +570,11 @@ function viewMenu(root) {
       nameTd.innerHTML = `${m.name}<div class="cat-chip">${m.icon} ${m.category}</div>`;
       tr.appendChild(nameTd);
 
+      const dm = state.data.menus.find((x) => x.name === m.name);
+      const wasM = baseMenu(m.name);
       const priceTd = el('td', 'num');
-      priceTd.appendChild(numInput(m.price, (v) => { setOv(['menus', m.name, 'price'], v); render({ keepScroll: true }); },
-        { changed: isOverridden(['menus', m.name, 'price']) }));
+      priceTd.appendChild(numInput(dm.price, (v) => { dm.price = v; commit(); render({ keepScroll: true }); },
+        { changed: diff(dm.price, wasM && wasM.price) }));
       priceTd.onclick = (e) => e.stopPropagation();
       tr.appendChild(priceTd);
 
@@ -488,11 +588,18 @@ function viewMenu(root) {
         tr.appendChild(td);
       });
       const gt = el('td'); gt.appendChild(gradeBadge(m.grade)); tr.appendChild(gt);
+      const act = el('td', 'act');
+      act.appendChild(delButton(m.name, () => {
+        if (!confirmDelete(m.name, usageOf('메뉴', m.name))) return;
+        removeAt(state.data.menus, state.data.menus.findIndex((x) => x.name === m.name));
+      }));
+      tr.appendChild(act);
       tr.onclick = () => openMenu(m.name);
       t.tbody.appendChild(tr);
     });
     t.wrap.classList.add('desktop-only');
     c.body.appendChild(t.wrap);
+    c.card.appendChild(newMenuForm());
     host.appendChild(c.card);
 
     /* 모바일 카드 */
@@ -512,15 +619,47 @@ function viewMenu(root) {
       k.onclick = () => openMenu(m.name);
       cards.appendChild(k);
     });
+    const mAdd = card(null, null, true);
+    mAdd.card.classList.add('mobile-only');
+    mAdd.card.appendChild(newMenuForm());
+    cards.appendChild(mAdd.card);
     host.appendChild(cards);
   }
   paint();
+}
+
+/* 새 메뉴 추가 폼 */
+function newMenuForm() {
+  const w = el('div', 'newform');
+  const name = el('input'); name.type = 'text'; name.placeholder = '새 메뉴 이름';
+  const cat = el('select', 'sel');
+  state.data.categoryOrder.forEach((c) => {
+    const o = el('option', null, `${state.data.categoryIcon[c] || ''} ${c}`); o.value = c; cat.appendChild(o);
+  });
+  const price = el('input'); price.type = 'number'; price.placeholder = '판매가'; price.min = '0';
+  const btn = el('button', 'btn btn-primary', '＋ 메뉴 추가');
+  const submit = () => {
+    const nm = name.value.trim();
+    if (!nm) { name.focus(); return; }
+    const created = addMenu(nm, cat.value, parseFloat(price.value) || 0);
+    name.value = ''; price.value = '';
+    render({ keepScroll: true });
+    openMenu(created);
+  };
+  btn.onclick = submit;
+  name.onkeydown = price.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+  w.append(name, cat, price, btn);
+  return w;
 }
 
 /* ═══════════════ 메뉴 상세 시트 ═══════════════ */
 function openMenu(name) {
   const m = state.result.menus.find((x) => x.name === name);
   if (!m) return;
+  const d = state.data.menus.find((x) => x.name === name);
+  const was = baseMenu(name);
+  const redraw = () => { render({ keepScroll: true }); openMenu(d.name); };
+
   $('#sheetTitle').textContent = m.name;
   $('#sheetSub').textContent = [`${m.icon} ${m.category}`, m.en, m.serving, m.time].filter(Boolean).join(' · ');
   const body = $('#sheetBody');
@@ -532,20 +671,39 @@ function openMenu(name) {
     body.appendChild(n);
   }
 
-  /* 요약 */
+  /* ── 메뉴 기본 정보 ── */
+  const info = el('div', 'newform');
+  info.style.cssText = 'border-top:0;padding:0 0 14px';
+  const nm = el('input'); nm.type = 'text'; nm.value = d.name; nm.placeholder = '메뉴 이름';
+  nm.onchange = () => {
+    const v = nm.value.trim();
+    if (!v || v === d.name) { nm.value = d.name; return; }
+    if (state.data.menus.some((x) => x !== d && x.name === v)) { toast('같은 이름이 이미 있습니다'); nm.value = d.name; return; }
+    renameRef('메뉴', d.name, v); d.name = v; commit(); render({ keepScroll: true }); openMenu(v);
+  };
+  const cs = el('select', 'sel');
+  state.data.categoryOrder.forEach((c) => {
+    const o = el('option', null, `${state.data.categoryIcon[c] || ''} ${c}`); o.value = c; cs.appendChild(o);
+  });
+  cs.value = d.category;
+  cs.onchange = () => { d.category = cs.value; d.icon = state.data.categoryIcon[cs.value] || '🍽'; commit(); redraw(); };
+  info.append(nm, cs);
+  body.appendChild(info);
+
+  /* ── 요약 ── */
   const bd = el('div', 'breakdown');
   const cell = (l, v, color) => {
-    const d = el('div');
-    d.appendChild(el('div', 'l', l));
+    const x = el('div');
+    x.appendChild(el('div', 'l', l));
     const vv = el('div', 'v', v);
     if (color) vv.style.color = color;
-    d.appendChild(vv);
-    return d;
+    x.appendChild(vv);
+    return x;
   };
   const priceBox = el('div');
   priceBox.appendChild(el('div', 'l', '판매가 (수정 가능)'));
-  const pin = numInput(m.price, (v) => { setOv(['menus', m.name, 'price'], v); openMenu(name); render({ keepScroll: true }); },
-    { changed: isOverridden(['menus', m.name, 'price']) });
+  const pin = numInput(d.price, (v) => { d.price = v; commit(); redraw(); },
+    { changed: diff(d.price, was && was.price) });
   pin.style.maxWidth = '100%';
   pin.style.marginTop = '4px';
   priceBox.appendChild(pin);
@@ -561,37 +719,64 @@ function openMenu(name) {
   );
   body.appendChild(bd);
 
-  /* 재료 */
+  /* ── 재료 ── */
   body.appendChild(el('div', 'sec-title', '재료 · 원가 구성'));
   const lines = el('div', 'lines');
   const head = el('div', 'line line-head');
   head.innerHTML = `<div class="c-name">재료 / 구성</div><div class="c-qty">사용량</div>
-                    <div class="c-yield">수율%</div><div class="c-unit">g당 단가</div><div class="c-cost">재료비</div>`;
+                    <div class="c-yield">수율%</div><div class="c-unit">g당 단가</div><div class="c-cost">재료비</div>
+                    <div class="c-del"></div>`;
   lines.appendChild(head);
 
   m.lines.forEach((l, ix) => {
+    const dl = d.lines[ix];
     const row = el('div', 'line');
-    const nm = el('div', 'c-name');
-    const kindPill = l.kind === '프렙' ? '<span class="pill prep">프렙</span> '
-                   : l.kind === '메뉴' ? '<span class="pill menu">메뉴</span> '
-                   : l.kind === '무료' ? '<span class="pill">무료</span> ' : '';
-    nm.innerHTML = `<b>${kindPill}${l.name}</b>` +
-      (l.raw && l.raw !== l.name ? `<span class="sub">레시피북: ${l.raw}</span>` : '') +
-      (l.note ? `<span class="sub">${l.note}</span>` : '');
-    row.appendChild(nm);
+
+    const nmBox = el('div', 'c-name');
+    const kindSel = el('select', 'sel');
+    kindSel.style.cssText = 'padding:4px 6px;font-size:11.5px;margin-right:6px';
+    ['식재료', '프렙', '메뉴', '무료'].forEach((k) => { const o = el('option', null, k); o.value = k; kindSel.appendChild(o); });
+    kindSel.value = dl.kind;
+    kindSel.onchange = () => {
+      dl.kind = kindSel.value;
+      const src = { 식재료: state.data.ingredients, 프렙: state.data.preps, 메뉴: state.data.menus }[dl.kind];
+      dl.name = dl.kind === '무료' ? '물' : ((src && src[0] && src[0].name) || '');
+      dl.raw = '';
+      commit(); redraw();
+    };
+    nmBox.appendChild(kindSel);
+
+    if (dl.kind === '무료') {
+      nmBox.appendChild(textInput(dl.name || '물', (v) => { dl.name = v; commit(); redraw(); }));
+    } else {
+      const src = { 식재료: state.data.ingredients, 프렙: state.data.preps, 메뉴: state.data.menus }[dl.kind] || [];
+      const sel = el('select', 'sel');
+      sel.style.cssText = 'padding:4px 8px;max-width:190px;font-size:13px';
+      src.forEach((x) => { if (x.name !== d.name) { const o = el('option', null, x.name); o.value = x.name; sel.appendChild(o); } });
+      if (!src.some((x) => x.name === dl.name)) {
+        const o = el('option', null, dl.name ? `${dl.name} (목록에 없음)` : '— 선택 —');
+        o.value = dl.name || ''; sel.appendChild(o);
+      }
+      sel.value = dl.name || '';
+      sel.onchange = () => { dl.name = sel.value; dl.raw = ''; commit(); redraw(); };
+      nmBox.appendChild(sel);
+    }
+    if (l.raw && l.raw !== l.name) nmBox.appendChild(el('span', 'sub', `원본 표기: ${l.raw}`));
+    if (l.note) nmBox.appendChild(el('span', 'sub', l.note));
+    row.appendChild(nmBox);
 
     const q = el('div', 'c-qty');
-    q.appendChild(el('span', 'flab', l.kind === '메뉴' ? '수량' : '사용량'));
-    q.appendChild(numInput(l.qty, (v) => { setOv(['menus', m.name, 'lines', ix, 'qty'], v); openMenu(name); render({ keepScroll: true }); },
-      { changed: isOverridden(['menus', m.name, 'lines', ix, 'qty']), step: 'any' }));
+    q.appendChild(el('span', 'flab', dl.kind === '메뉴' ? '수량' : '사용량'));
+    q.appendChild(numInput(dl.qty, (v) => { dl.qty = v; commit(); redraw(); },
+      { changed: diff(dl.qty, was && was.lines[ix] && was.lines[ix].qty), step: 'any' }));
     row.appendChild(q);
 
     const y = el('div', 'c-yield');
     y.appendChild(el('span', 'flab', '수율%'));
-    if (l.kind === '식재료' || l.kind === '프렙') {
-      y.appendChild(numInput(Math.round(l.yield * 100),
-        (v) => { setOv(['menus', m.name, 'lines', ix, 'yield'], Math.max(0.01, v / 100)); openMenu(name); render({ keepScroll: true }); },
-        { changed: isOverridden(['menus', m.name, 'lines', ix, 'yield']) }));
+    if (dl.kind === '식재료' || dl.kind === '프렙') {
+      y.appendChild(numInput(Math.round((dl.yield || 1) * 100),
+        (v) => { dl.yield = Math.max(0.01, v / 100); commit(); redraw(); },
+        { changed: diff((dl.yield || 1) * 100, was && was.lines[ix] && (was.lines[ix].yield || 1) * 100) }));
     } else y.appendChild(el('span', 'val', '–'));
     row.appendChild(y);
 
@@ -605,30 +790,70 @@ function openMenu(name) {
     cst.appendChild(el('span', 'val strong', won1(l.cost)));
     row.appendChild(cst);
 
+    const del = el('div', 'c-del');
+    del.appendChild(delButton(dl.name || '재료', () => { d.lines.splice(ix, 1); commit(); redraw(); }));
+    row.appendChild(del);
+
     lines.appendChild(row);
   });
+
   const foot = el('div', 'line line-foot');
   foot.innerHTML = `<div class="c-name"><b>합 계</b></div><div class="c-qty"></div><div class="c-yield"></div>
-                    <div class="c-unit"></div><div class="c-cost"><span class="val strong total">${won1(m.foodCost)}</span></div>`;
+                    <div class="c-unit"></div><div class="c-cost"><span class="val strong total">${won1(m.foodCost)}</span></div>
+                    <div class="c-del"></div>`;
   lines.appendChild(foot);
   body.appendChild(lines);
 
-  /* 조리법 */
+  const addLine = el('button', 'btn btn-add', '＋ 재료 추가');
+  addLine.style.marginTop = '10px';
+  addLine.onclick = () => {
+    d.lines.push({ kind: '식재료', name: (state.data.ingredients[0] || {}).name || '', raw: '',
+                   qty: 0, unit: 'g', yield: 1, note: '' });
+    commit(); redraw();
+  };
+  body.appendChild(addLine);
+
+  /* ── 조리법 ── */
+  body.appendChild(el('div', 'sec-title', '조리 방법'));
+  const stepsBox = el('textarea', 'ta');
+  stepsBox.rows = Math.max(4, (d.steps || []).length + 1);
+  stepsBox.value = (d.steps || []).join('\n');
+  stepsBox.placeholder = '한 줄에 한 단계씩 적으세요.\n예) 팬에 기름을 두르고 마늘을 볶는다.';
+  stepsBox.onchange = () => {
+    d.steps = stepsBox.value.split('\n').map((x) => x.trim()).filter(Boolean);
+    commit(); redraw();
+  };
+  body.appendChild(stepsBox);
   if (m.steps && m.steps.length) {
-    body.appendChild(el('div', 'sec-title', '조리 방법'));
     const ol = el('ol', 'steps');
-    m.steps.forEach((s) => ol.appendChild(el('li', null, s)));
+    m.steps.forEach((x) => ol.appendChild(el('li', null, x)));
     body.appendChild(ol);
   }
-  if (m.garnish) {
-    body.appendChild(el('div', 'sec-title', '가니쉬'));
-    body.appendChild(el('div', 'garnish', m.garnish));
-  }
+
+  body.appendChild(el('div', 'sec-title', '가니쉬 · 플레이팅'));
+  const gBox = el('textarea', 'ta');
+  gBox.rows = 2;
+  gBox.value = d.garnish || '';
+  gBox.placeholder = '담음새·장식 메모';
+  gBox.onchange = () => { d.garnish = gBox.value.trim(); commit(); redraw(); };
+  body.appendChild(gBox);
+
+  /* ── 메뉴 삭제 ── */
+  const danger = el('button', 'btn btn-block btn-danger', '이 메뉴 삭제');
+  danger.style.marginTop = '22px';
+  danger.onclick = () => {
+    if (!confirmDelete(d.name, usageOf('메뉴', d.name))) return;
+    const ix = state.data.menus.findIndex((x) => x === d);
+    state.data.menus.splice(ix, 1);
+    commit(); closeSheet(); render({ keepScroll: true });
+  };
+  body.appendChild(danger);
 
   $('#sheet').hidden = false;
   $('#sheetBackdrop').hidden = false;
   document.body.style.overflow = 'hidden';
 }
+
 function closeSheet() {
   $('#sheet').hidden = true;
   $('#sheetBackdrop').hidden = true;
@@ -659,30 +884,64 @@ function viewIng(root) {
     const c = card(null, null, true);
     const t = table([
       { label: '식재료명' }, { label: '구매가격(원)', num: true }, { label: '규격', num: true },
-      { label: '총중량(g)', num: true }, { label: 'g당 단가', num: true }, { label: '상태' },
+      { label: '단위' }, { label: '총중량(g)', num: true }, { label: 'g당 단가', num: true },
+      { label: '상태' }, { label: '' },
     ]);
     rows.forEach((it) => {
+      const ix = state.data.ingredients.findIndex((x) => x.name === it.name);
+      const d = state.data.ingredients[ix];
+      const was = baseIng(it.name);
       const tr = el('tr');
-      tr.appendChild(el('td', 'name', it.name));
+
+      const nameTd = el('td');
+      nameTd.appendChild(textInput(d.name, (v) => {
+        if (state.data.ingredients.some((x) => x !== d && x.name === v)) { toast('같은 이름이 이미 있습니다'); render({ keepScroll: true }); return; }
+        renameRef('식재료', d.name, v); d.name = v; commit(); render({ keepScroll: true });
+      }, { changed: !was }));
+      tr.appendChild(nameTd);
+
       const p = el('td', 'num');
-      p.appendChild(numInput(it.price, (v) => { setOv(['ingredients', it.name, 'price'], v); render({ keepScroll: true }); },
-        { changed: isOverridden(['ingredients', it.name, 'price']) }));
+      p.appendChild(numInput(d.price, (v) => { d.price = v; commit(); render({ keepScroll: true }); },
+        { changed: diff(d.price, was && was.price) }));
       tr.appendChild(p);
-      tr.appendChild(el('td', 'num dim', `${it.pack_qty || 0} ${it.unit || ''}`));
-      const w = el('td', 'num');
-      w.appendChild(numInput(it.weight_g, (v) => { setOv(['ingredients', it.name, 'weight_g'], v); render({ keepScroll: true }); },
-        { changed: isOverridden(['ingredients', it.name, 'weight_g']), step: 'any' }));
-      tr.appendChild(w);
-      const u = el('td', 'num', won3(it.unitCost));
-      u.style.cssText = 'font-weight:750;color:var(--accent-ink)';
+
+      const q = el('td', 'num');
+      q.appendChild(numInput(d.pack_qty, (v) => { d.pack_qty = v; commit(); render({ keepScroll: true }); },
+        { changed: diff(d.pack_qty, was && was.pack_qty), step: 'any' }));
+      tr.appendChild(q);
+
+      const u = el('td');
+      const us = el('input', 'inp inp-text');
+      us.type = 'text'; us.value = d.unit || 'kg'; us.style.maxWidth = '70px';
+      us.onchange = () => { d.unit = us.value.trim() || 'kg'; commit(); };
+      u.appendChild(us);
       tr.appendChild(u);
-      const s = el('td');
-      s.innerHTML = it.valid ? '<span class="badge-grade g-good">✓ 정상</span>'
-                             : '<span class="badge-grade g-warn">⚠ 값 확인</span>';
-      tr.appendChild(s);
+
+      const w = el('td', 'num');
+      w.appendChild(numInput(d.weight_g, (v) => { d.weight_g = v; commit(); render({ keepScroll: true }); },
+        { changed: diff(d.weight_g, was && was.weight_g), step: 'any' }));
+      tr.appendChild(w);
+
+      const uc = el('td', 'num', won3(it.unitCost));
+      uc.style.cssText = 'font-weight:750;color:var(--accent-ink)';
+      tr.appendChild(uc);
+
+      const st = el('td');
+      st.innerHTML = it.valid ? '<span class="badge-grade g-good">✓ 정상</span>'
+                              : '<span class="badge-grade g-warn">⚠ 값 확인</span>';
+      tr.appendChild(st);
+
+      const act = el('td', 'act');
+      act.appendChild(delButton(d.name, () => {
+        if (!confirmDelete(d.name, usageOf('식재료', d.name))) return;
+        removeAt(state.data.ingredients, ix);
+      }));
+      tr.appendChild(act);
       t.tbody.appendChild(tr);
     });
+    if (!rows.length) t.tbody.appendChild(Object.assign(el('tr'), { innerHTML: '<td colspan="8" class="dim" style="text-align:center;padding:28px">해당하는 식재료가 없습니다.</td>' }));
     c.body.appendChild(t.wrap);
+    c.card.appendChild(addBar('식재료 추가', addIngredient));
     host.appendChild(c.card);
   }
   paint();
@@ -691,84 +950,177 @@ function viewIng(root) {
 /* ═══════════════ 프렙 ═══════════════ */
 function viewPrep(root) {
   const r = state.result;
-  r.preps.forEach((p) => {
-    const c = card(p.name, `완성중량 ${won(p.yield_g)}g · 투입 ${won(p.inputG)}g · 총 재료비 ${won(p.totalCost)}원 · g당 ${won3(p.unitCost)}원`, true);
 
-    const head = el('div', 'card-body');
-    head.style.paddingBottom = '0';
-    const wrapY = el('label', 'switch');
-    wrapY.appendChild(el('span', null, '완성중량(g)'));
-    wrapY.appendChild(numInput(p.yield_g, (v) => { setOv(['preps', p.name, 'yield_g'], v); render({ keepScroll: true }); },
-      { changed: isOverridden(['preps', p.name, 'yield_g']), step: 'any' }));
-    head.appendChild(wrapY);
+  r.preps.forEach((p) => {
+    const px = state.data.preps.findIndex((x) => x.name === p.name);
+    const d = state.data.preps[px];
+    const was = basePrep(p.name);
+
+    const c = card(null, null, true);
+    const head = el('div', 'card-head');
+    const nameWrap = el('div', 'brandedit');
+    nameWrap.appendChild(textInput(d.name, (v) => {
+      if (state.data.preps.some((x) => x !== d && x.name === v)) { toast('같은 이름이 이미 있습니다'); render({ keepScroll: true }); return; }
+      renameRef('프렙', d.name, v); d.name = v; commit(); render({ keepScroll: true });
+    }, { changed: !was }));
+    const yl = el('label', 'switch');
+    yl.appendChild(el('span', null, '완성중량(g)'));
+    yl.appendChild(numInput(d.yield_g, (v) => { d.yield_g = v; commit(); render({ keepScroll: true }); },
+      { changed: diff(d.yield_g, was && was.yield_g), step: 'any' }));
+    nameWrap.appendChild(yl);
+    head.appendChild(nameWrap);
+    const sp = el('div', 'spacer');
+    head.appendChild(sp);
+    head.appendChild(el('div', 'sub', `투입 ${won(p.inputG)}g · 총 ${won(p.totalCost)}원 · g당 ${won3(p.unitCost)}원`));
+    head.appendChild(delButton(d.name, () => {
+      if (!confirmDelete(d.name, usageOf('프렙', d.name))) return;
+      removeAt(state.data.preps, px);
+    }));
     c.card.insertBefore(head, c.body);
 
     const t = table([
-      { label: '재료' }, { label: '투입량(g)', num: true }, { label: 'g당 단가', num: true }, { label: '재료비', num: true },
+      { label: '구분' }, { label: '재료' }, { label: '투입량(g)', num: true },
+      { label: 'g당 단가', num: true }, { label: '재료비', num: true }, { label: '' },
     ]);
     p.items.forEach((it, ix) => {
+      const di = d.items[ix];
       const tr = el('tr');
-      const nm = el('td', 'name');
-      nm.innerHTML = (it.kind === '프렙' ? '<span class="pill prep">프렙</span> ' : '') + it.name;
-      tr.appendChild(nm);
+      tr.appendChild(kindCell(di, ['식재료', '프렙'], () => render({ keepScroll: true })));
+      tr.appendChild(refCell(di, () => render({ keepScroll: true })));
       const q = el('td', 'num');
-      q.appendChild(numInput(it.qty, (v) => { setOv(['preps', p.name, 'items', ix, 'qty'], v); render({ keepScroll: true }); },
-        { changed: isOverridden(['preps', p.name, 'items', ix, 'qty']), step: 'any' }));
+      q.appendChild(numInput(di.qty, (v) => { di.qty = v; commit(); render({ keepScroll: true }); },
+        { changed: diff(di.qty, was && was.items[ix] && was.items[ix].qty), step: 'any' }));
       tr.appendChild(q);
       tr.appendChild(el('td', 'num', won3(it.unitCost)));
       const cs = el('td', 'num', won1(it.cost));
       cs.style.fontWeight = '700';
       tr.appendChild(cs);
+      const act = el('td', 'act');
+      act.appendChild(delButton(di.name, () => removeAt(d.items, ix)));
+      tr.appendChild(act);
       t.tbody.appendChild(tr);
     });
     const sum = el('tr');
-    sum.innerHTML = `<td class="name">합 계</td><td class="num dim">${won(p.inputG)}</td><td></td>
-                     <td class="num" style="font-weight:800;color:var(--accent-ink)">${won(p.totalCost)}</td>`;
+    sum.innerHTML = `<td class="name" colspan="2">합 계</td><td class="num dim">${won(p.inputG)}</td><td></td>
+                     <td class="num" style="font-weight:800;color:var(--accent-ink)">${won(p.totalCost)}</td><td></td>`;
     t.tbody.appendChild(sum);
     c.body.appendChild(t.wrap);
+    c.card.appendChild(addBar('재료 추가', () => {
+      d.items.push({ kind: '식재료', name: (state.data.ingredients[0] || {}).name || '', raw: '', qty: 0 });
+      commit(); render({ keepScroll: true });
+    }));
     root.appendChild(c.card);
   });
+
+  const add = el('div');
+  add.style.marginTop = '16px';
+  add.appendChild(addBar('프렙(반제품) 추가', addPrep));
+  add.firstChild.style.border = '1px dashed var(--line-2)';
+  add.firstChild.style.borderRadius = 'var(--r)';
+  root.appendChild(add);
+}
+
+/* 구분(식재료/프렙/메뉴/무료) 선택 칸 */
+function kindCell(line, kinds, after) {
+  const td = el('td');
+  const sel = el('select', 'sel');
+  sel.style.padding = '6px 8px';
+  kinds.forEach((k) => { const o = el('option', null, k); o.value = k; sel.appendChild(o); });
+  sel.value = line.kind;
+  sel.onchange = () => {
+    line.kind = sel.value;
+    const first = { 식재료: state.data.ingredients, 프렙: state.data.preps, 메뉴: state.data.menus }[line.kind];
+    line.name = line.kind === '무료' ? '물' : ((first && first[0] && first[0].name) || '');
+    commit(); after();
+  };
+  td.appendChild(sel);
+  return td;
+}
+/* 재료 이름 선택 칸 — 구분에 맞는 목록에서 고른다 */
+function refCell(line, after) {
+  const td = el('td', 'name');
+  if (line.kind === '무료') {
+    td.appendChild(textInput(line.name || '물', (v) => { line.name = v; commit(); after(); }));
+    return td;
+  }
+  const src = { 식재료: state.data.ingredients, 프렙: state.data.preps, 메뉴: state.data.menus }[line.kind] || [];
+  const sel = el('select', 'sel');
+  sel.style.cssText = 'padding:6px 8px;max-width:230px';
+  src.forEach((x) => { const o = el('option', null, x.name); o.value = x.name; sel.appendChild(o); });
+  if (!src.some((x) => x.name === line.name)) {
+    const o = el('option', null, line.name ? `${line.name} (없음)` : '— 선택 —');
+    o.value = line.name || '';
+    sel.appendChild(o);
+  }
+  sel.value = line.name || '';
+  sel.onchange = () => { line.name = sel.value; line.raw = ''; commit(); after(); };
+  td.appendChild(sel);
+  return td;
 }
 
 /* ═══════════════ 고정비 ═══════════════ */
 function viewFix(root) {
-  const r = state.result, s = r.summary, st = r.settings;
+  const r = state.result, s2 = r.summary, st = r.settings;
 
   const kpis = el('div', 'kpis');
   const K = (l, v, sub) => { const k = el('div', 'kpi'); k.append(el('div', 'lab', l), el('div', 'val', v), el('div', 'sub', sub)); return k; };
   kpis.append(
-    K('고정비 총계', won(s.fixedTotal) + '원', '입력한 모든 항목'),
-    K('배분 대상', won(s.fixedAllocatable) + '원', '「배분 포함」 항목만'),
-    K('월 추정매출', won(s.monthlyRevenue) + '원', '배달 포함'),
-    K('고정비 배분율', pct(s.fixedRate), '판매가 × 이 비율 = 배분액'),
+    K('고정비 총계', won(s2.fixedTotal) + '원', '입력한 모든 항목'),
+    K('배분 대상', won(s2.fixedAllocatable) + '원', '「배분 포함」 항목만'),
+    K('월 추정매출', won(s2.monthlyRevenue) + '원', '배달 포함'),
+    K('고정비 배분율', pct(s2.fixedRate), '판매가 × 이 비율 = 배분액'),
   );
   root.appendChild(kpis);
 
   const c = card('월 고정비 내역', '금액을 고치거나 배분 대상에서 빼고 넣을 수 있습니다', true);
-  const t = table([{ label: '항목' }, { label: '월간 금액(원)', num: true }, { label: '배분 포함' }, { label: '비고' }]);
-  r.fixedCosts.forEach((f) => {
+  const t = table([{ label: '항목' }, { label: '월간 금액(원)', num: true }, { label: '배분 포함' }, { label: '비고' }, { label: '' }]);
+  r.fixedCosts.forEach((f, ix) => {
+    const d = state.data.fixedCosts[ix];
+    const was = baseFix(f.name);
     const tr = el('tr');
-    tr.appendChild(el('td', 'name', f.name));
+
+    const nameTd = el('td');
+    nameTd.appendChild(textInput(d.name, (v) => {
+      if (state.data.fixedCosts.some((x) => x !== d && x.name === v)) { toast('같은 이름이 이미 있습니다'); render({ keepScroll: true }); return; }
+      d.name = v; commit(); render({ keepScroll: true });
+    }, { changed: !was }));
+    tr.appendChild(nameTd);
+
     const a = el('td', 'num');
-    a.appendChild(numInput(f.amount, (v) => { setOv(['fixedCosts', f.name, 'amount'], v); render({ keepScroll: true }); },
-      { changed: isOverridden(['fixedCosts', f.name, 'amount']) }));
+    a.appendChild(numInput(d.amount, (v) => { d.amount = v; commit(); render({ keepScroll: true }); },
+      { changed: diff(d.amount, was && was.amount) }));
     tr.appendChild(a);
+
     const sw = el('td');
     const lab = el('label', 'switch');
-    const cb = el('input'); cb.type = 'checkbox'; cb.checked = f.include !== false;
-    cb.onchange = () => { setOv(['fixedCosts', f.name, 'include'], cb.checked); render({ keepScroll: true }); };
+    const cb = el('input'); cb.type = 'checkbox'; cb.checked = d.include !== false;
+    cb.onchange = () => { d.include = cb.checked; commit(); render({ keepScroll: true }); };
     lab.append(cb, el('span', null, cb.checked ? '포함' : '제외'));
     sw.appendChild(lab);
     tr.appendChild(sw);
-    const note = el('td', 'dim', f.reason || f.note || '');
-    if (f.reason) note.style.color = 'var(--warn)';
-    tr.appendChild(note);
+
+    const noteTd = el('td');
+    const ni = el('input', 'inp inp-text');
+    ni.type = 'text'; ni.value = d.reason || d.note || ''; ni.placeholder = '메모';
+    ni.style.maxWidth = '280px';
+    ni.onchange = () => { d.note = ni.value; d.reason = ''; commit(); };
+    if (d.reason) ni.style.color = 'var(--warn)';
+    noteTd.appendChild(ni);
+    tr.appendChild(noteTd);
+
+    const act = el('td', 'act');
+    act.appendChild(delButton(d.name, () => {
+      if (!confirm(`「${d.name}」 항목을 지울까요?`)) return;
+      removeAt(state.data.fixedCosts, ix);
+    }));
+    tr.appendChild(act);
     t.tbody.appendChild(tr);
   });
   c.body.appendChild(t.wrap);
+  c.card.appendChild(addBar('비용 항목 추가', addFixedCost));
   root.appendChild(c.card);
 
-  const s2 = card('배분 · 판정 기준', '이 값에 따라 고정비 배분과 원가율 판정이 달라집니다');
+  const s3 = card('배분 · 판정 기준', '이 값에 따라 고정비 배분과 원가율 판정이 달라집니다');
   const grid = el('div', 'breakdown');
   const field = (label, value, onChange, suffix) => {
     const d = el('div');
@@ -781,19 +1133,68 @@ function viewFix(root) {
     return d;
   };
   grid.append(
-    field('월 추정매출 (원)', st.monthlyRevenue, (v) => { setOv(['settings', 'monthlyRevenue'], v); render({ keepScroll: true }); }),
+    field('월 추정매출 (원)', st.monthlyRevenue, (v) => { state.data.settings.monthlyRevenue = v; commit(); render({ keepScroll: true }); }),
     field('목표 식재료 원가율 (%)', Math.round(st.targetFoodCostRate * 1000) / 10,
-          (v) => { setOv(['settings', 'targetFoodCostRate'], v / 100); render({ keepScroll: true }); }, '이하 → ✅ 양호'),
+          (v) => { state.data.settings.targetFoodCostRate = v / 100; commit(); render({ keepScroll: true }); }, '이하 → ✅ 양호'),
     field('주의 식재료 원가율 (%)', Math.round(st.warnFoodCostRate * 1000) / 10,
-          (v) => { setOv(['settings', 'warnFoodCostRate'], v / 100); render({ keepScroll: true }); }, '초과 → 🔴 과다'),
+          (v) => { state.data.settings.warnFoodCostRate = v / 100; commit(); render({ keepScroll: true }); }, '초과 → 🔴 과다'),
   );
-  s2.body.appendChild(grid);
-  root.appendChild(s2.card);
+  s3.body.appendChild(grid);
+  root.appendChild(s3.card);
+
+  /* 회사 이름 · 카테고리 */
+  const s4 = card('기본 정보', '회사(매장) 이름과 메뉴 카테고리를 정합니다');
+  const be = el('div', 'brandedit');
+  be.appendChild(el('span', 'l', '회사 / 매장 이름'));
+  const bi = el('input');
+  bi.type = 'text';
+  bi.value = state.data.meta.brand || '';
+  bi.placeholder = '예: 우리 레스토랑';
+  bi.onchange = () => { state.data.meta.brand = bi.value.trim() || '우리 매장'; commit(); paintBrand(); };
+  be.appendChild(bi);
+  s4.body.appendChild(be);
+
+  const catWrap = el('div');
+  catWrap.style.marginTop = '14px';
+  catWrap.appendChild(el('div', 'l', '메뉴 카테고리 (메뉴를 추가할 때 고를 수 있습니다)'));
+  const chips = el('div', 'chips');
+  chips.style.marginTop = '8px';
+  state.data.categoryOrder.forEach((cat, ix) => {
+    const chip = el('span', 'chip');
+    chip.style.cursor = 'default';
+    chip.textContent = `${state.data.categoryIcon[cat] || ''} ${cat}`;
+    const used = state.data.menus.some((m) => m.category === cat);
+    if (!used) {
+      const x = delButton(cat, () => { state.data.categoryOrder.splice(ix, 1); commit(); render({ keepScroll: true }); });
+      x.style.marginLeft = '4px';
+      chip.appendChild(x);
+    }
+    chips.appendChild(chip);
+  });
+  catWrap.appendChild(chips);
+  const newCat = el('div', 'newform');
+  newCat.style.padding = '12px 0 0';
+  newCat.style.borderTop = '0';
+  const ci = el('input'); ci.type = 'text'; ci.placeholder = '새 카테고리 이름';
+  const cIcon = el('input'); cIcon.type = 'text'; cIcon.placeholder = '아이콘'; cIcon.style.width = '80px'; cIcon.value = '🍽';
+  const cb2 = el('button', 'btn', '카테고리 추가');
+  cb2.onclick = () => {
+    const v = ci.value.trim();
+    if (!v) return;
+    if (state.data.categoryOrder.includes(v)) { toast('이미 있는 카테고리입니다'); return; }
+    state.data.categoryOrder.push(v);
+    state.data.categoryIcon[v] = cIcon.value.trim() || '🍽';
+    commit(); render({ keepScroll: true });
+  };
+  newCat.append(ci, cIcon, cb2);
+  catWrap.appendChild(newCat);
+  s4.body.appendChild(catWrap);
+  root.appendChild(s4.card);
 }
 
 /* ═══════════════ 점검 ═══════════════ */
 function viewIssue(root) {
-  const issues = state.base.issues || [];
+  const issues = (state.data.issues || []);
   if (!issues.length) { root.appendChild(el('div', 'empty', '확인이 필요한 항목이 없습니다.')); return; }
   const groups = {};
   issues.forEach((i) => (groups[i.type] = groups[i.type] || []).push(i));
@@ -850,7 +1251,7 @@ async function downloadExcel() {
 async function excelFromServer() {
   const res = await fetch('/api/export.xlsx', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(state.ov),
+    body: JSON.stringify({ data: state.data }),
   });
   if (!res.ok) throw new Error('export ' + res.status);
   return res.blob();
@@ -859,7 +1260,7 @@ async function excelFromServer() {
 async function excelInBrowser() {
   await loadScript('/vendor/exceljs.min.js', () => self.ExcelJS);
   await loadScript('/build-xlsx.js', () => self.XlsxBuilder);
-  const wb = self.XlsxBuilder.build(merged());
+  const wb = self.XlsxBuilder.build(state.data);
   const buf = await wb.xlsx.writeBuffer();
   return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
@@ -878,7 +1279,7 @@ function loadScript(src, ready) {
 async function savePortable() {
   toast('파일을 만드는 중…');
   try {
-    const stamp = { savedAt: new Date().toISOString(), ov: state.ov };
+    const stamp = { savedAt: new Date().toISOString(), data: state.data };
     let html;
 
     if (self.EMBEDDED_DATASET) {
@@ -915,18 +1316,19 @@ async function savePortable() {
 }
 
 function backup() {
-  const blob = new Blob([JSON.stringify(state.ov, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ savedAt: new Date().toISOString(), data: state.data }, null, 2)],
+                        { type: 'application/json' });
   const a = el('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `원가_수정값_백업_${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `원가데이터_백업_${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   toast('백업 파일을 저장했습니다');
 }
 function restore() { $('#fileRestore').click(); }
 function resetAll() {
-  if (!confirm('수정한 값을 모두 지우고 원본으로 되돌립니다. 계속할까요?')) return;
-  state.ov = emptyOv();
-  recalc(); markDirty(); scheduleSave(); render();
+  if (!confirm('추가·수정한 내용을 모두 지우고 처음 상태로 되돌립니다. 계속할까요?')) return;
+  state.data = clone(state.base);
+  commit(); render();
   toast('원본으로 되돌렸습니다');
 }
 
@@ -968,8 +1370,10 @@ async function boot() {
     }
   }
   state.base = payload.dataset;
+  state.base.categoryOrder = state.base.categoryOrder || [];
+  state.base.categoryIcon = state.base.categoryIcon || {};
 
-  state.ov = pickOverrides(payload.overrides);
+  state.data = pickData(state.base, parseSaved(payload.saved));
   state.sync = state.serverOk ? 'synced' : 'local';
 
   // 브라우저가 저장을 받아주는지 미리 확인 → 못 쓰면 바로 알림
@@ -1002,9 +1406,10 @@ async function boot() {
     const f = e.target.files[0];
     if (!f) return;
     try {
-      const j = JSON.parse(await f.text());
-      state.ov = { ...emptyOv(), ...j };
-      recalc(); markDirty(); scheduleSave(); render();
+      const saved = parseSaved(await f.text());
+      if (!saved) throw new Error('형식이 맞지 않습니다');
+      state.data = toData(saved, state.base);
+      commit(); render();
       toast('백업을 복원했습니다');
     } catch (_) { toast('백업 파일을 읽지 못했습니다'); }
     e.target.value = '';

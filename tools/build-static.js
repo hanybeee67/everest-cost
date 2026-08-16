@@ -25,4 +25,8 @@ for (const [from, to] of copies) {
 const run = (f) => require('child_process').execFileSync(process.execPath, [path.join(ROOT, f)], { stdio: 'inherit' });
 run('tools/build-xlsx.js');
 run('tools/build-single.js');
+// 범용 템플릿 · 사용설명서
+const runArgs = (f, args) => require('child_process').execFileSync(process.execPath, [path.join(ROOT, f), ...args], { stdio: 'inherit' });
+runArgs('tools/build-single.js', ['public/downloads/원가분석_템플릿.html', 'data/template.json']);
+runArgs('tools/build-manual.js', []);
 console.log('\n정적 배포 준비 완료 → public/ 폴더를 그대로 올리면 됩니다.');

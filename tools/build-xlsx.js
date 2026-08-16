@@ -722,7 +722,8 @@ function build(data) {
   /* ═══════════════ 📘 사용안내 (맨 앞으로) ═══════════════ */
   const wsG = grab(S.guide);
   wsG.columns = [{ width: 4 }, { width: 22 }, { width: 96 }, { width: 4 }];
-  sheetTitle(wsG, `📘 ${data.meta.brand} · 메뉴 원가 분석서`, `${data.meta.source} · v${data.meta.version}`, 4);
+  sheetTitle(wsG, `📘 ${data.meta.brand || '메뉴'} · ${data.meta.title || '원가 분석서'}`,
+             `${data.meta.source || ''} · v${data.meta.version || '1.0'}`, 4);
 
   let g = 4;
   const gRow = (label, text, style = {}) => {
