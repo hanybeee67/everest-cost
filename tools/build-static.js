@@ -21,6 +21,8 @@ for (const [from, to] of copies) {
   console.log('✓', to, (fs.statSync(dst).size / 1024).toFixed(0) + 'KB');
 }
 
-// 엑셀 파일도 최신으로 다시 생성
-require('child_process').execFileSync(process.execPath, [path.join(ROOT, 'tools/build-xlsx.js')], { stdio: 'inherit' });
+// 엑셀 파일과 단일 HTML 파일도 최신으로 다시 생성
+const run = (f) => require('child_process').execFileSync(process.execPath, [path.join(ROOT, f)], { stdio: 'inherit' });
+run('tools/build-xlsx.js');
+run('tools/build-single.js');
 console.log('\n정적 배포 준비 완료 → public/ 폴더를 그대로 올리면 됩니다.');

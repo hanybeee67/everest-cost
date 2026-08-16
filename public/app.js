@@ -106,7 +106,9 @@ function paintSync() {
     ? (state.serverOk ? '서버에 저장 중…' : '이 기기에 저장 중…')
     : { synced: '서버에 저장됨', local: '이 기기에 저장됨', error: '저장 실패' }[state.sync];
   box.title = state.sync === 'local'
-    ? '정적 배포 모드입니다. 수정값은 이 브라우저에 저장됩니다 — 다른 기기와 공유하려면 [백업] 파일을 옮겨 [복원] 하세요.'
+    ? (self.EMBEDDED_DATASET
+        ? '단일 파일 모드입니다. 수정값은 이 브라우저에 저장됩니다 — 다른 기기로 옮기려면 [백업] 파일을 보내 [복원] 하세요.'
+        : '수정값은 이 브라우저에 저장됩니다 — 다른 기기와 공유하려면 [백업] 파일을 옮겨 [복원] 하세요.')
     : '수정값이 서버에 저장되어 모든 기기에서 같은 값을 봅니다.';
 }
 
@@ -803,17 +805,25 @@ async function boot() {
   applyTheme(localStorage.getItem('everest-theme') || '');
 
   let payload = null;
+  // ① 단일 HTML 파일 모드 — 데이터가 파일 안에 들어 있으면 그대로 사용 (인터넷·서버 불필요)
+  if (self.EMBEDDED_DATASET) {
+    state.serverOk = false;
+    payload = { dataset: self.EMBEDDED_DATASET, overrides: null };
+  }
   try {
+    if (payload) throw new Error('embedded');
     const res = await fetch('/api/data');
     if (!res.ok) throw new Error(res.status);
     payload = await res.json();
   } catch (_) {
-    // 정적 배포(Render Static Site 등) — 서버 없이 dataset.json 만으로 동작
-    state.serverOk = false;
-    try { payload = { dataset: await (await fetch('dataset.json')).json(), overrides: null }; }
-    catch (e) {
-      $('#boot').innerHTML = '<p>데이터를 불러오지 못했습니다. 새로고침해 주세요.</p>';
-      return;
+    // ② 정적 배포(Render Static Site 등) — 서버 없이 dataset.json 만으로 동작
+    if (!payload) {
+      state.serverOk = false;
+      try { payload = { dataset: await (await fetch('dataset.json')).json(), overrides: null }; }
+      catch (e) {
+        $('#boot').innerHTML = '<p>데이터를 불러오지 못했습니다. 새로고침해 주세요.</p>';
+        return;
+      }
     }
   }
   state.base = payload.dataset;
@@ -830,6 +840,11 @@ async function boot() {
 
   $('#boot').hidden = true;
   $('#app').hidden = false;
+
+  // 단일 HTML 파일로 저장하는 링크 — 단일 파일 안에서는 의미가 없으니 감춘다
+  if (!self.EMBEDDED_DATASET) {
+    ['#linkSingle', '#popSingle'].forEach((sel) => { const n = $(sel); if (n) n.hidden = false; });
+  }
 
   $('#btnTheme').onclick = toggleTheme;
   $('#btnExcel').onclick = downloadExcel;
@@ -856,6 +871,8 @@ async function boot() {
   $('#btnMenu').onclick = (e) => { e.stopPropagation(); pop.hidden = !pop.hidden; };
   document.addEventListener('click', () => { pop.hidden = true; });
   pop.addEventListener('click', (e) => e.stopPropagation());
+  const popLink = $('#popSingle');
+  if (popLink) popLink.onclick = () => { pop.hidden = true; };
   pop.querySelectorAll('button').forEach((b) => {
     b.onclick = () => {
       pop.hidden = true;

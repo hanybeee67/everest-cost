@@ -36,6 +36,7 @@ tools/normalize.py       원시 JSON → dataset.json (이름 매칭·검증)
 tools/build-xlsx.js      dataset → 엑셀 원가분석서 생성
 tools/verify_xlsx.py     생성된 엑셀의 전 수식을 실제 계산해 검증
 tools/build-static.js    정적 배포용 파일 모으기 (public/ 만으로 동작하게)
+tools/build-single.js    전부 합친 단일 HTML 파일 생성
 render.yaml              Render 배포 설정
 ```
 
@@ -53,8 +54,30 @@ npm start          # http://localhost:3000
 ```bash
 npm run build:data   # 원본 엑셀 → dataset.json   (python3 + openpyxl 필요)
 npm run build:xlsx   # dataset.json → 엑셀 파일
+npm run build:single # 전부 합친 단일 HTML 파일
 npm run verify       # 엑셀 전 수식 검증          (pip install formulas openpyxl)
 ```
+
+---
+
+## 단일 파일 버전 (설치·인터넷 불필요)
+
+`public/downloads/에베레스트_원가분석_단일파일.html` — **약 1.1MB 짜리 HTML 파일 하나**에
+데이터·계산엔진·엑셀생성기·화면이 전부 들어 있습니다.
+
+- 파일을 **더블클릭**하면 브라우저에서 바로 열립니다. 설치도, 인터넷도, 서버도 필요 없습니다.
+- 외부로 나가는 요청이 **0건**입니다. 매장 와이파이가 끊겨도 그대로 씁니다.
+- 웹 버전과 기능이 똑같습니다 — 단가 수정, 원가 재계산, **엑셀 내려받기**까지 전부 됩니다.
+- 고친 값은 그 브라우저에 저장됩니다. USB·카톡으로 파일을 옮겨도 되고,
+  값까지 함께 옮기려면 `백업` 으로 받은 JSON 을 상대 기기에서 `복원` 하면 됩니다.
+- 배포된 웹에서는 좌측 하단 **`단일 파일로 저장`** 으로 언제든 최신본을 받을 수 있습니다.
+
+```bash
+npm run build:single    # 단일 HTML 파일 다시 만들기
+```
+
+> 파일을 새로 만들 때마다 그 시점의 데이터가 안에 박힙니다.
+> 단가를 크게 손본 뒤에는 다시 만들어 배포하시면 됩니다.
 
 ---
 
@@ -185,7 +208,17 @@ public/dataset.json          원본 데이터
 public/calc.js               계산 엔진
 public/build-xlsx.js         엑셀 생성기 (브라우저에서도 동작)
 public/vendor/exceljs.min.js 엑셀 라이브러리 (내려받기 누를 때만 로드)
+public/downloads/…xlsx       엑셀 원가분석서
+public/downloads/…단일파일.html  단일 HTML 파일
 ```
+
+### 세 가지 사용 방식
+
+| | 필요한 것 | 값 저장 | 쓰임새 |
+|---|---|---|---|
+| **단일 HTML 파일** | 없음 (더블클릭) | 그 브라우저 | 주방 PC·오프라인·USB 배포 |
+| **Static Site** | 인터넷 | 그 브라우저 | 휴대폰에서 주소로 접속 |
+| **Web Service** | 인터넷 + 서버 | 서버 (기기 공유) | 여러 사람이 같은 값을 볼 때 |
 
 ## 확인이 필요한 항목
 
