@@ -245,7 +245,8 @@ DATA = {
  'fixedCosts': FIXED,
  'settings': {'monthlyRevenue': RAW['monthly_revenue'],
               'targetFoodCostRate': 0.30, 'warnFoodCostRate': 0.38,
-              'targetTotalCostRate': 0.80},
+              'targetTotalCostRate': 0.80,
+              'vatIncluded': True, 'vatRate': 0.1},
  'issues': issues,
 }
 os.makedirs('data', exist_ok=True)

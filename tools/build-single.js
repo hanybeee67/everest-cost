@@ -19,6 +19,7 @@ const calcJs  = read('shared/calc.js');
 const xlsxJs  = read('tools/build-xlsx.js');
 const appJs   = read('public/app.js');
 const excelJs = read('node_modules/exceljs/dist/exceljs.bare.min.js');
+const excelLicense = read('node_modules/exceljs/LICENSE').trim();
 const iconSvg = read('public/icon.svg');
 
 /* index.html 의 <body> 안쪽만 가져와 재사용 — 화면 구조를 한 곳에서만 관리한다 */
@@ -61,6 +62,15 @@ ${css}
 ${bodyInner}
 
 <script id="ovData" type="application/json">null</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     오픈소스 라이선스 고지 (Third-Party Notice)
+
+     이 파일은 엑셀(.xlsx) 생성을 위해 ExcelJS 를 포함합니다.
+     https://github.com/exceljs/exceljs
+
+${excelLicense.split('\n').map((l) => '     ' + l).join('\n')}
+     ═══════════════════════════════════════════════════════════════ -->
 <script>${safe(excelJs)}</script>
 <script>window.EMBEDDED_DATASET = ${safe(JSON.stringify(dataset))};</script>
 <script>${safe(calcJs)}</script>

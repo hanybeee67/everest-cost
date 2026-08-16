@@ -18,7 +18,7 @@ function img(name) {
   return 'data:image/webp;base64,' + fs.readFileSync(f).toString('base64');
 }
 const FIG = {};
-['dash', 'menu', 'detail', 'detail2', 'set', 'ing', 'prep', 'fix', 'issue',
+['dash', 'menu', 'detail', 'detail2', 'set', 'ing', 'prep', 'fix', 'issue', 'import',
  'm-dash', 'm-menu', 'm-detail'].forEach((k) => { FIG[k] = img(k); });
 
 const figure = (key, caption, note) => FIG[key]
@@ -240,6 +240,8 @@ const HTML = `<!doctype html>
     <a href="#screens"><i>🗂</i>화면별 사용법</a>
     <a href="#recipe"><i>📋</i>레시피와 원가 상세</a>
     <a href="#calc"><i>🧮</i>원가 계산 방식</a>
+    <a href="#vat"><i>🧾</i>부가세 설정 (중요)</a>
+    <a href="#bulk"><i>📋</i>엑셀에서 일괄 등록</a>
     <a href="#examples"><i>💡</i>예시 3개가 보여주는 것</a>
     <a href="#save"><i>💾</i>저장 · 백업 · 기기 이동</a>
     <a href="#excel"><i>📊</i>엑셀로 내보내기</a>
@@ -277,6 +279,18 @@ const HTML = `<!doctype html>
         예) 20kg 쌀 한 포대 62,000원 → 구매가격 <code>62000</code>, 총중량 <code>20000</code> → g당 3.1원
       </div>
       ${figure('ing', '식재료 화면', '노란 칸만 채우면 오른쪽 g당 단가가 자동으로 나옵니다')}
+      <div class="note tip">
+        💡 <b>재료가 많다면 하나씩 넣지 마세요.</b> 아래쪽 <b>「📋 엑셀에서 일괄 등록」</b> 으로
+        엑셀에서 복사해 한 번에 넣을 수 있습니다. (<a href="#bulk">자세히</a>)
+      </div>
+    </li>
+
+    <li>
+      <h3>부가세 설정 확인하기 <span class="chip c-bad">필수</span></h3>
+      <p><b>고정비</b> 화면의 <b>「부가세 처리」</b>에서 우리 매장에 맞는 것을 고릅니다.
+         기본값은 <b>「부가세 포함」</b>(일반과세 · 대부분의 식당)입니다.</p>
+      <p>이 설정 하나로 원가율이 달라집니다. 자세한 내용은
+         <a href="#vat">부가세 설정</a> 항목을 꼭 읽어 주세요.</p>
     </li>
 
     <li>
@@ -395,9 +409,14 @@ const HTML = `<!doctype html>
     <b>재료비</b> = 사용량 ÷ 수율 × g당 단가<br>
     <b>프렙 g당 원가</b> = 프렙 총 재료비 ÷ 완성중량(g)<br>
     <b>식재료 원가</b> = 그 메뉴 재료비의 합계<br>
-    <b>고정비 배분</b> = 판매가 × (배분대상 고정비 ÷ 월 추정매출)<br>
+    <b>공급가액</b> = 판매가 ÷ 1.1 &nbsp;<span style="color:var(--muted)">(부가세 포함일 때)</span><br>
+    <b>고정비 배분</b> = 공급가액 × (배분대상 고정비 ÷ 월매출 공급가액)<br>
     <b>총원가</b> = 식재료 원가 + 고정비 배분<br>
-    <b>마진</b> = 판매가 − 총원가
+    <b>마진</b> = 공급가액 − 총원가
+  </div>
+  <div class="note warn">
+    ⚠️ 원가율·마진율은 판매가가 아니라 <b>공급가액</b> 기준입니다.
+    부가세는 매장 매출이 아니라 잠시 맡아 두는 돈이기 때문입니다. (<a href="#vat">자세히</a>)
   </div>
 
   <h3>예시로 따라가 보기 — ${ex[0].name}</h3>
@@ -426,6 +445,91 @@ const HTML = `<!doctype html>
   <div class="note info">
     <b>노란 칸은 직접 넣는 값, 나머지는 자동 계산입니다.</b>
     화면 어디서든 <span class="chip c-input">노란 배경</span>이면 고칠 수 있다는 뜻입니다.
+  </div>
+</section>
+
+<section id="vat">
+  <div class="eyebrow">가장 중요한 설정</div>
+  <h2>부가세 설정 — 이걸 틀리면 원가율이 틀립니다</h2>
+  <p class="lead">원가 계산에서 가장 많이 놓치는 부분입니다. 5분만 읽어 주세요.</p>
+
+  <h3>왜 중요한가</h3>
+  <p>손님이 <b>9,000원</b>을 냈다고 해서 매장에 9,000원이 남는 게 아닙니다.
+     일반과세 사업자라면 그중 <b>10%는 부가세</b>로, 결국 나라에 냅니다.</p>
+
+  <div class="formula">
+    손님이 낸 돈 <b>9,000원</b><br>
+    − 부가세 &nbsp;818원<br>
+    = 매장에 남는 돈(공급가액) <b>8,182원</b>
+  </div>
+
+  <p>원가율은 <b>공급가액을 기준으로</b> 봐야 맞습니다. 판매가로 계산하면 원가율이 실제보다 낮게 나옵니다.</p>
+
+  <div class="tablewrap"><table>
+    <tr><th>구분</th><th>계산</th><th>결과</th></tr>
+    <tr><td>판매가 기준 (틀림)</td><td>2,339 ÷ 9,000</td><td>26.0%</td></tr>
+    <tr><td><b>공급가액 기준 (맞음)</b></td><td>2,339 ÷ 8,182</td><td><b>28.6%</b></td></tr>
+  </table></div>
+
+  <div class="note warn">
+    ⚠️ 목표 원가율이 30%라면, <b>26%(양호)로 보이던 메뉴가 실제로는 28.6%</b> 로 아슬아슬합니다.
+    이 차이 때문에 「양호」와 「주의」 판정이 뒤집히는 메뉴가 생깁니다.
+  </div>
+
+  <h3>세 가지 중에서 고르세요</h3>
+  <div class="tablewrap"><table>
+    <tr><th>선택</th><th>이런 경우</th><th>계산 방식</th></tr>
+    <tr><td><b>부가세 포함</b><br><span class="small">(기본값)</span></td>
+        <td>메뉴판 가격이 손님이 내는 금액 — <b>대부분의 식당</b></td>
+        <td>판매가 ÷ 1.1 = 공급가액</td></tr>
+    <tr><td><b>부가세 별도</b></td><td>판매가를 이미 공급가액으로 관리하는 경우</td>
+        <td>판매가 = 공급가액</td></tr>
+    <tr><td><b>면세 사업자</b></td><td>부가세 면제 대상</td><td>판매가 = 공급가액</td></tr>
+  </table></div>
+
+  <div class="note info">
+    <b>월 추정매출도 같은 기준으로 넣으세요.</b> 「부가세 포함」을 골랐다면 POS에 찍히는
+    부가세 포함 매출을 그대로 넣으면 됩니다. 프로그램이 알아서 나눠 계산합니다.
+  </div>
+  ${figure('fix', '고정비 화면의 부가세 설정', '설정을 바꾸면 전체 메뉴의 원가율이 즉시 다시 계산됩니다')}
+</section>
+
+<section id="bulk">
+  <div class="eyebrow">시간 절약</div>
+  <h2>엑셀에서 복사해 한 번에 등록하기</h2>
+  <p class="lead">식재료 100종을 하나씩 넣을 필요 없습니다. 엑셀에서 복사해 붙여넣으면 끝입니다.</p>
+
+  <h3>식재료 일괄 등록</h3>
+  <ol>
+    <li><b>식재료</b> 화면 아래 <b>「📋 엑셀에서 일괄 등록」</b> 클릭</li>
+    <li>엑셀에서 아래 순서로 5개 열을 <b>선택해 복사(Ctrl+C)</b></li>
+    <li>입력창에 <b>붙여넣기(Ctrl+V)</b> → 미리보기 확인 → <b>「등록하기」</b></li>
+  </ol>
+
+  <div class="tablewrap"><table>
+    <tr><th>식재료명</th><th>구매가격</th><th>규격수량</th><th>단위</th><th>총중량(g)</th></tr>
+    <tr><td>닭가슴살</td><td>12000</td><td>1</td><td>kg</td><td>1000</td></tr>
+    <tr><td>양파</td><td>14000</td><td>15</td><td>kg</td><td>15000</td></tr>
+    <tr><td>계란</td><td>9000</td><td>30</td><td>개</td><td>1800</td></tr>
+  </table></div>
+
+  ${figure('import', '일괄 등록 미리보기', '등록 전에 몇 건이 추가되고 몇 건이 갱신되는지 먼저 보여 줍니다')}
+
+  <div class="cards">
+    <div class="tile"><b>맨 윗줄 제목 자동 인식</b><span>「식재료명·구매가격…」 같은 제목 줄은 알아서 건너뜁니다.</span></div>
+    <div class="tile"><b>「28,000원」도 인식</b><span>쉼표와 「원」이 붙어 있어도 숫자만 읽습니다.</span></div>
+    <div class="tile"><b>이미 있는 이름은 갱신</b><span>같은 이름이 있으면 새로 만들지 않고 값만 바꿉니다. 단가 일괄 갱신에 쓰세요.</span></div>
+    <div class="tile"><b>이상한 줄은 건너뜀</b><span>이름이 비었거나 중복된 줄은 이유와 함께 알려 주고 넘어갑니다.</span></div>
+  </div>
+
+  <h3>메뉴 일괄 등록</h3>
+  <p><b>메뉴</b> 화면 아래 <b>「📋 일괄 등록」</b> 에서 <b>메뉴명 · 카테고리 · 판매가</b> 3개 열을 붙여넣으면
+     메뉴가 한 번에 만들어집니다. 없는 카테고리는 자동으로 생성됩니다.
+     레시피는 그다음 메뉴를 눌러 채우시면 됩니다.</p>
+
+  <div class="note tip">
+    💡 <b>단가가 오를 때도 유용합니다.</b> 거래처에서 받은 단가표를 그대로 붙여넣으면
+    기존 식재료 가격이 한 번에 갱신되고, 전체 메뉴 원가가 즉시 다시 계산됩니다.
   </div>
 </section>
 
@@ -556,6 +660,20 @@ const HTML = `<!doctype html>
     <div class="body"><p>「양파(A거래처)」「양파(B거래처)」처럼 나눠 등록하거나,
     평균 단가 하나로 관리하시면 됩니다. 가격이 바뀔 때 한 곳만 고치면 전체가 다시 계산됩니다.</p></div></details>
 
+  <details><summary>부가세 포함인지 별도인지 어떻게 아나요?</summary>
+    <div class="body"><p>메뉴판에 적힌 가격이 손님이 실제로 내는 금액이라면 <b>「부가세 포함」</b> 입니다.
+    일반적인 식당은 거의 전부 여기에 해당합니다. 간이과세자·면세사업자라면
+    세무 담당자에게 확인 후 「면세 사업자」를 고르세요.</p></div></details>
+
+  <details><summary>재료가 200개인데 다 손으로 넣어야 하나요?</summary>
+    <div class="body"><p>아니요. <b>「📋 엑셀에서 일괄 등록」</b> 에 엑셀 범위를 복사해 붙여넣으면 한 번에 들어갑니다.
+    거래처 단가표를 그대로 붙여넣어 <b>가격만 일괄 갱신</b>하는 것도 됩니다.</p></div></details>
+
+  <details><summary>상업적으로 사용해도 되나요?</summary>
+    <div class="body"><p>구매 조건에 따릅니다. 이 프로그램은 엑셀 생성을 위해 오픈소스(ExcelJS, MIT)를 포함하며,
+    해당 저작권 고지는 <b>고정비 화면 맨 아래 「라이선스 · 오픈소스 고지」</b> 에서 확인할 수 있습니다.
+    재배포 시 이 고지가 함께 제공되어야 합니다.</p></div></details>
+
   <details><summary>휴대폰에서도 값을 고칠 수 있나요?</summary>
     <div class="body"><p>네. 보기 전용이 아니라 PC와 똑같이 수정·저장·엑셀 출력까지 됩니다.
     다만 저장은 그 휴대폰 브라우저에 되므로, PC와 값을 맞추려면 백업/복원을 쓰세요.</p></div></details>
@@ -567,8 +685,9 @@ const HTML = `<!doctype html>
   <ul class="check">
     <li>회사·매장 이름을 우리 이름으로 바꿨다</li>
     <li>메뉴 카테고리를 우리 매장에 맞게 정리했다</li>
-    <li>자주 쓰는 식재료를 구매가격·총중량과 함께 등록했다</li>
+    <li>자주 쓰는 식재료를 구매가격·총중량과 함께 등록했다 (일괄 등록 활용)</li>
     <li>미리 만들어 두는 소스·반제품을 프렙으로 등록했다</li>
+    <li><b>부가세 처리</b>를 우리 사업자 유형에 맞게 설정했다</li>
     <li>월 고정비와 월 추정매출을 실제 값으로 넣었다</li>
     <li>식재료 매입비는 고정비 배분에서 「제외」로 두었다</li>
     <li>목표 원가율·주의 원가율을 우리 기준으로 정했다</li>

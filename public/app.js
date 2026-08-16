@@ -428,9 +428,9 @@ function viewDash(root) {
   const tone = (v) => (v <= st.targetFoodCostRate ? 'good' : v <= st.warnFoodCostRate ? 'warn' : 'bad');
   kpis.append(
     K('전체 메뉴', String(s.menuCount), `판매가 입력 ${s.pricedCount}개`),
-    K('평균 식재료 원가율', pct(s.avgFoodRate), '판매가 가중평균', tone(s.avgFoodRate)),
+    K('평균 식재료 원가율', pct(s.avgFoodRate), '공급가액 가중평균', tone(s.avgFoodRate)),
     K('평균 총원가율', pct(s.avgTotalRate), '식재료 + 고정비'),
-    K('평균 마진율', pct(s.avgMarginRate), '판매가 대비'),
+    K('평균 마진율', pct(s.avgMarginRate), '공급가액 대비'),
     K('고정비 배분율', pct(s.fixedRate), `월 ${won(s.fixedAllocatable)}원 ÷ 매출`),
   );
   root.appendChild(kpis);
@@ -450,9 +450,11 @@ function viewDash(root) {
   root.appendChild(g.card);
 
   /* 카테고리 */
-  const c = card('카테고리별 원가 분석', '판매가가 입력된 메뉴 기준', true);
+  const c = card('카테고리별 원가 분석',
+                 s.vatIncluded ? '원가율·마진은 공급가액(부가세 제외) 기준입니다' : '판매가가 입력된 메뉴 기준', true);
   const { wrap, tbody } = table([
     { label: '카테고리' }, { label: '메뉴', num: true }, { label: '판매가 합계', num: true },
+    { label: '공급가액', num: true },
     { label: '식재료원가', num: true }, { label: '원가율', num: true },
     { label: '총원가', num: true }, { label: '마진 합계', num: true }, { label: '마진율', num: true },
   ]);
@@ -461,6 +463,7 @@ function viewDash(root) {
     tr.innerHTML = `<td class="name">${ct.icon} ${ct.category}</td>
       <td class="num dim">${ct.count}</td>
       <td class="num">${won(ct.price)}</td>
+      <td class="num dim">${won(ct.net)}</td>
       <td class="num">${won(ct.foodCost)}</td>
       <td class="num"><b>${pct(ct.foodRate)}</b></td>
       <td class="num">${won(ct.totalCost)}</td>
@@ -478,11 +481,13 @@ function viewDash(root) {
   const mk = (title, sub, list) => {
     const cc = card(title, sub, true);
     const t = table([{ label: '#' }, { label: '메뉴' }, { label: '판매가', num: true },
+                     { label: '공급가액', num: true },
                      { label: '식재료원가', num: true }, { label: '원가율', num: true }]);
     list.forEach((m, i) => {
       const tr = el('tr', 'clickable');
       tr.innerHTML = `<td class="dim">${i + 1}</td><td class="name">${m.name}</td>
-        <td class="num">${won(m.price)}</td><td class="num">${won(m.foodCost)}</td>
+        <td class="num">${won(m.price)}</td><td class="num dim">${won(m.net)}</td>
+        <td class="num">${won(m.foodCost)}</td>
         <td class="num"><b>${pct(m.foodRate)}</b></td>`;
       tr.onclick = () => openMenu(m.name);
       t.tbody.appendChild(tr);
@@ -560,7 +565,8 @@ function viewMenu(root) {
     /* PC 표 */
     const c = card(null, null, true);
     const t = table([
-      { label: '메뉴' }, { label: '판매가', num: true }, { label: '식재료원가', num: true },
+      { label: '메뉴' }, { label: '판매가', num: true }, { label: '공급가액', num: true },
+      { label: '식재료원가', num: true },
       { label: '원가율', num: true }, { label: '고정비배분', num: true }, { label: '총원가', num: true },
       { label: '마진', num: true }, { label: '마진율', num: true }, { label: '판정' }, { label: '' },
     ]);
@@ -579,12 +585,14 @@ function viewMenu(root) {
       tr.appendChild(priceTd);
 
       const cells = [
-        won1(m.foodCost), m.hasPrice ? pct(m.foodRate) : '–', won(m.fixedCost),
+        m.hasPrice ? won(m.net) : '–', won1(m.foodCost),
+        m.hasPrice ? pct(m.foodRate) : '–', won(m.fixedCost),
         won(m.totalCost), m.hasPrice ? won(m.margin) : '–', m.hasPrice ? pct(m.marginRate) : '–',
       ];
       cells.forEach((v, i) => {
         const td = el('td', 'num', v);
-        if (i === 1) td.style.fontWeight = '750';
+        if (i === 0) td.style.color = 'var(--muted)';
+        if (i === 2) td.style.fontWeight = '750';
         tr.appendChild(td);
       });
       const gt = el('td'); gt.appendChild(gradeBadge(m.grade)); tr.appendChild(gt);
@@ -613,7 +621,7 @@ function viewMenu(root) {
         </div>
         <div class="mcard-grid">
           <div><div class="l">판매가</div><div class="v">${m.hasPrice ? won(m.price) : '–'}</div></div>
-          <div><div class="l">식재료원가</div><div class="v">${won(m.foodCost)}</div></div>
+          <div><div class="l">공급가액</div><div class="v">${m.hasPrice ? won(m.net) : '–'}</div></div>
           <div><div class="l">원가율</div><div class="v">${m.hasPrice ? pct(m.foodRate) : '–'}</div></div>
         </div>`;
       k.onclick = () => openMenu(m.name);
@@ -648,7 +656,9 @@ function newMenuForm() {
   };
   btn.onclick = submit;
   name.onkeydown = price.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
-  w.append(name, cat, price, btn);
+  const bulk = el('button', 'btn', '📋 일괄 등록');
+  bulk.onclick = () => openImport('menus');
+  w.append(name, cat, price, btn, bulk);
   return w;
 }
 
@@ -707,8 +717,11 @@ function openMenu(name) {
   pin.style.maxWidth = '100%';
   pin.style.marginTop = '4px';
   priceBox.appendChild(pin);
+  const S = state.result.summary;
   bd.append(
     priceBox,
+    cell(S.vatIncluded ? `공급가액 (부가세 ${pct(S.vatRate, 0)} 제외)` : '공급가액',
+         m.hasPrice ? won(m.net) : '–'),
     cell('식재료 원가', won1(m.foodCost)),
     cell('식재료 원가율', m.hasPrice ? pct(m.foodRate) : '–',
          m.hasPrice ? (m.grade.key === 'good' ? 'var(--good)' : m.grade.key === 'warn' ? 'var(--warn)' : 'var(--bad)') : ''),
@@ -941,10 +954,220 @@ function viewIng(root) {
     });
     if (!rows.length) t.tbody.appendChild(Object.assign(el('tr'), { innerHTML: '<td colspan="8" class="dim" style="text-align:center;padding:28px">해당하는 식재료가 없습니다.</td>' }));
     c.body.appendChild(t.wrap);
-    c.card.appendChild(addBar('식재료 추가', addIngredient));
+    const bar2 = el('div', 'addbar');
+    bar2.style.display = 'grid';
+    bar2.style.gridTemplateColumns = '1fr 1fr';
+    bar2.style.gap = '8px';
+    const b1 = el('button', 'btn btn-add', '＋ 식재료 추가');
+    b1.onclick = addIngredient;
+    const b2 = el('button', 'btn btn-add', '📋 엑셀에서 일괄 등록');
+    b2.onclick = () => openImport('ingredients');
+    bar2.append(b1, b2);
+    c.card.appendChild(bar2);
     host.appendChild(c.card);
   }
   paint();
+}
+
+/* ═══════════════ 일괄 입력 ═══════════════
+   엑셀·구글시트에서 범위를 복사해 붙여넣으면 한 번에 등록된다.
+   탭 구분(엑셀 복사) · 쉼표 구분(CSV) 둘 다 받는다. */
+
+/** 붙여넣은 텍스트를 행×열로 자른다 */
+function parsePasted(text) {
+  return String(text || '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    // 줄 전체를 trim 하면 맨 앞 빈 칸이 사라져 열이 밀린다 → 칸별로만 trim
+    .map((line) => (line.includes('\t') ? line.split('\t') : splitCsv(line)).map((c) => c.trim()));
+}
+/** 따옴표로 감싼 쉼표를 지켜 주는 CSV 분리 */
+function splitCsv(line) {
+  const out = []; let cur = '', quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (quoted && line[i + 1] === '"') { cur += '"'; i++; }
+      else quoted = !quoted;
+    } else if (ch === ',' && !quoted) { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+/** "12,000원" · "1.5kg" 같은 표기에서 숫자만 뽑는다 */
+function toNum(v) {
+  const n = parseFloat(String(v ?? '').replace(/[^0-9.\-]/g, ''));
+  return isFinite(n) ? n : NaN;
+}
+const isHeaderRow = (cells) => cells.some((c) => /식재료|재료명|품목|이름|메뉴|구매|단가|가격|중량|규격/.test(c))
+                            && cells.every((c) => isNaN(toNum(c)) || /[가-힣a-zA-Z]/.test(c));
+
+const IMPORT_SPECS = {
+  ingredients: {
+    title: '식재료 일괄 등록',
+    cols: '식재료명 · 구매가격 · 규격수량 · 단위 · 총중량(g)',
+    sample: '닭가슴살\t12000\t1\tkg\t1000\n양파\t14000\t15\tkg\t15000\n소금\t15000\t15\tkg\t15000',
+    hint: '엑셀에서 5개 열을 그대로 복사해 붙여넣으세요. 총중량은 "한 포장에 몇 g" 입니다.',
+    parse(cells) {
+      const [name, price, qty, unit, weight] = cells;
+      if (!name) return null;
+      const w = toNum(weight);
+      const q = toNum(qty);
+      return {
+        name: name.trim(),
+        price: Math.max(0, toNum(price) || 0),
+        pack_qty: isFinite(q) ? q : 1,
+        unit: (unit || 'kg').trim() || 'kg',
+        weight_g: isFinite(w) ? w : (isFinite(q) ? q * 1000 : 0),   // 중량이 없으면 kg 로 보고 환산
+      };
+    },
+    apply(rows) {
+      let added = 0, updated = 0;
+      rows.forEach((it) => {
+        const cur = state.data.ingredients.find((x) => x.name === it.name);
+        if (cur) { Object.assign(cur, it); updated++; }
+        else { state.data.ingredients.push(it); added++; }
+      });
+      return { added, updated };
+    },
+  },
+  menus: {
+    title: '메뉴 일괄 등록',
+    cols: '메뉴명 · 카테고리 · 판매가',
+    sample: '치킨 볶음밥\t메인 요리\t9000\n감자 크림 수프\t사이드\t5000',
+    hint: '없는 카테고리는 자동으로 만들어집니다. 레시피는 등록 후 메뉴를 눌러 채우세요.',
+    parse(cells) {
+      const [name, cat, price] = cells;
+      if (!name) return null;
+      return { name: name.trim(), category: (cat || '').trim(), price: Math.max(0, toNum(price) || 0) };
+    },
+    apply(rows) {
+      let added = 0, updated = 0;
+      rows.forEach((it) => {
+        const cur = state.data.menus.find((x) => x.name === it.name);
+        if (cur) { cur.price = it.price; if (it.category) cur.category = it.category; updated++; }
+        else {
+          const cat = it.category || state.data.categoryOrder[0] || '기타';
+          if (!state.data.categoryOrder.includes(cat)) {
+            state.data.categoryOrder.push(cat);
+            state.data.categoryIcon[cat] = '🍽';
+          }
+          state.data.menus.push({
+            name: it.name, category: cat, icon: state.data.categoryIcon[cat] || '🍽',
+            en: '', time: '', serving: '1인분 기준', price: it.price,
+            lines: [], steps: [], garnish: '',
+          });
+          added++;
+        }
+      });
+      return { added, updated };
+    },
+  },
+};
+
+function openImport(kind) {
+  const spec = IMPORT_SPECS[kind];
+  $('#sheetTitle').textContent = spec.title;
+  $('#sheetSub').textContent = '엑셀 · 구글시트에서 복사해 붙여넣거나 직접 입력하세요';
+  const body = $('#sheetBody');
+  body.innerHTML = '';
+
+  const guide = el('div', 'notebox');
+  guide.style.color = 'var(--ink-2)';
+  guide.innerHTML = `<b>열 순서:</b> ${spec.cols}<br>${spec.hint}`;
+  body.appendChild(guide);
+
+  const ta = el('textarea', 'ta');
+  ta.rows = 9;
+  ta.placeholder = spec.sample.replace(/\t/g, '    ');
+  body.appendChild(ta);
+
+  const bar = el('div', 'newform');
+  bar.style.cssText = 'border-top:0;padding:12px 0 0';
+  const btnSample = el('button', 'btn', '예시 채우기');
+  btnSample.onclick = () => { ta.value = spec.sample; preview(); };
+  const btnApply = el('button', 'btn btn-primary', '등록하기');
+  btnApply.disabled = true;
+  bar.append(btnSample, btnApply);
+  body.appendChild(bar);
+
+  const out = el('div');
+  out.style.marginTop = '14px';
+  body.appendChild(out);
+
+  let parsed = [];
+  function preview() {
+    out.innerHTML = '';
+    const rows = parsePasted(ta.value);
+    const data = rows.filter((r, i) => !(i === 0 && isHeaderRow(r)));
+    parsed = [];
+    const bad = [];
+    data.forEach((cells, i) => {
+      const item = spec.parse(cells);
+      if (!item) { bad.push({ line: i + 1, why: '이름이 비어 있음', raw: cells.join(' | ') }); return; }
+      if (parsed.some((x) => x.name === item.name)) { bad.push({ line: i + 1, why: '붙여넣은 내용 안에서 이름 중복', raw: item.name }); return; }
+      parsed.push(item);
+    });
+
+    btnApply.disabled = parsed.length === 0;
+    if (!ta.value.trim()) return;
+
+    const exist = parsed.filter((x) => (kind === 'ingredients' ? state.data.ingredients : state.data.menus)
+      .some((y) => y.name === x.name)).length;
+
+    const sum = el('div', 'notebox');
+    sum.style.cssText = 'color:var(--accent-ink);background:var(--accent-soft);border-color:transparent';
+    sum.innerHTML = `읽은 줄 <b>${parsed.length}</b>건 — 새로 추가 <b>${parsed.length - exist}</b>건,
+                     기존 값 갱신 <b>${exist}</b>건${bad.length ? ` · 건너뜀 <b>${bad.length}</b>건` : ''}`;
+    out.appendChild(sum);
+
+    if (parsed.length) {
+      const t = kind === 'ingredients'
+        ? table([{ label: '식재료명' }, { label: '구매가격', num: true }, { label: '총중량(g)', num: true },
+                 { label: 'g당 단가', num: true }, { label: '처리' }])
+        : table([{ label: '메뉴명' }, { label: '카테고리' }, { label: '판매가', num: true }, { label: '처리' }]);
+      parsed.slice(0, 30).forEach((it) => {
+        const isNew = !(kind === 'ingredients' ? state.data.ingredients : state.data.menus).some((y) => y.name === it.name);
+        const tr = el('tr');
+        if (kind === 'ingredients') {
+          tr.innerHTML = `<td class="name">${it.name}</td><td class="num">${won(it.price)}</td>
+            <td class="num">${won(it.weight_g)}</td>
+            <td class="num"><b>${it.weight_g > 0 ? won3(it.price / it.weight_g) : '–'}</b></td>
+            <td><span class="badge-grade ${isNew ? 'g-good' : 'g-warn'}">${isNew ? '추가' : '갱신'}</span></td>`;
+        } else {
+          tr.innerHTML = `<td class="name">${it.name}</td><td class="dim">${it.category || '(기본)'}</td>
+            <td class="num">${won(it.price)}</td>
+            <td><span class="badge-grade ${isNew ? 'g-good' : 'g-warn'}">${isNew ? '추가' : '갱신'}</span></td>`;
+        }
+        t.tbody.appendChild(tr);
+      });
+      out.appendChild(t.wrap);
+      if (parsed.length > 30) out.appendChild(el('div', 'small', `… 외 ${parsed.length - 30}건`));
+    }
+
+    if (bad.length) {
+      const w = el('div', 'notebox');
+      w.innerHTML = '<b>건너뛴 줄</b><br>' +
+        bad.slice(0, 8).map((b) => `${b.line}번째 줄 — ${b.why}: ${b.raw}`).join('<br>');
+      out.appendChild(w);
+    }
+  }
+  ta.oninput = preview;
+  ta.onpaste = () => setTimeout(preview, 0);
+
+  btnApply.onclick = () => {
+    const { added, updated } = spec.apply(parsed);
+    commit();
+    closeSheet();
+    render({ keepScroll: true });
+    toast(`${added}건 추가, ${updated}건 갱신했습니다`);
+  };
+
+  $('#sheet').hidden = false;
+  $('#sheetBackdrop').hidden = false;
+  document.body.style.overflow = 'hidden';
 }
 
 /* ═══════════════ 프렙 ═══════════════ */
@@ -1067,8 +1290,9 @@ function viewFix(root) {
   kpis.append(
     K('고정비 총계', won(s2.fixedTotal) + '원', '입력한 모든 항목'),
     K('배분 대상', won(s2.fixedAllocatable) + '원', '「배분 포함」 항목만'),
-    K('월 추정매출', won(s2.monthlyRevenue) + '원', '배달 포함'),
-    K('고정비 배분율', pct(s2.fixedRate), '판매가 × 이 비율 = 배분액'),
+    K('월 매출 (공급가액)', won(s2.netMonthlyRevenue) + '원',
+      s2.vatIncluded ? `입력 ${won(s2.monthlyRevenue)}원 ÷ ${(1 + s2.vatRate).toFixed(2)}` : '부가세 별도 입력'),
+    K('고정비 배분율', pct(s2.fixedRate), '공급가액 × 이 비율 = 배분액'),
   );
   root.appendChild(kpis);
 
@@ -1120,6 +1344,45 @@ function viewFix(root) {
   c.card.appendChild(addBar('비용 항목 추가', addFixedCost));
   root.appendChild(c.card);
 
+  /* ── 부가세 설정 ── */
+  const sv = card('부가세 처리', '원가율을 정확히 보려면 반드시 확인해야 하는 설정입니다');
+  const vrow = el('div', 'brandedit');
+  vrow.appendChild(el('span', 'l', '판매가 기준'));
+  const vsel = el('select', 'sel');
+  [['inc', '부가세 포함 (손님이 내는 금액) — 일반과세'],
+   ['exc', '부가세 별도 (판매가 = 공급가액)'],
+   ['free', '면세 사업자 (부가세 없음)']].forEach(([v, l]) => {
+    const o = el('option', null, l); o.value = v; vsel.appendChild(o);
+  });
+  const curMode = st.vatIncluded === false ? (Number(st.vatRate) === 0 ? 'free' : 'exc') : 'inc';
+  vsel.value = curMode;
+  vsel.onchange = () => {
+    const v = vsel.value;
+    state.data.settings.vatIncluded = v === 'inc';
+    if (v === 'free') state.data.settings.vatRate = 0;
+    else if (v === 'inc' && !Number(state.data.settings.vatRate)) state.data.settings.vatRate = 0.1;
+    commit(); render({ keepScroll: true });
+  };
+  vrow.appendChild(vsel);
+  if (curMode === 'inc') {
+    vrow.appendChild(el('span', 'l', '세율(%)'));
+    vrow.appendChild(numInput(Math.round((st.vatRate ?? 0.1) * 1000) / 10,
+      (v) => { state.data.settings.vatRate = v / 100; commit(); render({ keepScroll: true }); },
+      { step: 'any', changed: Number(st.vatRate) !== 0.1 }));
+  }
+  sv.body.appendChild(vrow);
+
+  const vnote = el('div', 'notebox');
+  vnote.style.margin = '14px 0 0';
+  vnote.innerHTML = s2.vatIncluded
+    ? `손님이 <b>10,000원</b>을 내면 매장에 남는 돈은 <b>${won(10000 / (1 + s2.vatRate))}원</b>(공급가액)입니다.
+       원가율·마진은 모두 이 금액을 기준으로 계산합니다.
+       월 추정매출도 <b>부가세가 포함된 금액</b>으로 넣으세요.`
+    : `판매가를 <b>공급가액(부가세 뺀 금액)</b>으로 보고 계산합니다.
+       월 추정매출도 같은 기준으로 넣으세요.`;
+  sv.body.appendChild(vnote);
+  root.appendChild(sv.card);
+
   const s3 = card('배분 · 판정 기준', '이 값에 따라 고정비 배분과 원가율 판정이 달라집니다');
   const grid = el('div', 'breakdown');
   const field = (label, value, onChange, suffix) => {
@@ -1133,7 +1396,8 @@ function viewFix(root) {
     return d;
   };
   grid.append(
-    field('월 추정매출 (원)', st.monthlyRevenue, (v) => { state.data.settings.monthlyRevenue = v; commit(); render({ keepScroll: true }); }),
+    field(s2.vatIncluded ? '월 추정매출 (부가세 포함)' : '월 추정매출 (공급가액)',
+          st.monthlyRevenue, (v) => { state.data.settings.monthlyRevenue = v; commit(); render({ keepScroll: true }); }),
     field('목표 식재료 원가율 (%)', Math.round(st.targetFoodCostRate * 1000) / 10,
           (v) => { state.data.settings.targetFoodCostRate = v / 100; commit(); render({ keepScroll: true }); }, '이하 → ✅ 양호'),
     field('주의 식재료 원가율 (%)', Math.round(st.warnFoodCostRate * 1000) / 10,
@@ -1190,7 +1454,53 @@ function viewFix(root) {
   catWrap.appendChild(newCat);
   s4.body.appendChild(catWrap);
   root.appendChild(s4.card);
+
+  /* ── 라이선스 · 오픈소스 고지 ── */
+  const s5 = card('라이선스 · 오픈소스 고지', '재배포 시 이 고지가 함께 제공되어야 합니다');
+  const lic = el('div');
+  lic.style.cssText = 'font-size:13px;color:var(--muted);line-height:1.8';
+  lic.innerHTML = `
+    이 프로그램은 엑셀 파일 생성을 위해 <b>ExcelJS</b>(MIT License)를 포함합니다.<br>
+    <span style="font-family:var(--mono);font-size:12px">Copyright (c) 2014-2019 Guyon Roche</span><br>
+    <a href="https://github.com/exceljs/exceljs" target="_blank" rel="noopener">github.com/exceljs/exceljs</a>
+    &nbsp;·&nbsp;
+    <a href="#" id="licMore">전문 보기</a>`;
+  s5.body.appendChild(lic);
+  const licBody = el('pre');
+  licBody.hidden = true;
+  licBody.style.cssText = 'white-space:pre-wrap;font-size:11.5px;line-height:1.6;color:var(--muted);' +
+    'background:var(--surface-2);padding:14px;border-radius:10px;margin-top:12px;overflow:auto;max-height:280px';
+  licBody.textContent = MIT_EXCELJS;
+  s5.body.appendChild(licBody);
+  lic.querySelector('#licMore').onclick = (e) => {
+    e.preventDefault();
+    licBody.hidden = !licBody.hidden;
+    e.target.textContent = licBody.hidden ? '전문 보기' : '접기';
+  };
+  root.appendChild(s5.card);
 }
+
+const MIT_EXCELJS = `The MIT License (MIT)
+
+Copyright (c) 2014-2019 Guyon Roche
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.`;
 
 /* ═══════════════ 점검 ═══════════════ */
 function viewIssue(root) {

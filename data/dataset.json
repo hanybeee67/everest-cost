@@ -8573,7 +8573,9 @@
   "monthlyRevenue": 70688000,
   "targetFoodCostRate": 0.3,
   "warnFoodCostRate": 0.38,
-  "targetTotalCostRate": 0.8
+  "targetTotalCostRate": 0.8,
+  "vatIncluded": true,
+  "vatRate": 0.1
  },
  "issues": [
   {

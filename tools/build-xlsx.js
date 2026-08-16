@@ -352,10 +352,23 @@ function build(data) {
     });
 
   const SET_ROW = rAlloc + 2;
-  sectionBar(wsF, SET_ROW, '▸  배분·판정 기준 설정', 5, C.inkSoft);
+  sectionBar(wsF, SET_ROW, '▸  부가세 · 배분 · 판정 기준 설정', 5, C.inkSoft);
+  const vatIncluded = data.settings.vatIncluded !== false;
+  const vatRate = vatIncluded ? (Number(data.settings.vatRate ?? 0.1) || 0) : 0;
+  /* 행 배치: +1 부가세처리  +2 부가세율  +3 부가세계수  +4 월매출(입력)
+              +5 월매출(공급가액)  +6 고정비배분율  +7 목표  +8 주의 */
   const settings = [
-    ['월 추정매출(원)', Number(data.settings.monthlyRevenue) || 0, NUM.won, '배달 포함 월 총매출 추정치', true],
-    ['고정비 배분율',  { formula: `IF(C${SET_ROW + 1}>0,C${rAlloc}/C${SET_ROW + 1},0)` }, NUM.pct, '= 배분 대상 합계 ÷ 월 추정매출 (매출 1원당 고정비)', false],
+    ['부가세 처리', vatIncluded ? '포함' : '별도', null,
+     '판매가가 손님이 내는 금액이면 「포함」, 공급가액이면 「별도」', true],
+    ['부가세율', vatRate, NUM.pct, '「포함」일 때만 사용 (면세면 0%)', true],
+    ['부가세 계수', { formula: `IF(C${SET_ROW + 1}="포함",1+C${SET_ROW + 2},1)` }, '0.000',
+     '판매가 ÷ 이 값 = 공급가액', false],
+    ['월 추정매출(원)', Number(data.settings.monthlyRevenue) || 0, NUM.won,
+     '배달 포함 월 총매출 (부가세 처리 기준과 동일하게 입력)', true],
+    ['월 매출 (공급가액)', { formula: `ROUND(C${SET_ROW + 4}/C${SET_ROW + 3},0)` }, NUM.won,
+     '= 월 추정매출 ÷ 부가세 계수', false],
+    ['고정비 배분율', { formula: `IF(C${SET_ROW + 5}>0,C${rAlloc}/C${SET_ROW + 5},0)` }, NUM.pct,
+     '= 배분 대상 합계 ÷ 월 매출(공급가액)', false],
     ['목표 식재료 원가율', Number(data.settings.targetFoodCostRate) || 0.3, NUM.pct, '이하이면 ✅ 양호', true],
     ['주의 식재료 원가율', Number(data.settings.warnFoodCostRate) || 0.38, NUM.pct, '초과하면 🔴 과다', true],
   ];
@@ -370,13 +383,22 @@ function build(data) {
     row.getCell(1).font = { name: FONT, size: 10, bold: true, color: { argb: C.inkSoft } };
     row.getCell(1).alignment = { horizontal: 'right', indent: 1 };
     if (input) asInput(row.getCell(3)); else asCalc(row.getCell(3));
-    row.getCell(3).numFmt = fmt;
+    if (fmt) row.getCell(3).numFmt = fmt;
+    if (label === '부가세 처리') {
+      row.getCell(3).alignment = { horizontal: 'center' };
+      wsF.getCell(r, 3).dataValidation = {
+        type: 'list', allowBlank: false, formulae: ['"포함,별도"'],
+        showErrorMessage: true, errorTitle: '입력 오류', error: '포함 또는 별도 중에서 선택하세요.',
+      };
+    }
     row.getCell(5).font = { name: FONT, size: 9, color: { argb: C.muted } };
   });
-  const REV_CELL    = `${q(S.fixed)}!$C$${SET_ROW + 1}`;
-  const RATE_CELL   = `${q(S.fixed)}!$C$${SET_ROW + 2}`;
-  const TARGET_CELL = `${q(S.fixed)}!$C$${SET_ROW + 3}`;
-  const WARN_CELL   = `${q(S.fixed)}!$C$${SET_ROW + 4}`;
+  const VATK_CELL   = `${q(S.fixed)}!$C$${SET_ROW + 3}`;   // 부가세 계수
+  const REV_CELL    = `${q(S.fixed)}!$C$${SET_ROW + 4}`;
+  const NETREV_CELL = `${q(S.fixed)}!$C$${SET_ROW + 5}`;
+  const RATE_CELL   = `${q(S.fixed)}!$C$${SET_ROW + 6}`;
+  const TARGET_CELL = `${q(S.fixed)}!$C$${SET_ROW + 7}`;
+  const WARN_CELL   = `${q(S.fixed)}!$C$${SET_ROW + 8}`;
 
   /* ═══════════════ ⑤ 레시피 상세 (④가 참조하므로 먼저 좌표 계산) ═══════════════ */
   const wsD = grab(S.detail, [{ state: 'frozen', ySplit: 5, xSplit: 2 }]);
@@ -410,7 +432,7 @@ function build(data) {
   // 레벨 L 메뉴가 조회해도 되는 ④ 범위 = 0 ~ L-1 레벨 (세트메뉴 → 단품만 조회)
   const menuLookupRange = (L) => (L <= 0 || !menuSumBlock[0]
     ? null
-    : `${q(S.menu)}!$C$${menuSumBlock[0].from}:$F$${menuSumBlock[L - 1].to}`);
+    : `${q(S.menu)}!$C$${menuSumBlock[0].from}:$F$${menuSumBlock[L - 1].to}`);  // 1열=메뉴명 … 4열=식재료원가
 
   /* ═══════════════ ④ 메뉴 원가표 ═══════════════ */
   const wsM = grab(S.menu, [{ state: 'frozen', ySplit: 5, xSplit: 3 }]);
@@ -419,9 +441,9 @@ function build(data) {
     { width: 10 }, { width: 12 }, { width: 12 }, { width: 10 }, { width: 12 },
     { width: 10 }, { width: 13 }, { width: 9 },
   ];
-  sheetTitle(wsM, '④ 메뉴 원가표', `레시피북 87개 메뉴 전체. 판매가(노란 셀)만 고치면 원가율·마진이 즉시 다시 계산됩니다.`, 13);
-  noteBar(wsM, 3, '💡  식재료원가 = ⑤ 레시피 상세의 합계 |  고정비 배분 = 판매가 × 고정비 배분율 |  총원가 = 식재료원가 + 고정비 배분 |  판정 = 식재료 원가율 기준', 13);
-  headerRow(wsM, 5, ['No.', '카테고리', '메뉴명', '판매가(원)', '식재료원가', '식재료\n원가율', '고정비배분', '총원가', '총원가율', '마진(원)', '마진율', '판정', '정렬키']);
+  sheetTitle(wsM, '④ 메뉴 원가표', `메뉴 ${menus.length}개 전체. 판매가(노란 셀)만 고치면 원가율·마진이 즉시 다시 계산됩니다.`, 14);
+  noteBar(wsM, 3, '💡  공급가액 = 판매가 ÷ 부가세 계수 (③ 시트).  원가율·마진은 모두 공급가액 기준입니다.  고정비 배분 = 공급가액 × 고정비 배분율.  총원가 = 식재료원가 + 고정비 배분.', 14);
+  headerRow(wsM, 5, ['No.', '카테고리', '메뉴명', '판매가(원)', '공급가액', '식재료원가', '식재료\n원가율', '고정비배분', '총원가', '총원가율', '마진(원)', '마진율', '판정', '정렬키']);
 
   menus.forEach((m, i) => {
     const r = MENU_FIRST + i;
@@ -431,30 +453,32 @@ function build(data) {
     row.getCell(2).value = `${m.icon} ${m.category}`;
     row.getCell(3).value = m.name;
     row.getCell(4).value = Number(m.price) || 0;
-    row.getCell(5).value = { formula:
+    row.getCell(5).value  = { formula: `ROUND($D${r}/${VATK_CELL},0)` };
+    row.getCell(6).value  = { formula:
       `ROUND(SUMIF(${q(S.detail)}!$B$${blk.from}:$B$${blk.to},$C${r},${q(S.detail)}!$K$${blk.from}:$K$${blk.to}),1)` };
-    row.getCell(6).value  = { formula: `IF($D${r}>0,$E${r}/$D${r},"")` };
-    row.getCell(7).value  = { formula: `ROUND($D${r}*${RATE_CELL},0)` };
-    row.getCell(8).value  = { formula: `ROUND($E${r}+$G${r},0)` };
-    row.getCell(9).value  = { formula: `IF($D${r}>0,$H${r}/$D${r},"")` };
-    row.getCell(10).value = { formula: `IF($D${r}>0,$D${r}-$H${r},"")` };
-    row.getCell(11).value = { formula: `IF($D${r}>0,$J${r}/$D${r},"")` };
-    row.getCell(12).value = { formula:
-      `IF($D${r}<=0,"⬜ 판매가 입력",IF($E${r}<=0,"⬜ 재료 확인",IF($F${r}<=${TARGET_CELL},"✅ 양호",IF($F${r}<=${WARN_CELL},"🟡 주의","🔴 과다"))))` };
-    row.getCell(13).value = { formula: `IF($D${r}>0,$F${r}+ROW()/1000000,"")` };
+    row.getCell(7).value  = { formula: `IF($E${r}>0,$F${r}/$E${r},"")` };
+    row.getCell(8).value  = { formula: `ROUND($E${r}*${RATE_CELL},0)` };
+    row.getCell(9).value  = { formula: `ROUND($F${r}+$H${r},0)` };
+    row.getCell(10).value = { formula: `IF($E${r}>0,$I${r}/$E${r},"")` };
+    row.getCell(11).value = { formula: `IF($E${r}>0,$E${r}-$I${r},"")` };
+    row.getCell(12).value = { formula: `IF($E${r}>0,$K${r}/$E${r},"")` };
+    row.getCell(13).value = { formula:
+      `IF($D${r}<=0,"⬜ 판매가 입력",IF($F${r}<=0,"⬜ 재료 확인",IF($G${r}<=${TARGET_CELL},"✅ 양호",IF($G${r}<=${WARN_CELL},"🟡 주의","🔴 과다"))))` };
+    row.getCell(14).value = { formula: `IF($D${r}>0,$G${r}+ROW()/1000000,"")` };
 
-    for (let c = 1; c <= 13; c++) asText(row.getCell(c));
+    for (let c = 1; c <= 14; c++) asText(row.getCell(c));
     asInput(row.getCell(4));
-    for (let c = 5; c <= 13; c++) asCalc(row.getCell(c));
+    for (let c = 5; c <= 14; c++) asCalc(row.getCell(c));
     row.getCell(1).alignment = { horizontal: 'center' };
     row.getCell(2).font = { name: FONT, size: 9, color: { argb: C.muted } };
     row.getCell(3).font = { name: FONT, size: 10, bold: true, color: { argb: C.ink } };
-    [4, 5, 7, 8, 10].forEach((c) => { row.getCell(c).numFmt = NUM.won; });
-    [6, 9, 11].forEach((c) => { row.getCell(c).numFmt = NUM.pct; });
-    row.getCell(12).alignment = { horizontal: 'center' };
-    row.getCell(13).numFmt = '0.000000';
-    row.getCell(6).font  = { name: FONT, size: 10, bold: true, color: { argb: C.accent2 } };
-    row.getCell(11).font = { name: FONT, size: 10, bold: true, color: { argb: C.inkSoft } };
+    [4, 5, 6, 8, 9, 11].forEach((c) => { row.getCell(c).numFmt = NUM.won; });
+    [7, 10, 12].forEach((c) => { row.getCell(c).numFmt = NUM.pct; });
+    row.getCell(5).font = { name: FONT, size: 10, color: { argb: C.muted } };
+    row.getCell(13).alignment = { horizontal: 'center' };
+    row.getCell(14).numFmt = '0.000000';
+    row.getCell(7).font  = { name: FONT, size: 10, bold: true, color: { argb: C.accent2 } };
+    row.getCell(12).font = { name: FONT, size: 10, bold: true, color: { argb: C.inkSoft } };
     if (i % 2 === 1) [1, 2, 3].forEach((c) => { row.getCell(c).fill = fill(C.band); });
   });
   const MENU_LAST = MENU_FIRST + menus.length - 1;
@@ -466,29 +490,30 @@ function build(data) {
   trow.getCell(1).value = '합 계 / 가중평균';
   trow.getCell(4).value  = { formula: `SUM(D${MENU_FIRST}:D${MENU_LAST})` };
   trow.getCell(5).value  = { formula: `SUM(E${MENU_FIRST}:E${MENU_LAST})` };
-  trow.getCell(6).value  = { formula: `IF(D${mTot}>0,E${mTot}/D${mTot},"")` };
-  trow.getCell(7).value  = { formula: `SUM(G${MENU_FIRST}:G${MENU_LAST})` };
+  trow.getCell(6).value  = { formula: `SUM(F${MENU_FIRST}:F${MENU_LAST})` };
+  trow.getCell(7).value  = { formula: `IF(E${mTot}>0,F${mTot}/E${mTot},"")` };
   trow.getCell(8).value  = { formula: `SUM(H${MENU_FIRST}:H${MENU_LAST})` };
-  trow.getCell(9).value  = { formula: `IF(D${mTot}>0,H${mTot}/D${mTot},"")` };
-  trow.getCell(10).value = { formula: `IF(D${mTot}>0,D${mTot}-H${mTot},"")` };
-  trow.getCell(11).value = { formula: `IF(D${mTot}>0,J${mTot}/D${mTot},"")` };
-  trow.getCell(12).value = { formula:
-    `"✅"&COUNTIF(L${MENU_FIRST}:L${MENU_LAST},"*양호*")&"  🟡"&COUNTIF(L${MENU_FIRST}:L${MENU_LAST},"*주의*")&"  🔴"&COUNTIF(L${MENU_FIRST}:L${MENU_LAST},"*과다*")` };
-  for (let c = 1; c <= 13; c++) {
+  trow.getCell(9).value  = { formula: `SUM(I${MENU_FIRST}:I${MENU_LAST})` };
+  trow.getCell(10).value = { formula: `IF(E${mTot}>0,I${mTot}/E${mTot},"")` };
+  trow.getCell(11).value = { formula: `IF(E${mTot}>0,E${mTot}-I${mTot},"")` };
+  trow.getCell(12).value = { formula: `IF(E${mTot}>0,K${mTot}/E${mTot},"")` };
+  trow.getCell(13).value = { formula:
+    `"✅"&COUNTIF(M${MENU_FIRST}:M${MENU_LAST},"*양호*")&"  🟡"&COUNTIF(M${MENU_FIRST}:M${MENU_LAST},"*주의*")&"  🔴"&COUNTIF(M${MENU_FIRST}:M${MENU_LAST},"*과다*")` };
+  for (let c = 1; c <= 14; c++) {
     const cell = trow.getCell(c);
     cell.border = { top: { style: 'medium', color: { argb: C.accent2 } }, left: thin, bottom: thin, right: thin };
     cell.fill = fill(C.goodBg);
     cell.font = { name: FONT, size: 10, bold: true, color: { argb: C.accent2 } };
   }
-  [4, 5, 7, 8, 10].forEach((c) => { trow.getCell(c).numFmt = NUM.won; });
-  [6, 9, 11].forEach((c) => { trow.getCell(c).numFmt = NUM.pct; });
+  [4, 5, 6, 8, 9, 11].forEach((c) => { trow.getCell(c).numFmt = NUM.won; });
+  [7, 10, 12].forEach((c) => { trow.getCell(c).numFmt = NUM.pct; });
   trow.getCell(1).alignment = { horizontal: 'right', indent: 1 };
-  trow.getCell(12).alignment = { horizontal: 'center' };
-  wsM.getColumn(13).hidden = true;
-  wsM.autoFilter = { from: { row: 5, column: 1 }, to: { row: MENU_LAST, column: 12 } };
+  trow.getCell(13).alignment = { horizontal: 'center' };
+  wsM.getColumn(14).hidden = true;
+  wsM.autoFilter = { from: { row: 5, column: 1 }, to: { row: MENU_LAST, column: 13 } };
 
   wsM.addConditionalFormatting({
-    ref: `F${MENU_FIRST}:F${MENU_LAST}`,
+    ref: `G${MENU_FIRST}:G${MENU_LAST}`,
     rules: [
       { type: 'cellIs', operator: 'greaterThan', formulae: [WARN_CELL],  priority: 1, style: { fill: fill(C.badBg),  font: { color: { argb: C.bad },  bold: true } } },
       { type: 'cellIs', operator: 'greaterThan', formulae: [TARGET_CELL], priority: 2, style: { fill: fill(C.warnBg), font: { color: { argb: C.warn }, bold: true } } },
@@ -496,7 +521,7 @@ function build(data) {
     ],
   });
   wsM.addConditionalFormatting({
-    ref: `K${MENU_FIRST}:K${MENU_LAST}`,
+    ref: `L${MENU_FIRST}:L${MENU_LAST}`,
     rules: [{ type: 'colorScale', priority: 4,
       cfvo: [{ type: 'min' }, { type: 'percentile', value: 50 }, { type: 'max' }],
       color: [{ argb: 'FFFECACA' }, { argb: 'FFFEF3C7' }, { argb: 'FFD1FAE5' }] }],
@@ -522,7 +547,7 @@ function build(data) {
       row.getCell(9).value = Number(l.yield) || 1;
       row.getCell(10).value = { formula:
         `IF($D${r}="무료",0,` +
-        (MENU_RANGE ? `IF($D${r}="메뉴",IFERROR(VLOOKUP($E${r},${MENU_RANGE},3,FALSE),0),` : `IF($D${r}="메뉴",0,`) +
+        (MENU_RANGE ? `IF($D${r}="메뉴",IFERROR(VLOOKUP($E${r},${MENU_RANGE},4,FALSE),0),` : `IF($D${r}="메뉴",0,`) +
         `IF($D${r}="프렙",IFERROR(VLOOKUP($E${r},${PREP_RANGE},5,FALSE),0),` +
         `IFERROR(VLOOKUP($E${r},${ING_RANGE},6,FALSE),0))))` };
       row.getCell(11).value = { formula:
@@ -568,9 +593,9 @@ function build(data) {
   const KPI = 4;
   const kpis = [
     ['전체 메뉴', `COUNTA(${q(S.menu)}!$C$${MENU_FIRST}:$C$${MENU_LAST})`, '개', NUM.int],
-    ['평균 식재료 원가율', `IF(${q(S.menu)}!$D$${mTot}>0,${q(S.menu)}!$E$${mTot}/${q(S.menu)}!$D$${mTot},0)`, '', NUM.pct],
-    ['평균 총원가율', `IF(${q(S.menu)}!$D$${mTot}>0,${q(S.menu)}!$H$${mTot}/${q(S.menu)}!$D$${mTot},0)`, '', NUM.pct],
-    ['평균 마진율', `IF(${q(S.menu)}!$D$${mTot}>0,(${q(S.menu)}!$D$${mTot}-${q(S.menu)}!$H$${mTot})/${q(S.menu)}!$D$${mTot},0)`, '', NUM.pct],
+    ['평균 식재료 원가율', `IF(${q(S.menu)}!$E$${mTot}>0,${q(S.menu)}!$F$${mTot}/${q(S.menu)}!$E$${mTot},0)`, '', NUM.pct],
+    ['평균 총원가율', `IF(${q(S.menu)}!$E$${mTot}>0,${q(S.menu)}!$I$${mTot}/${q(S.menu)}!$E$${mTot},0)`, '', NUM.pct],
+    ['평균 마진율', `IF(${q(S.menu)}!$E$${mTot}>0,(${q(S.menu)}!$E$${mTot}-${q(S.menu)}!$I$${mTot})/${q(S.menu)}!$E$${mTot},0)`, '', NUM.pct],
     ['고정비 배분율', `${RATE_CELL}`, '', NUM.pct],
   ];
   kpis.forEach((k, i) => {
@@ -605,7 +630,7 @@ function build(data) {
     lab.font = { name: FONT, size: 10, bold: true, color: { argb: g[3] } };
     lab.fill = fill(g[2]); lab.border = box; lab.alignment = { horizontal: 'left', indent: 1 };
     const v = wsB.getCell(r, 4);
-    v.value = { formula: `COUNTIF(${q(S.menu)}!$L$${MENU_FIRST}:$L$${MENU_LAST},"${g[1]}")` };
+    v.value = { formula: `COUNTIF(${q(S.menu)}!$M$${MENU_FIRST}:$M$${MENU_LAST},"${g[1]}")` };
     v.numFmt = NUM.int; v.border = box; v.fill = fill(g[2]);
     v.font = { name: FONT, size: 11, bold: true, color: { argb: g[3] } };
     v.alignment = { horizontal: 'center' };
@@ -620,7 +645,7 @@ function build(data) {
   /* 카테고리별 집계 */
   const CAT = GR + 6;
   sectionBar(wsB, CAT, '▸  카테고리별 원가 분석', 11, C.inkSoft);
-  headerRow(wsB, CAT + 1, ['', '카테고리', '메뉴수', '판매가 합계', '식재료원가', '원가율', '고정비배분', '총원가', '마진 합계', '마진율', '']);
+  headerRow(wsB, CAT + 1, ['', '카테고리', '메뉴수', '판매가 합계', '공급가액', '식재료원가', '원가율', '고정비배분', '총원가', '마진율', '']);
   const cats = data.categoryOrder.filter((c) => menus.some((m) => m.category === c));
   cats.forEach((c, i) => {
     const r = CAT + 2 + i;
@@ -631,22 +656,22 @@ function build(data) {
     row.getCell(3).value = { formula: `COUNTIF(${CB},${key})` };
     row.getCell(4).value = { formula: `SUMIF(${CB},${key},${q(S.menu)}!$D$${MENU_FIRST}:$D$${MENU_LAST})` };
     row.getCell(5).value = { formula: `SUMIF(${CB},${key},${q(S.menu)}!$E$${MENU_FIRST}:$E$${MENU_LAST})` };
-    row.getCell(6).value = { formula: `IF(D${r}>0,E${r}/D${r},"")` };
-    row.getCell(7).value = { formula: `SUMIF(${CB},${key},${q(S.menu)}!$G$${MENU_FIRST}:$G$${MENU_LAST})` };
+    row.getCell(6).value = { formula: `SUMIF(${CB},${key},${q(S.menu)}!$F$${MENU_FIRST}:$F$${MENU_LAST})` };
+    row.getCell(7).value = { formula: `IF(E${r}>0,F${r}/E${r},"")` };
     row.getCell(8).value = { formula: `SUMIF(${CB},${key},${q(S.menu)}!$H$${MENU_FIRST}:$H$${MENU_LAST})` };
-    row.getCell(9).value = { formula: `IF(D${r}>0,D${r}-H${r},"")` };
-    row.getCell(10).value = { formula: `IF(D${r}>0,I${r}/D${r},"")` };
+    row.getCell(9).value = { formula: `SUMIF(${CB},${key},${q(S.menu)}!$I$${MENU_FIRST}:$I$${MENU_LAST})` };
+    row.getCell(10).value = { formula: `IF(E${r}>0,(E${r}-I${r})/E${r},"")` };
     for (let c2 = 2; c2 <= 10; c2++) asText(row.getCell(c2));
     row.getCell(2).font = { name: FONT, size: 10, bold: true, color: { argb: C.ink } };
     row.getCell(3).numFmt = NUM.int; row.getCell(3).alignment = { horizontal: 'center' };
-    [4, 5, 7, 8, 9].forEach((c2) => { row.getCell(c2).numFmt = NUM.won; });
-    [6, 10].forEach((c2) => { row.getCell(c2).numFmt = NUM.pct; });
-    row.getCell(6).font = { name: FONT, size: 10, bold: true, color: { argb: C.accent2 } };
+    [4, 5, 6, 8, 9].forEach((c2) => { row.getCell(c2).numFmt = NUM.won; });
+    [7, 10].forEach((c2) => { row.getCell(c2).numFmt = NUM.pct; });
+    row.getCell(7).font = { name: FONT, size: 10, bold: true, color: { argb: C.accent2 } };
     if (i % 2 === 1) for (let c2 = 2; c2 <= 10; c2++) row.getCell(c2).fill = fill(C.band);
   });
   const CAT_LAST = CAT + 1 + cats.length;
   wsB.addConditionalFormatting({
-    ref: `F${CAT + 2}:F${CAT_LAST}`,
+    ref: `G${CAT + 2}:G${CAT_LAST}`,
     rules: [{ type: 'colorScale', priority: 5,
       cfvo: [{ type: 'min' }, { type: 'percentile', value: 50 }, { type: 'max' }],
       color: [{ argb: 'FFD1FAE5' }, { argb: 'FFFEF3C7' }, { argb: 'FFFECACA' }] }],
@@ -657,11 +682,11 @@ function build(data) {
   sectionBar(wsB, TOP, '▸  식재료 원가율 상위 10  (개선 우선순위)', 11, C.bad);
   headerRow(wsB, TOP + 1, ['', '순위', '메뉴명', '판매가', '식재료원가', '원가율', '', '순위', '메뉴명', '판매가', '']);
   wsB.getCell(TOP + 1, 7).value = '';
-  const KEY = `${q(S.menu)}!$M$${MENU_FIRST}:$M$${MENU_LAST}`;
+  const KEY = `${q(S.menu)}!$N$${MENU_FIRST}:$N$${MENU_LAST}`;
   const NAM = `${q(S.menu)}!$C$${MENU_FIRST}:$C$${MENU_LAST}`;
   const PRC = `${q(S.menu)}!$D$${MENU_FIRST}:$D$${MENU_LAST}`;
-  const FDC = `${q(S.menu)}!$E$${MENU_FIRST}:$E$${MENU_LAST}`;
-  const FDR = `${q(S.menu)}!$F$${MENU_FIRST}:$F$${MENU_LAST}`;
+  const FDC = `${q(S.menu)}!$F$${MENU_FIRST}:$F$${MENU_LAST}`;
+  const FDR = `${q(S.menu)}!$G$${MENU_FIRST}:$G$${MENU_LAST}`;
   for (let i = 0; i < 10; i++) {
     const r = TOP + 2 + i;
     const row = wsB.getRow(r);
@@ -766,8 +791,11 @@ function build(data) {
   gRow('재료비', '사용량 ÷ 수율 × g당 단가   (수율 100% 면 사용량 × 단가)');
   gRow('프렙 g당 원가', '프렙 총 재료비 ÷ 완성중량(g)');
   gRow('식재료 원가', '해당 메뉴의 재료비 전부 합계 (⑤ 시트 SUMIF)');
-  gRow('고정비 배분', '판매가 × (배분대상 고정비 ÷ 월 추정매출) — 판매가에 비례해 배분');
-  gRow('총원가 / 마진', '총원가 = 식재료 원가 + 고정비 배분,  마진 = 판매가 − 총원가');
+  gRow('공급가액', '판매가 ÷ 부가세 계수 — 판매가가 부가세 포함이면 실제로 매장에 남는 금액');
+  gRow('고정비 배분', '공급가액 × (배분대상 고정비 ÷ 월 매출 공급가액)');
+  gRow('총원가 / 마진', '총원가 = 식재료 원가 + 고정비 배분,  마진 = 공급가액 − 총원가');
+  gRow('원가율·마진율', '모두 판매가가 아니라 공급가액을 기준으로 계산합니다 (부가세는 매출이 아니므로)',
+       { bg: C.warnBg, lc: C.warn, h: 34 });
   g++;
 
   gSec('▸  꼭 알아두실 점');
@@ -775,6 +803,10 @@ function build(data) {
   gRow('오류 방지', '모든 나눗셈은 분모가 0이면 0을 돌려주고, 모든 조회는 IFERROR로 감쌌습니다. 재료명을 바꾸거나 지워도 #DIV/0!·#N/A 가 뜨지 않습니다.', { h: 34 });
   gRow('재료 추가', '⑤ 시트에서 줄을 복사해 메뉴명·재료명만 바꾸면 됩니다. 재료명은 ① 시트의 이름과 정확히 같아야 단가가 잡힙니다.', { h: 34 });
   gRow('웹·모바일', '같은 데이터로 만든 웹 버전에서는 PC·휴대폰 모두에서 단가를 수정하고 이 엑셀을 다시 내려받을 수 있습니다.', { h: 34 });
+  g++;
+
+  gSec('▸  오픈소스 라이선스 고지');
+  gRow('ExcelJS (MIT)', 'Copyright (c) 2014-2019 Guyon Roche · https://github.com/exceljs/exceljs — 이 파일을 만드는 데 사용되었습니다. MIT 라이선스 전문은 함께 제공되는 THIRD-PARTY-NOTICES 문서를 참고하세요.', { h: 46 });
 
   [wsG, wsB, wsM, wsD, wsI, wsP, wsF, wsX].forEach((ws) => {
     ws.properties.defaultRowHeight = 19;

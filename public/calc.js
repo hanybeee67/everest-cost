@@ -54,11 +54,19 @@
     data.preps.forEach((p) => prepUnitCost(p.name));
     const preps = data.preps.map((p) => prepCache.get(p.name));
 
-    /* ── 3. 고정비 배분율 ───────────────────────────────── */
-    const fixedTotal      = data.fixedCosts.reduce((s, f) => s + num(f.amount), 0);
+    /* ── 3. 부가세 · 고정비 배분율 ───────────────────────
+       판매가가 부가세 포함이면 실제로 매장에 남는 돈은 판매가 ÷ (1+세율) 이다.
+       원가율·마진은 이 「공급가액」 기준으로 봐야 맞다. */
+    const vatIncluded = data.settings.vatIncluded !== false;   // 기본값: 포함
+    const vatRate     = vatIncluded ? Math.max(0, num(data.settings.vatRate ?? 0.1)) : 0;
+    /** 손님이 내는 금액 → 매장에 남는 공급가액 */
+    const netOf = (gross) => (vatIncluded ? div(num(gross), 1 + vatRate) : num(gross));
+
+    const fixedTotal       = data.fixedCosts.reduce((s, f) => s + num(f.amount), 0);
     const fixedAllocatable = data.fixedCosts.reduce((s, f) => s + (f.include === false ? 0 : num(f.amount)), 0);
-    const monthlyRevenue = num(data.settings.monthlyRevenue);
-    const fixedRate = div(fixedAllocatable, monthlyRevenue);   // 매출 1원당 배분 고정비
+    const monthlyRevenue    = num(data.settings.monthlyRevenue);
+    const netMonthlyRevenue = netOf(monthlyRevenue);
+    const fixedRate = div(fixedAllocatable, netMonthlyRevenue); // 공급가액 1원당 배분 고정비
 
     /* ── 4. 메뉴 원가 (세트메뉴가 참조하는 단품까지 재귀) ── */
     const menuByName = new Map(data.menus.map((m) => [m.name, m]));
@@ -92,19 +100,22 @@
       });
       menuStack.delete(name);
 
-      const price     = num(m.price);
-      const fixedCost = price * fixedRate;
+      const price     = num(m.price);          // 손님이 내는 금액
+      const net       = netOf(price);           // 부가세를 뺀 공급가액
+      const vat       = price - net;
+      const fixedCost = net * fixedRate;
       const totalCost = food + fixedCost;
       const res = {
         ...m, lines,
+        net, vat,
         foodCost: food,
         fixedCost,
         totalCost,
-        foodRate:   div(food, price),
-        totalRate:  div(totalCost, price),
-        margin:     price ? price - totalCost : 0,
-        marginRate: div(price - totalCost, price),
-        grossMargin: price ? price - food : 0,
+        foodRate:   div(food, net),
+        totalRate:  div(totalCost, net),
+        margin:     net ? net - totalCost : 0,
+        marginRate: div(net - totalCost, net),
+        grossMargin: net ? net - food : 0,
         hasPrice: price > 0,
       };
       res.grade = grade(res, data.settings);
@@ -119,18 +130,18 @@
     menus.forEach((m) => {
       if (!catMap.has(m.category))
         catMap.set(m.category, { category: m.category, icon: m.icon, count: 0,
-                                 price: 0, foodCost: 0, fixedCost: 0, totalCost: 0, priced: 0 });
+                                 price: 0, net: 0, foodCost: 0, fixedCost: 0, totalCost: 0, priced: 0 });
       const c = catMap.get(m.category);
       c.count++;
-      if (m.hasPrice) { c.priced++; c.price += m.price; c.foodCost += m.foodCost;
+      if (m.hasPrice) { c.priced++; c.price += m.price; c.net += m.net; c.foodCost += m.foodCost;
                         c.fixedCost += m.fixedCost; c.totalCost += m.totalCost; }
     });
     const categories = (data.categoryOrder || [])
       .map((c) => catMap.get(c)).filter(Boolean)
-      .map((c) => ({ ...c, foodRate: div(c.foodCost, c.price),
-                     totalRate: div(c.totalCost, c.price),
-                     margin: c.price - c.totalCost,
-                     marginRate: div(c.price - c.totalCost, c.price) }));
+      .map((c) => ({ ...c, foodRate: div(c.foodCost, c.net),
+                     totalRate: div(c.totalCost, c.net),
+                     margin: c.net - c.totalCost,
+                     marginRate: div(c.net - c.totalCost, c.net) }));
 
     /* ── 6. 전체 요약 ─────────────────────────────────── */
     const priced = menus.filter((m) => m.hasPrice);
@@ -138,14 +149,15 @@
     const summary = {
       menuCount: menus.length,
       pricedCount: priced.length,
-      avgFoodRate:  div(sum((m) => m.foodCost),  sum((m) => m.price)),
-      avgTotalRate: div(sum((m) => m.totalCost), sum((m) => m.price)),
-      avgMarginRate: div(sum((m) => m.price - m.totalCost), sum((m) => m.price)),
+      avgFoodRate:  div(sum((m) => m.foodCost),  sum((m) => m.net)),
+      avgTotalRate: div(sum((m) => m.totalCost), sum((m) => m.net)),
+      avgMarginRate: div(sum((m) => m.net - m.totalCost), sum((m) => m.net)),
       good: menus.filter((m) => m.grade.key === 'good').length,
       warn: menus.filter((m) => m.grade.key === 'warn').length,
       bad:  menus.filter((m) => m.grade.key === 'bad').length,
       none: menus.filter((m) => m.grade.key === 'none').length,
-      fixedTotal, fixedAllocatable, monthlyRevenue, fixedRate,
+      fixedTotal, fixedAllocatable, monthlyRevenue, netMonthlyRevenue, fixedRate,
+      vatIncluded, vatRate,
     };
 
     return { ingredients, preps, menus, categories, summary,

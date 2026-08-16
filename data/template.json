@@ -6,7 +6,12 @@
   "version": "1.0",
   "template": true
  },
- "categoryOrder": ["메인 요리", "사이드", "음료", "세트메뉴"],
+ "categoryOrder": [
+  "메인 요리",
+  "사이드",
+  "음료",
+  "세트메뉴"
+ ],
  "categoryIcon": {
   "메인 요리": "🍳",
   "사이드": "🥗",
@@ -14,18 +19,90 @@
   "세트메뉴": "🍽"
  },
  "ingredients": [
-  { "name": "닭가슴살",  "price": 12000, "pack_qty": 1,    "unit": "kg", "weight_g": 1000  },
-  { "name": "쌀",        "price": 62000, "pack_qty": 20,   "unit": "kg", "weight_g": 20000 },
-  { "name": "양파",      "price": 14000, "pack_qty": 15,   "unit": "kg", "weight_g": 15000 },
-  { "name": "당근",      "price": 16500, "pack_qty": 3,    "unit": "kg", "weight_g": 3000  },
-  { "name": "감자",      "price": 35000, "pack_qty": 20,   "unit": "kg", "weight_g": 20000 },
-  { "name": "우유",      "price": 1650,  "pack_qty": 1,    "unit": "L",  "weight_g": 1000  },
-  { "name": "버터",      "price": 14500, "pack_qty": 13.1, "unit": "kg", "weight_g": 13100 },
-  { "name": "식용유",    "price": 49500, "pack_qty": 18,   "unit": "L",  "weight_g": 18000 },
-  { "name": "간장",      "price": 5500,  "pack_qty": 1.8,  "unit": "L",  "weight_g": 1800  },
-  { "name": "소금",      "price": 15000, "pack_qty": 15,   "unit": "kg", "weight_g": 15000 },
-  { "name": "후추",      "price": 9000,  "pack_qty": 0.4,  "unit": "kg", "weight_g": 400   },
-  { "name": "대파",      "price": 4980,  "pack_qty": 0.5,  "unit": "kg", "weight_g": 500   }
+  {
+   "name": "닭가슴살",
+   "price": 12000,
+   "pack_qty": 1,
+   "unit": "kg",
+   "weight_g": 1000
+  },
+  {
+   "name": "쌀",
+   "price": 62000,
+   "pack_qty": 20,
+   "unit": "kg",
+   "weight_g": 20000
+  },
+  {
+   "name": "양파",
+   "price": 14000,
+   "pack_qty": 15,
+   "unit": "kg",
+   "weight_g": 15000
+  },
+  {
+   "name": "당근",
+   "price": 16500,
+   "pack_qty": 3,
+   "unit": "kg",
+   "weight_g": 3000
+  },
+  {
+   "name": "감자",
+   "price": 35000,
+   "pack_qty": 20,
+   "unit": "kg",
+   "weight_g": 20000
+  },
+  {
+   "name": "우유",
+   "price": 1650,
+   "pack_qty": 1,
+   "unit": "L",
+   "weight_g": 1000
+  },
+  {
+   "name": "버터",
+   "price": 14500,
+   "pack_qty": 13.1,
+   "unit": "kg",
+   "weight_g": 13100
+  },
+  {
+   "name": "식용유",
+   "price": 49500,
+   "pack_qty": 18,
+   "unit": "L",
+   "weight_g": 18000
+  },
+  {
+   "name": "간장",
+   "price": 5500,
+   "pack_qty": 1.8,
+   "unit": "L",
+   "weight_g": 1800
+  },
+  {
+   "name": "소금",
+   "price": 15000,
+   "pack_qty": 15,
+   "unit": "kg",
+   "weight_g": 15000
+  },
+  {
+   "name": "후추",
+   "price": 9000,
+   "pack_qty": 0.4,
+   "unit": "kg",
+   "weight_g": 400
+  },
+  {
+   "name": "대파",
+   "price": 4980,
+   "pack_qty": 0.5,
+   "unit": "kg",
+   "weight_g": 500
+  }
  ],
  "preps": [
   {
@@ -33,10 +110,30 @@
    "yield_g": 1200,
    "yield_rate": 0.8,
    "items": [
-    { "kind": "식재료", "name": "양파",    "raw": "", "qty": 1000 },
-    { "kind": "식재료", "name": "간장",    "raw": "", "qty": 300  },
-    { "kind": "식재료", "name": "식용유",  "raw": "", "qty": 200  },
-    { "kind": "식재료", "name": "소금",    "raw": "", "qty": 50   }
+    {
+     "kind": "식재료",
+     "name": "양파",
+     "raw": "",
+     "qty": 1000
+    },
+    {
+     "kind": "식재료",
+     "name": "간장",
+     "raw": "",
+     "qty": 300
+    },
+    {
+     "kind": "식재료",
+     "name": "식용유",
+     "raw": "",
+     "qty": 200
+    },
+    {
+     "kind": "식재료",
+     "name": "소금",
+     "raw": "",
+     "qty": 50
+    }
    ]
   }
  ],
@@ -50,15 +147,87 @@
    "serving": "1인분 기준",
    "price": 9000,
    "lines": [
-    { "kind": "식재료", "name": "쌀",           "raw": "", "qty": 200, "unit": "g", "yield": 1,    "note": "지은 밥 기준" },
-    { "kind": "식재료", "name": "닭가슴살",     "raw": "", "qty": 100, "unit": "g", "yield": 0.9,  "note": "손질 손실 10% 반영" },
-    { "kind": "식재료", "name": "양파",         "raw": "", "qty": 30,  "unit": "g", "yield": 1,    "note": "잘게 썰기" },
-    { "kind": "식재료", "name": "당근",         "raw": "", "qty": 20,  "unit": "g", "yield": 1,    "note": "잘게 썰기" },
-    { "kind": "식재료", "name": "식용유",       "raw": "", "qty": 15,  "unit": "g", "yield": 1,    "note": "" },
-    { "kind": "식재료", "name": "소금",         "raw": "", "qty": 3,   "unit": "g", "yield": 1,    "note": "" },
-    { "kind": "식재료", "name": "후추",         "raw": "", "qty": 1,   "unit": "g", "yield": 1,    "note": "" },
-    { "kind": "식재료", "name": "대파",         "raw": "", "qty": 10,  "unit": "g", "yield": 1,    "note": "고명" },
-    { "kind": "프렙",   "name": "기본 볶음 소스", "raw": "", "qty": 40, "unit": "g", "yield": 1,   "note": "미리 만들어 둔 소스" }
+    {
+     "kind": "식재료",
+     "name": "쌀",
+     "raw": "",
+     "qty": 200,
+     "unit": "g",
+     "yield": 1,
+     "note": "지은 밥 기준"
+    },
+    {
+     "kind": "식재료",
+     "name": "닭가슴살",
+     "raw": "",
+     "qty": 100,
+     "unit": "g",
+     "yield": 0.9,
+     "note": "손질 손실 10% 반영"
+    },
+    {
+     "kind": "식재료",
+     "name": "양파",
+     "raw": "",
+     "qty": 30,
+     "unit": "g",
+     "yield": 1,
+     "note": "잘게 썰기"
+    },
+    {
+     "kind": "식재료",
+     "name": "당근",
+     "raw": "",
+     "qty": 20,
+     "unit": "g",
+     "yield": 1,
+     "note": "잘게 썰기"
+    },
+    {
+     "kind": "식재료",
+     "name": "식용유",
+     "raw": "",
+     "qty": 15,
+     "unit": "g",
+     "yield": 1,
+     "note": ""
+    },
+    {
+     "kind": "식재료",
+     "name": "소금",
+     "raw": "",
+     "qty": 3,
+     "unit": "g",
+     "yield": 1,
+     "note": ""
+    },
+    {
+     "kind": "식재료",
+     "name": "후추",
+     "raw": "",
+     "qty": 1,
+     "unit": "g",
+     "yield": 1,
+     "note": ""
+    },
+    {
+     "kind": "식재료",
+     "name": "대파",
+     "raw": "",
+     "qty": 10,
+     "unit": "g",
+     "yield": 1,
+     "note": "고명"
+    },
+    {
+     "kind": "프렙",
+     "name": "기본 볶음 소스",
+     "raw": "",
+     "qty": 40,
+     "unit": "g",
+     "yield": 1,
+     "note": "미리 만들어 둔 소스"
+    }
    ],
    "steps": [
     "닭가슴살을 사방 1cm 크기로 썰고 소금·후추로 밑간한다.",
@@ -78,12 +247,60 @@
    "serving": "1인분 기준",
    "price": 5000,
    "lines": [
-    { "kind": "식재료", "name": "감자", "raw": "", "qty": 150, "unit": "g", "yield": 0.85, "note": "껍질 손실 15% 반영" },
-    { "kind": "식재료", "name": "양파", "raw": "", "qty": 30,  "unit": "g", "yield": 1,    "note": "" },
-    { "kind": "식재료", "name": "우유", "raw": "", "qty": 120, "unit": "g", "yield": 1,    "note": "120ml ≈ 120g" },
-    { "kind": "식재료", "name": "버터", "raw": "", "qty": 10,  "unit": "g", "yield": 1,    "note": "" },
-    { "kind": "식재료", "name": "소금", "raw": "", "qty": 3,   "unit": "g", "yield": 1,    "note": "" },
-    { "kind": "무료",   "name": "물",   "raw": "", "qty": 100, "unit": "g", "yield": 1,    "note": "수돗물 — 원가 0원 처리" }
+    {
+     "kind": "식재료",
+     "name": "감자",
+     "raw": "",
+     "qty": 150,
+     "unit": "g",
+     "yield": 0.85,
+     "note": "껍질 손실 15% 반영"
+    },
+    {
+     "kind": "식재료",
+     "name": "양파",
+     "raw": "",
+     "qty": 30,
+     "unit": "g",
+     "yield": 1,
+     "note": ""
+    },
+    {
+     "kind": "식재료",
+     "name": "우유",
+     "raw": "",
+     "qty": 120,
+     "unit": "g",
+     "yield": 1,
+     "note": "120ml ≈ 120g"
+    },
+    {
+     "kind": "식재료",
+     "name": "버터",
+     "raw": "",
+     "qty": 10,
+     "unit": "g",
+     "yield": 1,
+     "note": ""
+    },
+    {
+     "kind": "식재료",
+     "name": "소금",
+     "raw": "",
+     "qty": 3,
+     "unit": "g",
+     "yield": 1,
+     "note": ""
+    },
+    {
+     "kind": "무료",
+     "name": "물",
+     "raw": "",
+     "qty": 100,
+     "unit": "g",
+     "yield": 1,
+     "note": "수돗물 — 원가 0원 처리"
+    }
    ],
    "steps": [
     "감자는 껍질을 벗겨 얇게 썰고, 양파도 채 썬다.",
@@ -102,8 +319,24 @@
    "serving": "1인 세트",
    "price": 12000,
    "lines": [
-    { "kind": "메뉴", "name": "치킨 볶음밥",   "raw": "", "qty": 1, "unit": "개", "yield": 1, "note": "단품 원가를 그대로 가져옵니다" },
-    { "kind": "메뉴", "name": "감자 크림 수프", "raw": "", "qty": 1, "unit": "개", "yield": 1, "note": "단품 원가를 그대로 가져옵니다" }
+    {
+     "kind": "메뉴",
+     "name": "치킨 볶음밥",
+     "raw": "",
+     "qty": 1,
+     "unit": "개",
+     "yield": 1,
+     "note": "단품 원가를 그대로 가져옵니다"
+    },
+    {
+     "kind": "메뉴",
+     "name": "감자 크림 수프",
+     "raw": "",
+     "qty": 1,
+     "unit": "개",
+     "yield": 1,
+     "note": "단품 원가를 그대로 가져옵니다"
+    }
    ],
    "steps": [
     "치킨 볶음밥과 감자 크림 수프를 각각 조리한다.",
@@ -113,34 +346,97 @@
   }
  ],
  "fixedCosts": [
-  { "name": "인건비",        "amount": 8000000, "include": true,  "note": "급여 · 4대보험 사용자 부담분", "reason": "" },
-  { "name": "임대료",        "amount": 3000000, "include": true,  "note": "월 임대료 · 관리비",           "reason": "" },
-  { "name": "공과금",        "amount": 800000,  "include": true,  "note": "수도 · 전기 · 가스",           "reason": "" },
-  { "name": "배달·광고 수수료", "amount": 1500000, "include": true, "note": "배달앱 수수료 · 마케팅비",   "reason": "" },
-  { "name": "식재료 매입비",  "amount": 6000000, "include": false, "note": "",
-    "reason": "메뉴별 식재료 원가에 이미 반영 → 고정비 배분에서 제외 (이중 계산 방지)" }
+  {
+   "name": "인건비",
+   "amount": 8000000,
+   "include": true,
+   "note": "급여 · 4대보험 사용자 부담분",
+   "reason": ""
+  },
+  {
+   "name": "임대료",
+   "amount": 3000000,
+   "include": true,
+   "note": "월 임대료 · 관리비",
+   "reason": ""
+  },
+  {
+   "name": "공과금",
+   "amount": 800000,
+   "include": true,
+   "note": "수도 · 전기 · 가스",
+   "reason": ""
+  },
+  {
+   "name": "배달·광고 수수료",
+   "amount": 1500000,
+   "include": true,
+   "note": "배달앱 수수료 · 마케팅비",
+   "reason": ""
+  },
+  {
+   "name": "식재료 매입비",
+   "amount": 6000000,
+   "include": false,
+   "note": "",
+   "reason": "메뉴별 식재료 원가에 이미 반영 → 고정비 배분에서 제외 (이중 계산 방지)"
+  }
  ],
  "settings": {
   "monthlyRevenue": 30000000,
   "targetFoodCostRate": 0.3,
-  "warnFoodCostRate": 0.38
+  "warnFoodCostRate": 0.38,
+  "vatIncluded": true,
+  "vatRate": 0.1
  },
  "issues": [
-  { "type": "시작하기", "menu": "-", "name": "① 회사 이름 바꾸기",
-    "note": "[고정비] 화면 맨 아래 「기본 정보」에서 회사·매장 이름을 입력하세요. 화면과 엑셀 제목에 반영됩니다." },
-  { "type": "시작하기", "menu": "-", "name": "② 식재료 등록",
-    "note": "[식재료] 화면에서 「＋ 식재료 추가」로 우리 매장이 쓰는 재료와 구매가격·규격을 넣으세요." },
-  { "type": "시작하기", "menu": "-", "name": "③ 고정비 입력",
-    "note": "[고정비] 화면에서 우리 매장의 월 고정비와 월 추정매출을 실제 값으로 바꾸세요." },
-  { "type": "시작하기", "menu": "-", "name": "④ 메뉴 등록",
-    "note": "[메뉴] 화면 아래 입력칸에 메뉴 이름·카테고리·판매가를 넣고 「＋ 메뉴 추가」를 누르면 상세가 열립니다." },
-  { "type": "시작하기", "menu": "-", "name": "⑤ 예시 데이터 정리",
-    "note": "치킨 볶음밥 · 감자 크림 수프 · 런치 세트는 사용법을 보여주기 위한 예시입니다. 다 익히셨으면 지우세요." },
-  { "type": "예시 데이터", "menu": "치킨 볶음밥", "name": "식재료 + 프렙 사용 예시",
-    "note": "일반 식재료와 미리 만들어 둔 프렙(반제품)을 함께 쓰는 메뉴의 예시입니다." },
-  { "type": "예시 데이터", "menu": "감자 크림 수프", "name": "수율 · 무료 항목 예시",
-    "note": "껍질을 벗겨 버리는 손실(수율 85%)과 원가가 들지 않는 수돗물(무료) 처리 예시입니다." },
-  { "type": "예시 데이터", "menu": "런치 세트", "name": "세트메뉴 예시",
-    "note": "다른 메뉴를 구성품으로 넣으면 그 메뉴의 식재료 원가가 자동으로 합산됩니다." }
+  {
+   "type": "시작하기",
+   "menu": "-",
+   "name": "① 회사 이름 바꾸기",
+   "note": "[고정비] 화면 맨 아래 「기본 정보」에서 회사·매장 이름을 입력하세요. 화면과 엑셀 제목에 반영됩니다."
+  },
+  {
+   "type": "시작하기",
+   "menu": "-",
+   "name": "② 식재료 등록",
+   "note": "[식재료] 화면에서 「＋ 식재료 추가」로 우리 매장이 쓰는 재료와 구매가격·규격을 넣으세요."
+  },
+  {
+   "type": "시작하기",
+   "menu": "-",
+   "name": "③ 고정비 입력",
+   "note": "[고정비] 화면에서 우리 매장의 월 고정비와 월 추정매출을 실제 값으로 바꾸세요."
+  },
+  {
+   "type": "시작하기",
+   "menu": "-",
+   "name": "④ 메뉴 등록",
+   "note": "[메뉴] 화면 아래 입력칸에 메뉴 이름·카테고리·판매가를 넣고 「＋ 메뉴 추가」를 누르면 상세가 열립니다."
+  },
+  {
+   "type": "시작하기",
+   "menu": "-",
+   "name": "⑤ 예시 데이터 정리",
+   "note": "치킨 볶음밥 · 감자 크림 수프 · 런치 세트는 사용법을 보여주기 위한 예시입니다. 다 익히셨으면 지우세요."
+  },
+  {
+   "type": "예시 데이터",
+   "menu": "치킨 볶음밥",
+   "name": "식재료 + 프렙 사용 예시",
+   "note": "일반 식재료와 미리 만들어 둔 프렙(반제품)을 함께 쓰는 메뉴의 예시입니다."
+  },
+  {
+   "type": "예시 데이터",
+   "menu": "감자 크림 수프",
+   "name": "수율 · 무료 항목 예시",
+   "note": "껍질을 벗겨 버리는 손실(수율 85%)과 원가가 들지 않는 수돗물(무료) 처리 예시입니다."
+  },
+  {
+   "type": "예시 데이터",
+   "menu": "런치 세트",
+   "name": "세트메뉴 예시",
+   "note": "다른 메뉴를 구성품으로 넣으면 그 메뉴의 식재료 원가가 자동으로 합산됩니다."
+  }
  ]
 }
