@@ -47,11 +47,18 @@
         <p id="viewDesc"></p>
       </div>
       <div class="topbar-actions">
+        <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
         <button class="icon-btn" id="btnTheme" title="화면 밝기 전환">◐</button>
         <button class="icon-btn only-mobile" id="btnMenu" title="메뉴">⋯</button>
       </div>
     </header>
 
+    <div class="savewarn" id="saveWarn" hidden>
+      ⚠️ <b>이 브라우저에 자동 저장을 할 수 없습니다.</b>
+      시크릿(비공개) 모드이거나 저장공간이 막혀 있습니다.
+      고친 값을 잃지 않으려면 <b>[백업]</b> 으로 파일을 저장해 두세요.
+      <button class="savewarn-x" id="saveWarnClose" aria-label="닫기">✕</button>
+    </div>
     <div class="scroll" id="viewRoot"></div>
   </main>
 

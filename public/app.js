@@ -7,6 +7,13 @@
 'use strict';
 
 const LS_KEY = 'everest-cost-overrides-v2';
+
+/* localStorage 는 시크릿 모드·정책에 따라 접근만 해도 예외를 던진다.
+   화면이 통째로 멈추지 않도록 전부 이 래퍼를 통해서만 쓴다. */
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); return localStorage.getItem(k) !== null; } catch (_) { return false; } },
+};
 const $  = (s, r = document) => r.querySelector(s);
 const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
 
@@ -24,6 +31,7 @@ const state = {
   result: null,
   filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '' },
   sync: 'synced',
+  savedAt: null,
   serverOk: true,
 };
 function emptyOv() {
@@ -76,40 +84,88 @@ function isOverridden(path) {
 }
 
 /* ── 저장 ───────────────────────────────────────────── */
+/* 값을 고치면 0.7초 뒤 자동 저장된다. 따로 저장 버튼을 누를 필요가 없다.
+   다만 저장이 "실제로" 됐는지 확인해서, 실패하면 숨기지 않고 알린다.
+   (시크릿 모드·저장공간 부족 등에서는 브라우저가 저장을 거부할 수 있다) */
 let saveTimer = null;
 function markDirty() { state.sync = 'dirty'; paintSync(); }
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(save, 700);
 }
+
+/** 브라우저 저장 — 성공하면 true */
+function saveLocal() { return store.set(LS_KEY, JSON.stringify(state.ov)); }
+
 async function save() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(state.ov)); } catch (_) {}
-  if (!state.serverOk) { state.sync = 'local'; paintSync(); return; }
-  try {
+  const okLocal = saveLocal();
+
+  if (!state.serverOk) {                       // 단일 파일 / 정적 배포
+    state.sync = okLocal ? 'local' : 'error';
+    if (okLocal) state.savedAt = new Date();
+    paintSync();
+    warnIfCannotSave(okLocal);
+    return;
+  }
+  try {                                        // 서버 모드
     const res = await fetch('/api/overrides', {
       method: 'PUT', headers: { 'content-type': 'application/json' },
       body: JSON.stringify(state.ov),
     });
     if (!res.ok) throw new Error(res.status);
     state.sync = 'synced';
+    state.savedAt = new Date();
   } catch (_) {
     state.serverOk = false;
-    state.sync = 'local';
+    state.sync = okLocal ? 'local' : 'error';
+    if (okLocal) state.savedAt = new Date();
+    warnIfCannotSave(okLocal);
   }
   paintSync();
 }
+
+/* 저장이 아예 안 되는 상황이면 한 번만 크게 알려준다 */
+let warned = false;
+function warnIfCannotSave(ok) {
+  if (ok) return;
+  state.sync = 'error';                    // 표시 문구도 「저장 실패」로 맞춘다
+  paintSync();
+  if (warned) return;
+  warned = true;
+  const b = $('#saveWarn');
+  if (b) b.hidden = false;
+  toast('이 브라우저에 저장할 수 없습니다 — [백업] 으로 파일을 저장해 주세요');
+}
+
+const hhmm = (d) => d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+
 function paintSync() {
   const box = $('#syncBox'), txt = $('#syncText');
   if (!box) return;
   box.dataset.state = state.sync;
-  txt.textContent = state.sync === 'dirty'
-    ? (state.serverOk ? '서버에 저장 중…' : '이 기기에 저장 중…')
-    : { synced: '서버에 저장됨', local: '이 기기에 저장됨', error: '저장 실패' }[state.sync];
-  box.title = state.sync === 'local'
-    ? (self.EMBEDDED_DATASET
-        ? '단일 파일 모드입니다. 수정값은 이 브라우저에 저장됩니다 — 다른 기기로 옮기려면 [백업] 파일을 보내 [복원] 하세요.'
-        : '수정값은 이 브라우저에 저장됩니다 — 다른 기기와 공유하려면 [백업] 파일을 옮겨 [복원] 하세요.')
-    : '수정값이 서버에 저장되어 모든 기기에서 같은 값을 봅니다.';
+
+  const when = state.savedAt ? ` · ${hhmm(state.savedAt)}` : '';
+  txt.textContent =
+      state.sync === 'dirty' ? (state.serverOk ? '저장 중…' : '저장 중…')
+    : state.sync === 'synced' ? '서버에 저장됨' + when
+    : state.sync === 'local'  ? '자동 저장됨' + when
+    : '저장 실패 — 백업하세요';
+
+  box.title =
+      state.sync === 'error' ? '이 브라우저가 저장을 거부하고 있습니다(시크릿 모드 등). [백업] 으로 파일을 저장해 두세요.'
+    : state.sync === 'synced' ? '수정값이 서버에 저장되어 모든 기기에서 같은 값을 봅니다.'
+    : (self.EMBEDDED_DATASET
+        ? '값을 고치면 자동으로 저장됩니다. 다른 기기로 옮기려면 [백업] 파일을 보내 [복원] 하세요.'
+        : '값을 고치면 자동으로 저장됩니다. 다른 기기와 공유하려면 [백업] 파일을 옮겨 [복원] 하세요.');
+
+  // 모바일 상단 표시
+  const m = $('#syncMobile');
+  if (m) {
+    m.dataset.state = state.sync;
+    m.textContent = state.sync === 'dirty' ? '저장 중…'
+                  : state.sync === 'error' ? '저장 실패'
+                  : '저장됨' + when;
+  }
 }
 
 /* ── 화면 정의 ──────────────────────────────────────── */
@@ -793,7 +849,7 @@ function resetAll() {
 function applyTheme(t) {
   if (t) document.documentElement.dataset.theme = t;
   else delete document.documentElement.dataset.theme;
-  localStorage.setItem('everest-theme', t || '');
+  store.set('everest-theme', t || '');
 }
 function toggleTheme() {
   const cur = document.documentElement.dataset.theme;
@@ -802,7 +858,7 @@ function toggleTheme() {
 }
 
 async function boot() {
-  applyTheme(localStorage.getItem('everest-theme') || '');
+  applyTheme(store.get('everest-theme') || '');
 
   let payload = null;
   // ① 단일 HTML 파일 모드 — 데이터가 파일 안에 들어 있으면 그대로 사용 (인터넷·서버 불필요)
@@ -828,9 +884,12 @@ async function boot() {
   }
   state.base = payload.dataset;
 
-  const local = (() => { try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (_) { return null; } })();
+  const local = (() => { try { return JSON.parse(store.get(LS_KEY) || 'null'); } catch (_) { return null; } })();
   state.ov = { ...emptyOv(), ...(payload.overrides || local || {}) };
   state.sync = state.serverOk ? 'synced' : 'local';
+
+  // 브라우저가 저장을 받아주는지 미리 확인 → 못 쓰면 바로 알림
+  if (!state.serverOk && !saveLocal()) warnIfCannotSave(false);
 
   recalc();
   buildNav();
@@ -845,6 +904,9 @@ async function boot() {
   if (!self.EMBEDDED_DATASET) {
     ['#linkSingle', '#popSingle'].forEach((sel) => { const n = $(sel); if (n) n.hidden = false; });
   }
+
+  const warnBox = $('#saveWarnClose');
+  if (warnBox) warnBox.onclick = () => { $('#saveWarn').hidden = true; };
 
   $('#btnTheme').onclick = toggleTheme;
   $('#btnExcel').onclick = downloadExcel;
