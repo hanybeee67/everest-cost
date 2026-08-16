@@ -28,8 +28,7 @@
     <div class="sidebar-foot">
       <div class="sync" id="syncBox"><span class="dot"></span><span id="syncText">동기화됨</span></div>
       <button class="btn btn-primary btn-block" id="btnExcel">엑셀 내려받기</button>
-      <a class="btn btn-block btn-center" id="linkSingle" href="/downloads/에베레스트_원가분석_단일파일.html"
-         download="에베레스트_원가분석.html" hidden>단일 파일로 저장</a>
+      <button class="btn btn-block" id="btnPortable">이 값 그대로 파일 저장</button>
       <div class="row-2">
         <button class="btn btn-ghost" id="btnBackup">백업</button>
         <button class="btn btn-ghost" id="btnRestore">복원</button>
@@ -81,8 +80,7 @@
   <!-- ══════════ 모바일 더보기 ══════════ -->
   <div class="popover" id="morePop" hidden>
     <button data-act="excel">엑셀 내려받기</button>
-    <a data-act="single" id="popSingle" href="/downloads/에베레스트_원가분석_단일파일.html"
-       download="에베레스트_원가분석.html" hidden>단일 파일로 저장</a>
+    <button data-act="portable">이 값 그대로 파일 저장</button>
     <button data-act="backup">백업 파일 저장</button>
     <button data-act="restore">백업 복원</button>
     <button data-act="reset" class="danger">수정값 초기화</button>
@@ -91,6 +89,7 @@
   <div class="toast" id="toast" hidden></div>
 </div>
 
+<script id="ovData" type="application/json">null</script>
 <script src="/calc.js"></script>
 <script src="/app.js"></script>
 </body>

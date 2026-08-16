@@ -32,6 +32,7 @@ const state = {
   filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '' },
   sync: 'synced',
   savedAt: null,
+  loadedFromFile: false,
   serverOk: true,
 };
 function emptyOv() {
@@ -95,7 +96,18 @@ function scheduleSave() {
 }
 
 /** 브라우저 저장 — 성공하면 true */
-function saveLocal() { return store.set(LS_KEY, JSON.stringify(state.ov)); }
+function saveLocal() {
+  return store.set(LS_KEY, JSON.stringify({ savedAt: new Date().toISOString(), ov: state.ov }));
+}
+/** 저장된 값 읽기 — 예전 형식(수정값만 저장)도 그대로 읽는다 */
+function readLocal() {
+  try {
+    const j = JSON.parse(store.get(LS_KEY) || 'null');
+    if (!j) return null;
+    if (j.ov) return { ov: j.ov, savedAt: j.savedAt || null };
+    return { ov: j, savedAt: null };                 // 예전 형식
+  } catch (_) { return null; }
+}
 
 async function save() {
   const okLocal = saveLocal();
@@ -166,6 +178,38 @@ function paintSync() {
                   : state.sync === 'error' ? '저장 실패'
                   : '저장됨' + when;
   }
+}
+
+/* ── 어떤 값으로 시작할지 고르기 ──────────────────────
+   ① 서버 값이 있으면 그것
+   ② 없으면, 파일에 담겨 온 값과 이 브라우저에 저장된 값 중 "더 최근" 것
+      (다른 PC에서 받은 파일을 열면 그 파일의 값이, 쓰던 PC에서 다시 열면
+       그동안 고친 값이 자연스럽게 이어진다) */
+function readEmbeddedOv() {
+  const tag = document.getElementById('ovData');
+  if (!tag) return null;
+  try {
+    const j = JSON.parse(tag.textContent || 'null');
+    if (!j || !j.ov) return null;
+    return { ov: j.ov, savedAt: j.savedAt || null };
+  } catch (_) { return null; }
+}
+function pickOverrides(serverOv) {
+  if (serverOv && Object.keys(serverOv).some((k) => Object.keys(serverOv[k] || {}).length))
+    return { ...emptyOv(), ...serverOv };
+
+  const fromFile = readEmbeddedOv();
+  const fromHere = readLocal();
+  if (fromFile && fromHere) {
+    const tf = Date.parse(fromFile.savedAt || 0) || 0;
+    const th = Date.parse(fromHere.savedAt || 0) || 0;
+    const win = tf > th ? fromFile : fromHere;
+    if (win === fromFile) state.loadedFromFile = true;
+    return { ...emptyOv(), ...win.ov };
+  }
+  if (fromFile) { state.loadedFromFile = true; return { ...emptyOv(), ...fromFile.ov }; }
+  if (fromHere) return { ...emptyOv(), ...fromHere.ov };
+  return { ...emptyOv(), ...(serverOv || {}) };
 }
 
 /* ── 화면 정의 ──────────────────────────────────────── */
@@ -829,6 +873,47 @@ function loadScript(src, ready) {
     document.head.appendChild(s);
   });
 }
+/* 지금 화면의 값까지 통째로 담은 HTML 파일을 만든다.
+   이 파일 하나만 다른 PC로 옮기면 값 그대로 이어서 쓸 수 있다. */
+async function savePortable() {
+  toast('파일을 만드는 중…');
+  try {
+    const stamp = { savedAt: new Date().toISOString(), ov: state.ov };
+    let html;
+
+    if (self.EMBEDDED_DATASET) {
+      // 단일 파일 모드 — 지금 문서를 복제해서 값만 갈아 끼운다
+      const doc = document.documentElement.cloneNode(true);
+      const clear = (sel) => { const n = doc.querySelector(sel); if (n) n.innerHTML = ''; };
+      ['#viewRoot', '#navDesktop', '#navMobile', '#sheetBody'].forEach(clear);   // 그려진 화면은 뺀다
+      const setHidden = (sel, v) => { const n = doc.querySelector(sel); if (n) v ? n.setAttribute('hidden', '') : n.removeAttribute('hidden'); };
+      setHidden('#boot', false); setHidden('#app', true);
+      setHidden('#sheet', true); setHidden('#sheetBackdrop', true);
+      setHidden('#morePop', true); setHidden('#toast', true); setHidden('#saveWarn', true);
+      const tag = doc.querySelector('#ovData');
+      if (tag) tag.textContent = JSON.stringify(stamp);
+      html = '<!doctype html>\n' + doc.outerHTML;
+    } else {
+      // 서버 / 정적 모드 — 기본 단일 파일을 받아 값만 끼워 넣는다
+      const res = await fetch('downloads/에베레스트_원가분석_단일파일.html');
+      if (!res.ok) throw new Error(res.status);
+      const base = await res.text();
+      html = base.replace(/(<script id="ovData"[^>]*>)[\s\S]*?(<\/script>)/,
+                          (_m, a, b) => a + JSON.stringify(stamp) + b);
+    }
+
+    const a = el('a');
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    a.download = `에베레스트_원가분석_${new Date().toISOString().slice(0, 10)}.html`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast('저장했습니다 — 이 파일만 옮기면 값도 함께 갑니다');
+  } catch (err) {
+    console.error(err);
+    toast('파일 생성에 실패했습니다');
+  }
+}
+
 function backup() {
   const blob = new Blob([JSON.stringify(state.ov, null, 2)], { type: 'application/json' });
   const a = el('a');
@@ -884,8 +969,7 @@ async function boot() {
   }
   state.base = payload.dataset;
 
-  const local = (() => { try { return JSON.parse(store.get(LS_KEY) || 'null'); } catch (_) { return null; } })();
-  state.ov = { ...emptyOv(), ...(payload.overrides || local || {}) };
+  state.ov = pickOverrides(payload.overrides);
   state.sync = state.serverOk ? 'synced' : 'local';
 
   // 브라우저가 저장을 받아주는지 미리 확인 → 못 쓰면 바로 알림
@@ -899,17 +983,14 @@ async function boot() {
 
   $('#boot').hidden = true;
   $('#app').hidden = false;
-
-  // 단일 HTML 파일로 저장하는 링크 — 단일 파일 안에서는 의미가 없으니 감춘다
-  if (!self.EMBEDDED_DATASET) {
-    ['#linkSingle', '#popSingle'].forEach((sel) => { const n = $(sel); if (n) n.hidden = false; });
-  }
+  if (state.loadedFromFile) setTimeout(() => toast('파일에 담겨 온 수정값을 불러왔습니다'), 400);
 
   const warnBox = $('#saveWarnClose');
   if (warnBox) warnBox.onclick = () => { $('#saveWarn').hidden = true; };
 
   $('#btnTheme').onclick = toggleTheme;
   $('#btnExcel').onclick = downloadExcel;
+  $('#btnPortable').onclick = savePortable;
   $('#btnBackup').onclick = backup;
   $('#btnRestore').onclick = restore;
   $('#btnReset').onclick = resetAll;
@@ -933,12 +1014,10 @@ async function boot() {
   $('#btnMenu').onclick = (e) => { e.stopPropagation(); pop.hidden = !pop.hidden; };
   document.addEventListener('click', () => { pop.hidden = true; });
   pop.addEventListener('click', (e) => e.stopPropagation());
-  const popLink = $('#popSingle');
-  if (popLink) popLink.onclick = () => { pop.hidden = true; };
   pop.querySelectorAll('button').forEach((b) => {
     b.onclick = () => {
       pop.hidden = true;
-      ({ excel: downloadExcel, backup, restore, reset: resetAll }[b.dataset.act] || (() => {}))();
+      ({ excel: downloadExcel, portable: savePortable, backup, restore, reset: resetAll }[b.dataset.act] || (() => {}))();
     };
   });
 

@@ -59,6 +59,7 @@ ${css}
 
 ${bodyInner}
 
+<script id="ovData" type="application/json">null</script>
 <script>${safe(excelJs)}</script>
 <script>window.EMBEDDED_DATASET = ${safe(JSON.stringify(dataset))};</script>
 <script>${safe(calcJs)}</script>
