@@ -38,11 +38,63 @@ const state = {
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
+/* ── 되돌리기 / 다시 실행 ──────────────────────────────
+   값을 바꾸기 직전 상태를 쌓아 둔다. 실수로 지워도 Ctrl+Z 로 복구된다.
+   메모리를 위해 최근 것만 남기고, 문자열로 보관해 참조가 얽히지 않게 한다. */
+const HISTORY_MAX = 30;
+const history = { undo: [], redo: [], snapshot: null };
+
+function pushHistory(label) {
+  if (history.snapshot === null) return;
+  history.undo.push({ json: history.snapshot, label: label || '수정' });
+  if (history.undo.length > HISTORY_MAX) history.undo.shift();
+  history.redo.length = 0;                       // 새로 바꾸면 「다시 실행」은 무효
+}
+function takeSnapshot() { history.snapshot = JSON.stringify(state.data); }
+
+function undo() {
+  if (!history.undo.length) return;
+  const step = history.undo.pop();
+  history.redo.push({ json: JSON.stringify(state.data), label: step.label });
+  state.data = JSON.parse(step.json);
+  afterTimeTravel(`되돌렸습니다 — ${step.label}`);
+}
+function redo() {
+  if (!history.redo.length) return;
+  const step = history.redo.pop();
+  history.undo.push({ json: JSON.stringify(state.data), label: step.label });
+  state.data = JSON.parse(step.json);
+  afterTimeTravel(`다시 적용했습니다 — ${step.label}`);
+}
+function afterTimeTravel(msg) {
+  takeSnapshot();
+  recalc();
+  markDirty();
+  scheduleSave();
+  closeSheet();
+  render();
+  toast(msg);
+}
+function paintHistoryButtons() {
+  const u = $('#btnUndo'), r = $('#btnRedo');
+  if (u) { u.disabled = !history.undo.length;
+           u.title = history.undo.length ? `되돌리기 — ${history.undo[history.undo.length - 1].label} (Ctrl+Z)` : '되돌릴 내용이 없습니다'; }
+  if (r) { r.disabled = !history.redo.length;
+           r.title = history.redo.length ? `다시 실행 (Ctrl+Shift+Z)` : '다시 실행할 내용이 없습니다'; }
+}
+
 /* ── 계산 · 저장 트리거 ─────────────────────────────── */
 function merged() { return state.data; }
 function recalc() { state.result = Calc.compute(state.data); }
-/** 데이터를 바꾼 뒤 반드시 호출 — 다시 계산하고 자동 저장을 예약한다 */
-function commit() { recalc(); markDirty(); scheduleSave(); }
+/** 데이터를 바꾼 뒤 반드시 호출 — 직전 상태를 쌓고, 다시 계산하고, 자동 저장을 예약한다 */
+function commit(label) {
+  pushHistory(label);
+  takeSnapshot();
+  recalc();
+  markDirty();
+  scheduleSave();
+  paintHistoryButtons();
+}
 
 /* ── 원본과 달라졌는지 (노란 테두리 표시용) ─────────── */
 const baseIng  = (n) => (state.base.ingredients || []).find((x) => x.name === n);
@@ -60,13 +112,13 @@ function uniqueName(list, want) {
 function addIngredient() {
   const name = uniqueName(state.data.ingredients, '새 식재료');
   state.data.ingredients.push({ name, price: 0, pack_qty: 1, unit: 'kg', weight_g: 1000 });
-  commit(); render({ keepScroll: true });
+  commit('식재료 추가'); render({ keepScroll: true });
   focusRowNamed(name);
 }
 function addPrep() {
   const name = uniqueName(state.data.preps, '새 프렙');
   state.data.preps.push({ name, yield_g: 1000, yield_rate: 1, items: [] });
-  commit(); render({ keepScroll: true });
+  commit('프렙 추가'); render({ keepScroll: true });
 }
 function addMenu(name, category, price) {
   const nm = uniqueName(state.data.menus, name || '새 메뉴');
@@ -78,13 +130,13 @@ function addMenu(name, category, price) {
     en: '', time: '', serving: '1인분 기준', price: Number(price) || 0,
     lines: [], steps: [], garnish: '',
   });
-  commit();
+  commit('메뉴 추가');
   return nm;
 }
 function addFixedCost() {
   const name = uniqueName(state.data.fixedCosts, '새 비용 항목');
   state.data.fixedCosts.push({ name, amount: 0, include: true, note: '' });
-  commit(); render({ keepScroll: true });
+  commit('비용 항목 추가'); render({ keepScroll: true });
 }
 /** 이름을 바꿀 때 이 이름을 참조하던 곳도 같이 고쳐 준다 */
 function renameRef(kind, oldName, newName) {
@@ -102,7 +154,7 @@ function usageOf(kind, name) {
   state.data.preps.forEach((p) => { if (p.items.some((i) => i.kind === kind && i.name === name)) out.push(p.name); });
   return out;
 }
-function removeAt(list, ix) { list.splice(ix, 1); commit(); render({ keepScroll: true }); }
+function removeAt(list, ix, label) { list.splice(ix, 1); commit(label || '삭제'); render({ keepScroll: true }); }
 
 function focusRowNamed(name) {
   setTimeout(() => {
@@ -302,6 +354,13 @@ function go(id) {
 }
 
 /* ── 렌더 ───────────────────────────────────────────── */
+function paintLicense() {
+  const n = $('#licenseFoot');
+  if (!n) return;
+  const line = licenseLine();
+  n.textContent = line;
+  n.hidden = !line;
+}
 function paintBrand() {
   const b = $('#brandName');
   if (b) b.textContent = (state.data.meta.brand || '우리 매장');
@@ -322,6 +381,8 @@ function render(opts = {}) {
   root.scrollTop = keep;
   paintSync();
   paintBrand();
+  paintLicense();
+  paintHistoryButtons();
 }
 
 /* ── 공통 조각 ──────────────────────────────────────── */
@@ -523,6 +584,9 @@ function viewMenu(root) {
   gsel.value = f.grade;
   gsel.onchange = () => { f.grade = gsel.value; paint(); };
   bar1.appendChild(gsel);
+  const pAll = el('button', 'btn', '🖨 레시피 카드 인쇄');
+  pAll.onclick = () => printCards(list().map((m) => m.name));
+  bar1.appendChild(pAll);
   root.appendChild(bar1);
 
   const chips = el('div', 'chips');
@@ -599,7 +663,7 @@ function viewMenu(root) {
       const act = el('td', 'act');
       act.appendChild(delButton(m.name, () => {
         if (!confirmDelete(m.name, usageOf('메뉴', m.name))) return;
-        removeAt(state.data.menus, state.data.menus.findIndex((x) => x.name === m.name));
+        removeAt(state.data.menus, state.data.menus.findIndex((x) => x.name === m.name), `메뉴 삭제 — ${m.name}`);
       }));
       tr.appendChild(act);
       tr.onclick = () => openMenu(m.name);
@@ -804,7 +868,7 @@ function openMenu(name) {
     row.appendChild(cst);
 
     const del = el('div', 'c-del');
-    del.appendChild(delButton(dl.name || '재료', () => { d.lines.splice(ix, 1); commit(); redraw(); }));
+    del.appendChild(delButton(dl.name || '재료', () => { d.lines.splice(ix, 1); commit(`재료 삭제 — ${dl.name}`); redraw(); }));
     row.appendChild(del);
 
     lines.appendChild(row);
@@ -851,14 +915,20 @@ function openMenu(name) {
   gBox.onchange = () => { d.garnish = gBox.value.trim(); commit(); redraw(); };
   body.appendChild(gBox);
 
+  /* ── 인쇄 ── */
+  const pbtn = el('button', 'btn btn-block', '🖨  이 메뉴 레시피 카드 인쇄');
+  pbtn.style.marginTop = '22px';
+  pbtn.onclick = () => printCards([d.name]);
+  body.appendChild(pbtn);
+
   /* ── 메뉴 삭제 ── */
   const danger = el('button', 'btn btn-block btn-danger', '이 메뉴 삭제');
-  danger.style.marginTop = '22px';
+  danger.style.marginTop = '10px';
   danger.onclick = () => {
     if (!confirmDelete(d.name, usageOf('메뉴', d.name))) return;
     const ix = state.data.menus.findIndex((x) => x === d);
     state.data.menus.splice(ix, 1);
-    commit(); closeSheet(); render({ keepScroll: true });
+    commit(`메뉴 삭제 — ${d.name}`); closeSheet(); render({ keepScroll: true });
   };
   body.appendChild(danger);
 
@@ -947,7 +1017,7 @@ function viewIng(root) {
       const act = el('td', 'act');
       act.appendChild(delButton(d.name, () => {
         if (!confirmDelete(d.name, usageOf('식재료', d.name))) return;
-        removeAt(state.data.ingredients, ix);
+        removeAt(state.data.ingredients, ix, `식재료 삭제 — ${d.name}`);
       }));
       tr.appendChild(act);
       t.tbody.appendChild(tr);
@@ -967,6 +1037,82 @@ function viewIng(root) {
     host.appendChild(c.card);
   }
   paint();
+}
+
+/* ═══════════════ 레시피 카드 인쇄 ═══════════════
+   주방에 붙일 A4 카드를 만든다. 브라우저 인쇄에서 「PDF로 저장」도 된다. */
+function printCards(names) {
+  const r = state.result;
+  const list = (names && names.length ? names : r.menus.map((m) => m.name))
+    .map((n) => r.menus.find((m) => m.name === n)).filter(Boolean);
+  if (!list.length) { toast('인쇄할 메뉴가 없습니다'); return; }
+
+  const root = $('#printRoot');
+  root.innerHTML = '';
+  const brand = state.data.meta.brand || '';
+  const lic = licenseLine();
+
+  const wmText = (() => { const l = licenseInfo(); return l ? `${l.licensee}${l.licenseId ? '\n' + l.licenseId : ''}` : ''; })();
+  list.forEach((m) => {
+    const card = el('article', 'pcard');
+    if (wmText) card.dataset.wmtext = wmText;
+    const rows = m.lines.map((l) => `
+      <tr>
+        <td>${l.kind === '식재료' ? '' : `<span class="pk">${l.kind}</span> `}${l.name}</td>
+        <td class="r">${l.kind === '메뉴' ? `${l.qty}개` : `${won1(l.qty)}g`}</td>
+        <td class="r">${l.kind === '식재료' || l.kind === '프렙' ? pct(l.yield || 1, 0) : '–'}</td>
+        <td class="r">${l.kind === '무료' ? '0' : won3(l.unitCost)}</td>
+        <td class="r b">${won1(l.cost)}</td>
+      </tr>`).join('');
+
+    card.innerHTML = `
+      <header class="ph">
+        <div>
+          <h1>${m.name}</h1>
+          <p>${[m.icon + ' ' + m.category, m.en, m.serving, m.time].filter(Boolean).join(' · ')}</p>
+        </div>
+        <div class="pbrand">${brand}</div>
+      </header>
+
+      <div class="pkpi">
+        <div><span>판매가</span><b>${m.hasPrice ? won(m.price) : '–'}</b></div>
+        <div><span>공급가액</span><b>${m.hasPrice ? won(m.net) : '–'}</b></div>
+        <div><span>식재료 원가</span><b>${won(m.foodCost)}</b></div>
+        <div><span>원가율</span><b class="${m.grade.key}">${m.hasPrice ? pct(m.foodRate) : '–'}</b></div>
+        <div><span>총원가</span><b>${won(m.totalCost)}</b></div>
+        <div><span>마진</span><b>${m.hasPrice ? won(m.margin) : '–'}</b></div>
+      </div>
+
+      <h2>재료</h2>
+      <table class="ptab">
+        <thead><tr><th>재료 / 구성</th><th class="r">사용량</th><th class="r">수율</th>
+                   <th class="r">g당 단가</th><th class="r">재료비</th></tr></thead>
+        <tbody>${rows}
+          <tr class="psum"><td>합 계</td><td></td><td></td><td></td><td class="r b">${won1(m.foodCost)}</td></tr>
+        </tbody>
+      </table>
+
+      ${m.steps && m.steps.length ? `<h2>조리 방법</h2><ol class="psteps">${m.steps.map((x) => `<li>${x}</li>`).join('')}</ol>` : ''}
+      ${m.garnish ? `<h2>가니쉬 · 플레이팅</h2><p class="pgar">${m.garnish}</p>` : ''}
+
+      <footer class="pf">
+        <span>${brand}${brand ? ' · ' : ''}${new Date().toLocaleDateString('ko-KR')} 기준</span>
+        <span>${lic}</span>
+      </footer>`;
+    root.appendChild(card);
+  });
+
+  const li = licenseInfo();
+  root.dataset.wm = li ? `${li.licensee}${li.licenseId ? ' · ' + li.licenseId : ''}` : '';
+  document.body.classList.add('printing');
+  const done = () => {
+    document.body.classList.remove('printing');
+    root.innerHTML = '';
+    removeEventListener('afterprint', done);
+  };
+  addEventListener('afterprint', done);
+  setTimeout(() => window.print(), 60);
+  setTimeout(() => { if (document.body.classList.contains('printing')) done(); }, 60000);
 }
 
 /* ═══════════════ 일괄 입력 ═══════════════
@@ -1159,7 +1305,7 @@ function openImport(kind) {
 
   btnApply.onclick = () => {
     const { added, updated } = spec.apply(parsed);
-    commit();
+    commit(`${spec.title} (${parsed.length}건)`);
     closeSheet();
     render({ keepScroll: true });
     toast(`${added}건 추가, ${updated}건 갱신했습니다`);
@@ -1197,7 +1343,7 @@ function viewPrep(root) {
     head.appendChild(el('div', 'sub', `투입 ${won(p.inputG)}g · 총 ${won(p.totalCost)}원 · g당 ${won3(p.unitCost)}원`));
     head.appendChild(delButton(d.name, () => {
       if (!confirmDelete(d.name, usageOf('프렙', d.name))) return;
-      removeAt(state.data.preps, px);
+      removeAt(state.data.preps, px, `프렙 삭제 — ${d.name}`);
     }));
     c.card.insertBefore(head, c.body);
 
@@ -1219,7 +1365,7 @@ function viewPrep(root) {
       cs.style.fontWeight = '700';
       tr.appendChild(cs);
       const act = el('td', 'act');
-      act.appendChild(delButton(di.name, () => removeAt(d.items, ix)));
+      act.appendChild(delButton(di.name, () => removeAt(d.items, ix, `프렙 재료 삭제 — ${di.name}`)));
       tr.appendChild(act);
       t.tbody.appendChild(tr);
     });
@@ -1335,7 +1481,7 @@ function viewFix(root) {
     const act = el('td', 'act');
     act.appendChild(delButton(d.name, () => {
       if (!confirm(`「${d.name}」 항목을 지울까요?`)) return;
-      removeAt(state.data.fixedCosts, ix);
+      removeAt(state.data.fixedCosts, ix, `비용 항목 삭제 — ${d.name}`);
     }));
     tr.appendChild(act);
     t.tbody.appendChild(tr);
@@ -1457,6 +1603,16 @@ function viewFix(root) {
 
   /* ── 라이선스 · 오픈소스 고지 ── */
   const s5 = card('라이선스 · 오픈소스 고지', '재배포 시 이 고지가 함께 제공되어야 합니다');
+  const li = licenseInfo();
+  if (li) {
+    const box = el('div', 'notebox');
+    box.style.cssText = 'margin:0 0 14px;background:var(--accent-soft);color:var(--accent-ink);border-color:transparent';
+    box.innerHTML = `<b>이 파일의 사용권자</b><br>
+      ${li.licensee}${li.licenseId ? ` &nbsp;·&nbsp; 발급번호 <span style="font-family:var(--mono)">${li.licenseId}</span>` : ''}
+      ${li.issuedAt ? ` &nbsp;·&nbsp; ${li.issuedAt} 발급` : ''}<br>
+      <span style="font-size:12px;opacity:.85">이 파일은 위 사용권자에게 발급된 것입니다. 무단 복제·재배포는 허가 조건 위반입니다.</span>`;
+    s5.body.appendChild(box);
+  }
   const lic = el('div');
   lic.style.cssText = 'font-size:13px;color:var(--muted);line-height:1.8';
   lic.innerHTML = `
@@ -1533,6 +1689,20 @@ const HINT = {
   '식재료 단가 미입력': '[식재료] 화면에서 구매가격을 입력하세요.',
   '식재료 규격 미입력': '[식재료] 화면에서 총중량(g)을 입력하세요. 개당 판매 품목이면 그대로 두어도 됩니다.',
 };
+
+/* 사용권 정보는 파일에 새겨진 값을 쓴다.
+   데이터(백업/복원)와 분리해 두어 복원해도 지워지지 않는다. */
+function licenseInfo() {
+  const f = self.LICENSE_INFO;
+  if (f && f.licensee) return f;
+  const m = (state.data && state.data.meta) || {};
+  return m.licensee ? { licensee: m.licensee, licenseId: m.licenseId, issuedAt: m.issuedAt } : null;
+}
+/** 인쇄물·화면에 넣을 사용권 한 줄 */
+function licenseLine() {
+  const l = licenseInfo();
+  return l ? `사용권자: ${l.licensee}${l.licenseId ? ` · ${l.licenseId}` : ''}` : '';
+}
 
 /* ═══════════════ 액션 ═══════════════ */
 function toast(msg) {
@@ -1638,7 +1808,7 @@ function restore() { $('#fileRestore').click(); }
 function resetAll() {
   if (!confirm('추가·수정한 내용을 모두 지우고 처음 상태로 되돌립니다. 계속할까요?')) return;
   state.data = clone(state.base);
-  commit(); render();
+  commit('처음 상태로 되돌리기'); render();
   toast('원본으로 되돌렸습니다');
 }
 
@@ -1690,6 +1860,7 @@ async function boot() {
   if (!state.serverOk && !saveLocal()) warnIfCannotSave(false);
 
   recalc();
+  takeSnapshot();
   buildNav();
   state.view = (location.hash || '').replace('#', '') || 'dash';
   if (!VIEWS.some((v) => v.id === state.view)) state.view = 'dash';
@@ -1710,7 +1881,16 @@ async function boot() {
   $('#btnReset').onclick = resetAll;
   $('#sheetClose').onclick = closeSheet;
   $('#sheetBackdrop').onclick = closeSheet;
-  addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeSheet(); $('#morePop').hidden = true; } });
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeSheet(); $('#morePop').hidden = true; return; }
+    const mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
+  });
+  $('#btnUndo').onclick = undo;
+  $('#btnRedo').onclick = redo;
 
   $('#fileRestore').onchange = async (e) => {
     const f = e.target.files[0];
@@ -1719,7 +1899,7 @@ async function boot() {
       const saved = parseSaved(await f.text());
       if (!saved) throw new Error('형식이 맞지 않습니다');
       state.data = toData(saved, state.base);
-      commit(); render();
+      commit('백업 복원'); render();
       toast('백업을 복원했습니다');
     } catch (_) { toast('백업 파일을 읽지 못했습니다'); }
     e.target.value = '';

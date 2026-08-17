@@ -93,6 +93,10 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
 
 .sidebar-foot{padding:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
 .row-2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.license-foot{
+  font-size:10.5px;color:var(--faint);text-align:center;padding:6px 2px 0;
+  border-top:1px dashed var(--line);margin-top:4px;line-height:1.5;word-break:keep-all;
+}
 .sync{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);padding:2px 4px 6px}
 .sync .dot{width:7px;height:7px;border-radius:50%;background:var(--good);flex:0 0 auto}
 .sync[data-state="dirty"] .dot{background:var(--warn)}
@@ -134,7 +138,8 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
   background:var(--surface);cursor:pointer;font-size:15px;color:var(--ink-2);
   display:grid;place-items:center;
 }
-.icon-btn:hover{background:var(--surface-2)}
+.icon-btn:hover:not(:disabled){background:var(--surface-2)}
+.icon-btn:disabled{opacity:.32;cursor:default}
 
 /* ── 저장 상태 표시 ───────────────────────────────── */
 .sync-pill{
@@ -439,4 +444,66 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .line-foot .c-cost{background:transparent;padding:0}
 }
 @media (min-width:861px){ .cards{display:none} .mobile-only{display:none} }
+
+/* ══════════ 레시피 카드 인쇄 ══════════ */
+/* 사용권자가 새겨진 파일이면 인쇄물에 옅은 워터마크를 깐다 */
+#printRoot[data-wm]:not([data-wm=""]) .pcard{position:relative}
+#printRoot[data-wm]:not([data-wm=""]) .pcard::before{
+  content:attr(data-wmtext);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:34pt;font-weight:800;color:rgba(15,23,42,.045);transform:rotate(-28deg);
+  pointer-events:none;white-space:pre;letter-spacing:.05em;z-index:0;
+}
+#printRoot .pcard > *{position:relative;z-index:1}
+
+#printRoot{display:none}
+body.printing #printRoot{display:block}
+
+.pcard{
+  background:#fff;color:#0f172a;padding:14mm 14mm 12mm;
+  font-family:var(--font);line-height:1.55;
+}
+.pcard + .pcard{border-top:1px dashed #cbd5e1}
+.ph{display:flex;align-items:flex-start;gap:12px;border-bottom:2px solid #0f766e;padding-bottom:8px}
+.ph h1{font-size:22pt;font-weight:800;margin:0;letter-spacing:-.02em}
+.ph p{margin:3px 0 0;font-size:9pt;color:#64748b}
+.pbrand{margin-left:auto;font-size:9pt;font-weight:750;color:#0f766e;white-space:nowrap;padding-top:4px}
+
+.pkpi{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0 4px}
+.pkpi div{background:#f1f5f9;border-radius:6px;padding:6px 8px;text-align:center}
+.pkpi span{display:block;font-size:7.5pt;color:#64748b;font-weight:600}
+.pkpi b{display:block;font-size:11.5pt;font-weight:800;margin-top:1px;font-variant-numeric:tabular-nums}
+.pkpi b.good{color:#047857} .pkpi b.warn{color:#b45309} .pkpi b.bad{color:#be123c}
+
+.pcard h2{font-size:10pt;font-weight:800;color:#0f766e;margin:14px 0 5px;
+          border-bottom:1px solid #e2e8f0;padding-bottom:3px}
+.ptab{width:100%;border-collapse:collapse;font-size:9.5pt}
+.ptab th{background:#f8fafc;color:#64748b;font-size:8pt;font-weight:700;padding:5px 7px;
+         border-bottom:1px solid #cbd5e1;text-align:left}
+.ptab td{padding:5px 7px;border-bottom:1px solid #eef2f7}
+.ptab .r{text-align:right;font-variant-numeric:tabular-nums}
+.ptab .b{font-weight:750}
+.ptab .psum td{background:#f1f5f9;font-weight:800;border-top:1px solid #cbd5e1}
+.pk{display:inline-block;padding:0 5px;border-radius:99px;background:#ccfbf1;color:#0f766e;
+    font-size:7.5pt;font-weight:750}
+
+.psteps{margin:0;padding-left:18px;font-size:10pt}
+.psteps li{margin:3px 0}
+.pgar{font-size:10pt;background:#f8fafc;border-left:3px solid #0d9488;padding:7px 10px;margin:0}
+.pf{display:flex;justify-content:space-between;gap:10px;margin-top:14px;padding-top:6px;
+    border-top:1px solid #e2e8f0;font-size:7.5pt;color:#94a3b8}
+
+@media print{
+  @page{size:A4 portrait;margin:0}
+  html,body{background:#fff !important}
+  body.printing > #app,
+  body.printing .sheet,
+  body.printing .sheet-backdrop,
+  body.printing .toast,
+  body.printing .popover{display:none !important}
+  body.printing #printRoot{display:block}
+  .pcard{page-break-after:always;break-after:page;min-height:297mm}
+  .pcard:last-child{page-break-after:auto;break-after:auto}
+  .pcard + .pcard{border-top:0}
+  .ptab,.psteps,.pkpi{page-break-inside:avoid;break-inside:avoid}
+}
 @media (max-width:860px){ .tablewrap.desktop-only{display:none} }

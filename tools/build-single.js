@@ -9,8 +9,20 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
-const OUT = process.argv[2] || path.join(ROOT, 'public', 'downloads', '에베레스트_원가분석_단일파일.html');
-const DATA = process.argv[3] || 'data/dataset.json';
+const argv = process.argv.slice(2);
+const flag = (name) => { const i = argv.indexOf('--' + name); return i >= 0 ? argv[i + 1] : ''; };
+const positional = argv.filter((a, i) => !a.startsWith('--') && !(i > 0 && argv[i - 1].startsWith('--')));
+
+const OUT = positional[0] || path.join(ROOT, 'public', 'downloads', '에베레스트_원가분석_단일파일.html');
+const DATA = positional[1] || 'data/dataset.json';
+
+/* 사용권 정보 — 구매자별 파일을 만들 때 새겨 넣는다.
+   node tools/build-single.js 출력.html data.json --licensee "홍길동" --license-id "EC-2026-0001" */
+const LICENSE = {
+  licensee: flag('licensee'),
+  licenseId: flag('license-id'),
+  issuedAt: flag('issued') || new Date().toISOString().slice(0, 10),
+};
 
 /* ── 재료 모으기 ──────────────────────────────────────── */
 const dataset = JSON.parse(read(DATA));
@@ -51,6 +63,15 @@ const html = `<!doctype html>
    · 고친 단가는 그 브라우저에 저장됩니다.
      다른 기기로 옮기려면 [백업] 으로 JSON 을 저장해 [복원] 하세요.
    · [엑셀 내려받기] 를 누르면 지금 값 그대로 엑셀이 만들어집니다.
+${LICENSE.licensee ? `
+   ───────────────────────────────────────────────────────────
+   사용권자 : ${LICENSE.licensee}
+   발급번호 : ${LICENSE.licenseId || '-'}
+   발급일   : ${LICENSE.issuedAt}
+
+   이 파일은 위 사용권자에게 발급된 것입니다.
+   무단 복제·재배포·판매는 사용 허가 조건 위반입니다.
+   ───────────────────────────────────────────────────────────` : ''}
   ═══════════════════════════════════════════════════════════════
 -->
 <style>
@@ -62,6 +83,7 @@ ${css}
 ${bodyInner}
 
 <script id="ovData" type="application/json">null</script>
+<script>window.LICENSE_INFO = ${safe(JSON.stringify(LICENSE))};</script>
 
 <!-- ═══════════════════════════════════════════════════════════════
      오픈소스 라이선스 고지 (Third-Party Notice)
@@ -85,5 +107,6 @@ fs.writeFileSync(OUT, html, 'utf8');
 
 const kb = (fs.statSync(OUT).size / 1024).toFixed(0);
 console.log(`✅  단일 파일 생성 완료`);
+if (LICENSE.licensee) console.log(`    사용권자: ${LICENSE.licensee} · ${LICENSE.licenseId || '-'} · ${LICENSE.issuedAt}`);
 console.log(`    ${OUT}`);
 console.log(`    ${kb}KB · 메뉴 ${dataset.menus.length} · 식재료 ${dataset.ingredients.length} · 프렙 ${dataset.preps.length}`);

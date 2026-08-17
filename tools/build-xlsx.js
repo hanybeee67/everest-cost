@@ -805,6 +805,16 @@ function build(data) {
   gRow('웹·모바일', '같은 데이터로 만든 웹 버전에서는 PC·휴대폰 모두에서 단가를 수정하고 이 엑셀을 다시 내려받을 수 있습니다.', { h: 34 });
   g++;
 
+  if (data.meta.licensee) {
+    gSec('▸  사용권 정보');
+    gRow('사용권자', `${data.meta.licensee}${data.meta.licenseId ? ` · 발급번호 ${data.meta.licenseId}` : ''}` +
+                     `${data.meta.issuedAt ? ` · ${data.meta.issuedAt} 발급` : ''}`,
+         { bg: C.goodBg, lc: C.accent2 });
+    gRow('안내', '이 파일은 위 사용권자에게 발급된 것입니다. 무단 복제·재배포·판매는 사용 허가 조건 위반입니다.',
+         { bg: C.warnBg, lc: C.warn, h: 34 });
+    g++;
+  }
+
   gSec('▸  오픈소스 라이선스 고지');
   gRow('ExcelJS (MIT)', 'Copyright (c) 2014-2019 Guyon Roche · https://github.com/exceljs/exceljs — 이 파일을 만드는 데 사용되었습니다. MIT 라이선스 전문은 함께 제공되는 THIRD-PARTY-NOTICES 문서를 참고하세요.', { h: 46 });
 

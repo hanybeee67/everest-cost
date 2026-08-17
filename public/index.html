@@ -35,6 +35,7 @@
       </div>
       <button class="btn btn-ghost btn-block btn-danger" id="btnReset">수정값 초기화</button>
       <input type="file" id="fileRestore" accept="application/json" hidden>
+      <div class="license-foot" id="licenseFoot" hidden></div>
     </div>
   </aside>
 
@@ -47,6 +48,8 @@
       </div>
       <div class="topbar-actions">
         <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
+        <button class="icon-btn" id="btnUndo" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
+        <button class="icon-btn" id="btnRedo" title="다시 실행 (Ctrl+Shift+Z)" disabled>↷</button>
         <button class="icon-btn" id="btnTheme" title="화면 밝기 전환">◐</button>
         <button class="icon-btn only-mobile" id="btnMenu" title="메뉴">⋯</button>
       </div>
@@ -88,6 +91,9 @@
 
   <div class="toast" id="toast" hidden></div>
 </div>
+
+<!-- 인쇄용 레시피 카드가 그려지는 곳 (화면에는 보이지 않음) -->
+<div id="printRoot" aria-hidden="true"></div>
 
 <script id="ovData" type="application/json">null</script>
 <script src="/calc.js"></script>

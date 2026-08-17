@@ -9,13 +9,14 @@
 <!--
   ═══════════════════════════════════════════════════════════════
    우리 매장 · 메뉴 원가 분석서  (단일 파일 버전)
-   생성일 2026-08-16
+   생성일 2026-08-17
 
    · 이 파일 하나면 끝입니다. 인터넷도, 설치도, 서버도 필요 없습니다.
    · 파일을 더블클릭하면 브라우저에서 바로 열립니다.
    · 고친 단가는 그 브라우저에 저장됩니다.
      다른 기기로 옮기려면 [백업] 으로 JSON 을 저장해 [복원] 하세요.
    · [엑셀 내려받기] 를 누르면 지금 값 그대로 엑셀이 만들어집니다.
+
   ═══════════════════════════════════════════════════════════════
 -->
 <style>
@@ -114,6 +115,10 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
 
 .sidebar-foot{padding:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
 .row-2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.license-foot{
+  font-size:10.5px;color:var(--faint);text-align:center;padding:6px 2px 0;
+  border-top:1px dashed var(--line);margin-top:4px;line-height:1.5;word-break:keep-all;
+}
 .sync{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);padding:2px 4px 6px}
 .sync .dot{width:7px;height:7px;border-radius:50%;background:var(--good);flex:0 0 auto}
 .sync[data-state="dirty"] .dot{background:var(--warn)}
@@ -155,7 +160,8 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
   background:var(--surface);cursor:pointer;font-size:15px;color:var(--ink-2);
   display:grid;place-items:center;
 }
-.icon-btn:hover{background:var(--surface-2)}
+.icon-btn:hover:not(:disabled){background:var(--surface-2)}
+.icon-btn:disabled{opacity:.32;cursor:default}
 
 /* ── 저장 상태 표시 ───────────────────────────────── */
 .sync-pill{
@@ -460,6 +466,68 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .line-foot .c-cost{background:transparent;padding:0}
 }
 @media (min-width:861px){ .cards{display:none} .mobile-only{display:none} }
+
+/* ══════════ 레시피 카드 인쇄 ══════════ */
+/* 사용권자가 새겨진 파일이면 인쇄물에 옅은 워터마크를 깐다 */
+#printRoot[data-wm]:not([data-wm=""]) .pcard{position:relative}
+#printRoot[data-wm]:not([data-wm=""]) .pcard::before{
+  content:attr(data-wmtext);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:34pt;font-weight:800;color:rgba(15,23,42,.045);transform:rotate(-28deg);
+  pointer-events:none;white-space:pre;letter-spacing:.05em;z-index:0;
+}
+#printRoot .pcard > *{position:relative;z-index:1}
+
+#printRoot{display:none}
+body.printing #printRoot{display:block}
+
+.pcard{
+  background:#fff;color:#0f172a;padding:14mm 14mm 12mm;
+  font-family:var(--font);line-height:1.55;
+}
+.pcard + .pcard{border-top:1px dashed #cbd5e1}
+.ph{display:flex;align-items:flex-start;gap:12px;border-bottom:2px solid #0f766e;padding-bottom:8px}
+.ph h1{font-size:22pt;font-weight:800;margin:0;letter-spacing:-.02em}
+.ph p{margin:3px 0 0;font-size:9pt;color:#64748b}
+.pbrand{margin-left:auto;font-size:9pt;font-weight:750;color:#0f766e;white-space:nowrap;padding-top:4px}
+
+.pkpi{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0 4px}
+.pkpi div{background:#f1f5f9;border-radius:6px;padding:6px 8px;text-align:center}
+.pkpi span{display:block;font-size:7.5pt;color:#64748b;font-weight:600}
+.pkpi b{display:block;font-size:11.5pt;font-weight:800;margin-top:1px;font-variant-numeric:tabular-nums}
+.pkpi b.good{color:#047857} .pkpi b.warn{color:#b45309} .pkpi b.bad{color:#be123c}
+
+.pcard h2{font-size:10pt;font-weight:800;color:#0f766e;margin:14px 0 5px;
+          border-bottom:1px solid #e2e8f0;padding-bottom:3px}
+.ptab{width:100%;border-collapse:collapse;font-size:9.5pt}
+.ptab th{background:#f8fafc;color:#64748b;font-size:8pt;font-weight:700;padding:5px 7px;
+         border-bottom:1px solid #cbd5e1;text-align:left}
+.ptab td{padding:5px 7px;border-bottom:1px solid #eef2f7}
+.ptab .r{text-align:right;font-variant-numeric:tabular-nums}
+.ptab .b{font-weight:750}
+.ptab .psum td{background:#f1f5f9;font-weight:800;border-top:1px solid #cbd5e1}
+.pk{display:inline-block;padding:0 5px;border-radius:99px;background:#ccfbf1;color:#0f766e;
+    font-size:7.5pt;font-weight:750}
+
+.psteps{margin:0;padding-left:18px;font-size:10pt}
+.psteps li{margin:3px 0}
+.pgar{font-size:10pt;background:#f8fafc;border-left:3px solid #0d9488;padding:7px 10px;margin:0}
+.pf{display:flex;justify-content:space-between;gap:10px;margin-top:14px;padding-top:6px;
+    border-top:1px solid #e2e8f0;font-size:7.5pt;color:#94a3b8}
+
+@media print{
+  @page{size:A4 portrait;margin:0}
+  html,body{background:#fff !important}
+  body.printing > #app,
+  body.printing .sheet,
+  body.printing .sheet-backdrop,
+  body.printing .toast,
+  body.printing .popover{display:none !important}
+  body.printing #printRoot{display:block}
+  .pcard{page-break-after:always;break-after:page;min-height:297mm}
+  .pcard:last-child{page-break-after:auto;break-after:auto}
+  .pcard + .pcard{border-top:0}
+  .ptab,.psteps,.pkpi{page-break-inside:avoid;break-inside:avoid}
+}
 @media (max-width:860px){ .tablewrap.desktop-only{display:none} }
 
 </style>
@@ -490,6 +558,7 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
       </div>
       <button class="btn btn-ghost btn-block btn-danger" id="btnReset">수정값 초기화</button>
       <input type="file" id="fileRestore" accept="application/json" hidden>
+      <div class="license-foot" id="licenseFoot" hidden></div>
     </div>
   </aside>
 
@@ -502,6 +571,8 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
       </div>
       <div class="topbar-actions">
         <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
+        <button class="icon-btn" id="btnUndo" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
+        <button class="icon-btn" id="btnRedo" title="다시 실행 (Ctrl+Shift+Z)" disabled>↷</button>
         <button class="icon-btn" id="btnTheme" title="화면 밝기 전환">◐</button>
         <button class="icon-btn only-mobile" id="btnMenu" title="메뉴">⋯</button>
       </div>
@@ -544,7 +615,11 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   <div class="toast" id="toast" hidden></div>
 </div>
 
+<!-- 인쇄용 레시피 카드가 그려지는 곳 (화면에는 보이지 않음) -->
+<div id="printRoot" aria-hidden="true"></div>
+
 <script id="ovData" type="application/json">null</script>
+<script>window.LICENSE_INFO = {"licensee":"","licenseId":"","issuedAt":"2026-08-17"};</script>
 
 <!-- ═══════════════════════════════════════════════════════════════
      오픈소스 라이선스 고지 (Third-Party Notice)
@@ -1605,6 +1680,16 @@ function build(data) {
   gRow('웹·모바일', '같은 데이터로 만든 웹 버전에서는 PC·휴대폰 모두에서 단가를 수정하고 이 엑셀을 다시 내려받을 수 있습니다.', { h: 34 });
   g++;
 
+  if (data.meta.licensee) {
+    gSec('▸  사용권 정보');
+    gRow('사용권자', `${data.meta.licensee}${data.meta.licenseId ? ` · 발급번호 ${data.meta.licenseId}` : ''}` +
+                     `${data.meta.issuedAt ? ` · ${data.meta.issuedAt} 발급` : ''}`,
+         { bg: C.goodBg, lc: C.accent2 });
+    gRow('안내', '이 파일은 위 사용권자에게 발급된 것입니다. 무단 복제·재배포·판매는 사용 허가 조건 위반입니다.',
+         { bg: C.warnBg, lc: C.warn, h: 34 });
+    g++;
+  }
+
   gSec('▸  오픈소스 라이선스 고지');
   gRow('ExcelJS (MIT)', 'Copyright (c) 2014-2019 Guyon Roche · https://github.com/exceljs/exceljs — 이 파일을 만드는 데 사용되었습니다. MIT 라이선스 전문은 함께 제공되는 THIRD-PARTY-NOTICES 문서를 참고하세요.', { h: 46 });
 
@@ -1688,11 +1773,63 @@ const state = {
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
+/* ── 되돌리기 / 다시 실행 ──────────────────────────────
+   값을 바꾸기 직전 상태를 쌓아 둔다. 실수로 지워도 Ctrl+Z 로 복구된다.
+   메모리를 위해 최근 것만 남기고, 문자열로 보관해 참조가 얽히지 않게 한다. */
+const HISTORY_MAX = 30;
+const history = { undo: [], redo: [], snapshot: null };
+
+function pushHistory(label) {
+  if (history.snapshot === null) return;
+  history.undo.push({ json: history.snapshot, label: label || '수정' });
+  if (history.undo.length > HISTORY_MAX) history.undo.shift();
+  history.redo.length = 0;                       // 새로 바꾸면 「다시 실행」은 무효
+}
+function takeSnapshot() { history.snapshot = JSON.stringify(state.data); }
+
+function undo() {
+  if (!history.undo.length) return;
+  const step = history.undo.pop();
+  history.redo.push({ json: JSON.stringify(state.data), label: step.label });
+  state.data = JSON.parse(step.json);
+  afterTimeTravel(`되돌렸습니다 — ${step.label}`);
+}
+function redo() {
+  if (!history.redo.length) return;
+  const step = history.redo.pop();
+  history.undo.push({ json: JSON.stringify(state.data), label: step.label });
+  state.data = JSON.parse(step.json);
+  afterTimeTravel(`다시 적용했습니다 — ${step.label}`);
+}
+function afterTimeTravel(msg) {
+  takeSnapshot();
+  recalc();
+  markDirty();
+  scheduleSave();
+  closeSheet();
+  render();
+  toast(msg);
+}
+function paintHistoryButtons() {
+  const u = $('#btnUndo'), r = $('#btnRedo');
+  if (u) { u.disabled = !history.undo.length;
+           u.title = history.undo.length ? `되돌리기 — ${history.undo[history.undo.length - 1].label} (Ctrl+Z)` : '되돌릴 내용이 없습니다'; }
+  if (r) { r.disabled = !history.redo.length;
+           r.title = history.redo.length ? `다시 실행 (Ctrl+Shift+Z)` : '다시 실행할 내용이 없습니다'; }
+}
+
 /* ── 계산 · 저장 트리거 ─────────────────────────────── */
 function merged() { return state.data; }
 function recalc() { state.result = Calc.compute(state.data); }
-/** 데이터를 바꾼 뒤 반드시 호출 — 다시 계산하고 자동 저장을 예약한다 */
-function commit() { recalc(); markDirty(); scheduleSave(); }
+/** 데이터를 바꾼 뒤 반드시 호출 — 직전 상태를 쌓고, 다시 계산하고, 자동 저장을 예약한다 */
+function commit(label) {
+  pushHistory(label);
+  takeSnapshot();
+  recalc();
+  markDirty();
+  scheduleSave();
+  paintHistoryButtons();
+}
 
 /* ── 원본과 달라졌는지 (노란 테두리 표시용) ─────────── */
 const baseIng  = (n) => (state.base.ingredients || []).find((x) => x.name === n);
@@ -1710,13 +1847,13 @@ function uniqueName(list, want) {
 function addIngredient() {
   const name = uniqueName(state.data.ingredients, '새 식재료');
   state.data.ingredients.push({ name, price: 0, pack_qty: 1, unit: 'kg', weight_g: 1000 });
-  commit(); render({ keepScroll: true });
+  commit('식재료 추가'); render({ keepScroll: true });
   focusRowNamed(name);
 }
 function addPrep() {
   const name = uniqueName(state.data.preps, '새 프렙');
   state.data.preps.push({ name, yield_g: 1000, yield_rate: 1, items: [] });
-  commit(); render({ keepScroll: true });
+  commit('프렙 추가'); render({ keepScroll: true });
 }
 function addMenu(name, category, price) {
   const nm = uniqueName(state.data.menus, name || '새 메뉴');
@@ -1728,13 +1865,13 @@ function addMenu(name, category, price) {
     en: '', time: '', serving: '1인분 기준', price: Number(price) || 0,
     lines: [], steps: [], garnish: '',
   });
-  commit();
+  commit('메뉴 추가');
   return nm;
 }
 function addFixedCost() {
   const name = uniqueName(state.data.fixedCosts, '새 비용 항목');
   state.data.fixedCosts.push({ name, amount: 0, include: true, note: '' });
-  commit(); render({ keepScroll: true });
+  commit('비용 항목 추가'); render({ keepScroll: true });
 }
 /** 이름을 바꿀 때 이 이름을 참조하던 곳도 같이 고쳐 준다 */
 function renameRef(kind, oldName, newName) {
@@ -1752,7 +1889,7 @@ function usageOf(kind, name) {
   state.data.preps.forEach((p) => { if (p.items.some((i) => i.kind === kind && i.name === name)) out.push(p.name); });
   return out;
 }
-function removeAt(list, ix) { list.splice(ix, 1); commit(); render({ keepScroll: true }); }
+function removeAt(list, ix, label) { list.splice(ix, 1); commit(label || '삭제'); render({ keepScroll: true }); }
 
 function focusRowNamed(name) {
   setTimeout(() => {
@@ -1952,6 +2089,13 @@ function go(id) {
 }
 
 /* ── 렌더 ───────────────────────────────────────────── */
+function paintLicense() {
+  const n = $('#licenseFoot');
+  if (!n) return;
+  const line = licenseLine();
+  n.textContent = line;
+  n.hidden = !line;
+}
 function paintBrand() {
   const b = $('#brandName');
   if (b) b.textContent = (state.data.meta.brand || '우리 매장');
@@ -1972,6 +2116,8 @@ function render(opts = {}) {
   root.scrollTop = keep;
   paintSync();
   paintBrand();
+  paintLicense();
+  paintHistoryButtons();
 }
 
 /* ── 공통 조각 ──────────────────────────────────────── */
@@ -2173,6 +2319,9 @@ function viewMenu(root) {
   gsel.value = f.grade;
   gsel.onchange = () => { f.grade = gsel.value; paint(); };
   bar1.appendChild(gsel);
+  const pAll = el('button', 'btn', '🖨 레시피 카드 인쇄');
+  pAll.onclick = () => printCards(list().map((m) => m.name));
+  bar1.appendChild(pAll);
   root.appendChild(bar1);
 
   const chips = el('div', 'chips');
@@ -2249,7 +2398,7 @@ function viewMenu(root) {
       const act = el('td', 'act');
       act.appendChild(delButton(m.name, () => {
         if (!confirmDelete(m.name, usageOf('메뉴', m.name))) return;
-        removeAt(state.data.menus, state.data.menus.findIndex((x) => x.name === m.name));
+        removeAt(state.data.menus, state.data.menus.findIndex((x) => x.name === m.name), `메뉴 삭제 — ${m.name}`);
       }));
       tr.appendChild(act);
       tr.onclick = () => openMenu(m.name);
@@ -2454,7 +2603,7 @@ function openMenu(name) {
     row.appendChild(cst);
 
     const del = el('div', 'c-del');
-    del.appendChild(delButton(dl.name || '재료', () => { d.lines.splice(ix, 1); commit(); redraw(); }));
+    del.appendChild(delButton(dl.name || '재료', () => { d.lines.splice(ix, 1); commit(`재료 삭제 — ${dl.name}`); redraw(); }));
     row.appendChild(del);
 
     lines.appendChild(row);
@@ -2501,14 +2650,20 @@ function openMenu(name) {
   gBox.onchange = () => { d.garnish = gBox.value.trim(); commit(); redraw(); };
   body.appendChild(gBox);
 
+  /* ── 인쇄 ── */
+  const pbtn = el('button', 'btn btn-block', '🖨  이 메뉴 레시피 카드 인쇄');
+  pbtn.style.marginTop = '22px';
+  pbtn.onclick = () => printCards([d.name]);
+  body.appendChild(pbtn);
+
   /* ── 메뉴 삭제 ── */
   const danger = el('button', 'btn btn-block btn-danger', '이 메뉴 삭제');
-  danger.style.marginTop = '22px';
+  danger.style.marginTop = '10px';
   danger.onclick = () => {
     if (!confirmDelete(d.name, usageOf('메뉴', d.name))) return;
     const ix = state.data.menus.findIndex((x) => x === d);
     state.data.menus.splice(ix, 1);
-    commit(); closeSheet(); render({ keepScroll: true });
+    commit(`메뉴 삭제 — ${d.name}`); closeSheet(); render({ keepScroll: true });
   };
   body.appendChild(danger);
 
@@ -2597,7 +2752,7 @@ function viewIng(root) {
       const act = el('td', 'act');
       act.appendChild(delButton(d.name, () => {
         if (!confirmDelete(d.name, usageOf('식재료', d.name))) return;
-        removeAt(state.data.ingredients, ix);
+        removeAt(state.data.ingredients, ix, `식재료 삭제 — ${d.name}`);
       }));
       tr.appendChild(act);
       t.tbody.appendChild(tr);
@@ -2617,6 +2772,82 @@ function viewIng(root) {
     host.appendChild(c.card);
   }
   paint();
+}
+
+/* ═══════════════ 레시피 카드 인쇄 ═══════════════
+   주방에 붙일 A4 카드를 만든다. 브라우저 인쇄에서 「PDF로 저장」도 된다. */
+function printCards(names) {
+  const r = state.result;
+  const list = (names && names.length ? names : r.menus.map((m) => m.name))
+    .map((n) => r.menus.find((m) => m.name === n)).filter(Boolean);
+  if (!list.length) { toast('인쇄할 메뉴가 없습니다'); return; }
+
+  const root = $('#printRoot');
+  root.innerHTML = '';
+  const brand = state.data.meta.brand || '';
+  const lic = licenseLine();
+
+  const wmText = (() => { const l = licenseInfo(); return l ? `${l.licensee}${l.licenseId ? '\n' + l.licenseId : ''}` : ''; })();
+  list.forEach((m) => {
+    const card = el('article', 'pcard');
+    if (wmText) card.dataset.wmtext = wmText;
+    const rows = m.lines.map((l) => `
+      <tr>
+        <td>${l.kind === '식재료' ? '' : `<span class="pk">${l.kind}</span> `}${l.name}</td>
+        <td class="r">${l.kind === '메뉴' ? `${l.qty}개` : `${won1(l.qty)}g`}</td>
+        <td class="r">${l.kind === '식재료' || l.kind === '프렙' ? pct(l.yield || 1, 0) : '–'}</td>
+        <td class="r">${l.kind === '무료' ? '0' : won3(l.unitCost)}</td>
+        <td class="r b">${won1(l.cost)}</td>
+      </tr>`).join('');
+
+    card.innerHTML = `
+      <header class="ph">
+        <div>
+          <h1>${m.name}</h1>
+          <p>${[m.icon + ' ' + m.category, m.en, m.serving, m.time].filter(Boolean).join(' · ')}</p>
+        </div>
+        <div class="pbrand">${brand}</div>
+      </header>
+
+      <div class="pkpi">
+        <div><span>판매가</span><b>${m.hasPrice ? won(m.price) : '–'}</b></div>
+        <div><span>공급가액</span><b>${m.hasPrice ? won(m.net) : '–'}</b></div>
+        <div><span>식재료 원가</span><b>${won(m.foodCost)}</b></div>
+        <div><span>원가율</span><b class="${m.grade.key}">${m.hasPrice ? pct(m.foodRate) : '–'}</b></div>
+        <div><span>총원가</span><b>${won(m.totalCost)}</b></div>
+        <div><span>마진</span><b>${m.hasPrice ? won(m.margin) : '–'}</b></div>
+      </div>
+
+      <h2>재료</h2>
+      <table class="ptab">
+        <thead><tr><th>재료 / 구성</th><th class="r">사용량</th><th class="r">수율</th>
+                   <th class="r">g당 단가</th><th class="r">재료비</th></tr></thead>
+        <tbody>${rows}
+          <tr class="psum"><td>합 계</td><td></td><td></td><td></td><td class="r b">${won1(m.foodCost)}</td></tr>
+        </tbody>
+      </table>
+
+      ${m.steps && m.steps.length ? `<h2>조리 방법</h2><ol class="psteps">${m.steps.map((x) => `<li>${x}</li>`).join('')}</ol>` : ''}
+      ${m.garnish ? `<h2>가니쉬 · 플레이팅</h2><p class="pgar">${m.garnish}</p>` : ''}
+
+      <footer class="pf">
+        <span>${brand}${brand ? ' · ' : ''}${new Date().toLocaleDateString('ko-KR')} 기준</span>
+        <span>${lic}</span>
+      </footer>`;
+    root.appendChild(card);
+  });
+
+  const li = licenseInfo();
+  root.dataset.wm = li ? `${li.licensee}${li.licenseId ? ' · ' + li.licenseId : ''}` : '';
+  document.body.classList.add('printing');
+  const done = () => {
+    document.body.classList.remove('printing');
+    root.innerHTML = '';
+    removeEventListener('afterprint', done);
+  };
+  addEventListener('afterprint', done);
+  setTimeout(() => window.print(), 60);
+  setTimeout(() => { if (document.body.classList.contains('printing')) done(); }, 60000);
 }
 
 /* ═══════════════ 일괄 입력 ═══════════════
@@ -2809,7 +3040,7 @@ function openImport(kind) {
 
   btnApply.onclick = () => {
     const { added, updated } = spec.apply(parsed);
-    commit();
+    commit(`${spec.title} (${parsed.length}건)`);
     closeSheet();
     render({ keepScroll: true });
     toast(`${added}건 추가, ${updated}건 갱신했습니다`);
@@ -2847,7 +3078,7 @@ function viewPrep(root) {
     head.appendChild(el('div', 'sub', `투입 ${won(p.inputG)}g · 총 ${won(p.totalCost)}원 · g당 ${won3(p.unitCost)}원`));
     head.appendChild(delButton(d.name, () => {
       if (!confirmDelete(d.name, usageOf('프렙', d.name))) return;
-      removeAt(state.data.preps, px);
+      removeAt(state.data.preps, px, `프렙 삭제 — ${d.name}`);
     }));
     c.card.insertBefore(head, c.body);
 
@@ -2869,7 +3100,7 @@ function viewPrep(root) {
       cs.style.fontWeight = '700';
       tr.appendChild(cs);
       const act = el('td', 'act');
-      act.appendChild(delButton(di.name, () => removeAt(d.items, ix)));
+      act.appendChild(delButton(di.name, () => removeAt(d.items, ix, `프렙 재료 삭제 — ${di.name}`)));
       tr.appendChild(act);
       t.tbody.appendChild(tr);
     });
@@ -2985,7 +3216,7 @@ function viewFix(root) {
     const act = el('td', 'act');
     act.appendChild(delButton(d.name, () => {
       if (!confirm(`「${d.name}」 항목을 지울까요?`)) return;
-      removeAt(state.data.fixedCosts, ix);
+      removeAt(state.data.fixedCosts, ix, `비용 항목 삭제 — ${d.name}`);
     }));
     tr.appendChild(act);
     t.tbody.appendChild(tr);
@@ -3107,6 +3338,16 @@ function viewFix(root) {
 
   /* ── 라이선스 · 오픈소스 고지 ── */
   const s5 = card('라이선스 · 오픈소스 고지', '재배포 시 이 고지가 함께 제공되어야 합니다');
+  const li = licenseInfo();
+  if (li) {
+    const box = el('div', 'notebox');
+    box.style.cssText = 'margin:0 0 14px;background:var(--accent-soft);color:var(--accent-ink);border-color:transparent';
+    box.innerHTML = `<b>이 파일의 사용권자</b><br>
+      ${li.licensee}${li.licenseId ? ` &nbsp;·&nbsp; 발급번호 <span style="font-family:var(--mono)">${li.licenseId}</span>` : ''}
+      ${li.issuedAt ? ` &nbsp;·&nbsp; ${li.issuedAt} 발급` : ''}<br>
+      <span style="font-size:12px;opacity:.85">이 파일은 위 사용권자에게 발급된 것입니다. 무단 복제·재배포는 허가 조건 위반입니다.</span>`;
+    s5.body.appendChild(box);
+  }
   const lic = el('div');
   lic.style.cssText = 'font-size:13px;color:var(--muted);line-height:1.8';
   lic.innerHTML = `
@@ -3183,6 +3424,20 @@ const HINT = {
   '식재료 단가 미입력': '[식재료] 화면에서 구매가격을 입력하세요.',
   '식재료 규격 미입력': '[식재료] 화면에서 총중량(g)을 입력하세요. 개당 판매 품목이면 그대로 두어도 됩니다.',
 };
+
+/* 사용권 정보는 파일에 새겨진 값을 쓴다.
+   데이터(백업/복원)와 분리해 두어 복원해도 지워지지 않는다. */
+function licenseInfo() {
+  const f = self.LICENSE_INFO;
+  if (f && f.licensee) return f;
+  const m = (state.data && state.data.meta) || {};
+  return m.licensee ? { licensee: m.licensee, licenseId: m.licenseId, issuedAt: m.issuedAt } : null;
+}
+/** 인쇄물·화면에 넣을 사용권 한 줄 */
+function licenseLine() {
+  const l = licenseInfo();
+  return l ? `사용권자: ${l.licensee}${l.licenseId ? ` · ${l.licenseId}` : ''}` : '';
+}
 
 /* ═══════════════ 액션 ═══════════════ */
 function toast(msg) {
@@ -3288,7 +3543,7 @@ function restore() { $('#fileRestore').click(); }
 function resetAll() {
   if (!confirm('추가·수정한 내용을 모두 지우고 처음 상태로 되돌립니다. 계속할까요?')) return;
   state.data = clone(state.base);
-  commit(); render();
+  commit('처음 상태로 되돌리기'); render();
   toast('원본으로 되돌렸습니다');
 }
 
@@ -3340,6 +3595,7 @@ async function boot() {
   if (!state.serverOk && !saveLocal()) warnIfCannotSave(false);
 
   recalc();
+  takeSnapshot();
   buildNav();
   state.view = (location.hash || '').replace('#', '') || 'dash';
   if (!VIEWS.some((v) => v.id === state.view)) state.view = 'dash';
@@ -3360,7 +3616,16 @@ async function boot() {
   $('#btnReset').onclick = resetAll;
   $('#sheetClose').onclick = closeSheet;
   $('#sheetBackdrop').onclick = closeSheet;
-  addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeSheet(); $('#morePop').hidden = true; } });
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeSheet(); $('#morePop').hidden = true; return; }
+    const mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
+  });
+  $('#btnUndo').onclick = undo;
+  $('#btnRedo').onclick = redo;
 
   $('#fileRestore').onchange = async (e) => {
     const f = e.target.files[0];
@@ -3369,7 +3634,7 @@ async function boot() {
       const saved = parseSaved(await f.text());
       if (!saved) throw new Error('형식이 맞지 않습니다');
       state.data = toData(saved, state.base);
-      commit(); render();
+      commit('백업 복원'); render();
       toast('백업을 복원했습니다');
     } catch (_) { toast('백업 파일을 읽지 못했습니다'); }
     e.target.value = '';
