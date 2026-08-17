@@ -51,6 +51,11 @@ services:
   #       value: "22"
   #     - key: DATA_DIR
   #       value: /var/data
+  #     # ⚠ 필수 — 설정하지 않으면 외부 접속이 전부 차단됩니다
+  #     - key: APP_PASSWORD
+  #       sync: false          # Render 대시보드에서 직접 입력
+  #     - key: SESSION_SECRET  # 없으면 재시작 때마다 로그인이 풀립니다
+  #       generateValue: true
   #   disk:                 # 유료 플랜에서만 사용 가능
   #     name: everest-cost-data
   #     mountPath: /var/data

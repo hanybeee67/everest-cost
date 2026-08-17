@@ -1749,6 +1749,13 @@ const store = {
   get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); return localStorage.getItem(k) !== null; } catch (_) { return false; } },
 };
+/* 사용자가 넣은 글자를 화면에 그릴 때는 반드시 이걸 통과시킨다.
+   재료명·메뉴명 등에 <script> 같은 태그가 들어와도 글자로만 보이게 한다. */
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 const $  = (s, r = document) => r.querySelector(s);
 const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
 
@@ -2256,7 +2263,7 @@ function viewDash(root) {
   ]);
   r.categories.forEach((ct) => {
     const tr = el('tr');
-    tr.innerHTML = `<td class="name">${ct.icon} ${ct.category}</td>
+    tr.innerHTML = `<td class="name">${esc(ct.icon)} ${esc(ct.category)}</td>
       <td class="num dim">${ct.count}</td>
       <td class="num">${won(ct.price)}</td>
       <td class="num dim">${won(ct.net)}</td>
@@ -2281,7 +2288,7 @@ function viewDash(root) {
                      { label: '식재료원가', num: true }, { label: '원가율', num: true }]);
     list.forEach((m, i) => {
       const tr = el('tr', 'clickable');
-      tr.innerHTML = `<td class="dim">${i + 1}</td><td class="name">${m.name}</td>
+      tr.innerHTML = `<td class="dim">${i + 1}</td><td class="name">${esc(m.name)}</td>
         <td class="num">${won(m.price)}</td><td class="num dim">${won(m.net)}</td>
         <td class="num">${won(m.foodCost)}</td>
         <td class="num"><b>${pct(m.foodRate)}</b></td>`;
@@ -2372,7 +2379,7 @@ function viewMenu(root) {
     rows.forEach((m) => {
       const tr = el('tr', 'clickable');
       const nameTd = el('td', 'name');
-      nameTd.innerHTML = `${m.name}<div class="cat-chip">${m.icon} ${m.category}</div>`;
+      nameTd.innerHTML = `${esc(m.name)}<div class="cat-chip">${esc(m.icon)} ${esc(m.category)}</div>`;
       tr.appendChild(nameTd);
 
       const dm = state.data.menus.find((x) => x.name === m.name);
@@ -2415,8 +2422,8 @@ function viewMenu(root) {
       const k = el('div', 'mcard');
       k.innerHTML = `
         <div class="mcard-top">
-          <div class="t"><b>${m.name}</b><span>${m.icon} ${m.category}</span></div>
-          <span class="badge-grade g-${m.grade.key}">${m.grade.icon} ${m.grade.label}</span>
+          <div class="t"><b>${esc(m.name)}</b><span>${esc(m.icon)} ${esc(m.category)}</span></div>
+          <span class="badge-grade g-${esc(m.grade.key)}">${esc(m.grade.icon)} ${esc(m.grade.label)}</span>
         </div>
         <div class="mcard-grid">
           <div><div class="l">판매가</div><div class="v">${m.hasPrice ? won(m.price) : '–'}</div></div>
@@ -2574,7 +2581,7 @@ function openMenu(name) {
       nmBox.appendChild(sel);
     }
     if (l.raw && l.raw !== l.name) nmBox.appendChild(el('span', 'sub', `원본 표기: ${l.raw}`));
-    if (l.note) nmBox.appendChild(el('span', 'sub', l.note));
+    if (l.note) nmBox.appendChild(el('span', 'sub', l.note));   // el() 은 textContent 사용 — 안전
     row.appendChild(nmBox);
 
     const q = el('div', 'c-qty');
@@ -2793,7 +2800,7 @@ function printCards(names) {
     if (wmText) card.dataset.wmtext = wmText;
     const rows = m.lines.map((l) => `
       <tr>
-        <td>${l.kind === '식재료' ? '' : `<span class="pk">${l.kind}</span> `}${l.name}</td>
+        <td>${l.kind === '식재료' ? '' : `<span class="pk">${esc(l.kind)}</span> `}${esc(l.name)}</td>
         <td class="r">${l.kind === '메뉴' ? `${l.qty}개` : `${won1(l.qty)}g`}</td>
         <td class="r">${l.kind === '식재료' || l.kind === '프렙' ? pct(l.yield || 1, 0) : '–'}</td>
         <td class="r">${l.kind === '무료' ? '0' : won3(l.unitCost)}</td>
@@ -2803,17 +2810,17 @@ function printCards(names) {
     card.innerHTML = `
       <header class="ph">
         <div>
-          <h1>${m.name}</h1>
-          <p>${[m.icon + ' ' + m.category, m.en, m.serving, m.time].filter(Boolean).join(' · ')}</p>
+          <h1>${esc(m.name)}</h1>
+          <p>${esc([m.icon + ' ' + m.category, m.en, m.serving, m.time].filter(Boolean).join(' · '))}</p>
         </div>
-        <div class="pbrand">${brand}</div>
+        <div class="pbrand">${esc(brand)}</div>
       </header>
 
       <div class="pkpi">
         <div><span>판매가</span><b>${m.hasPrice ? won(m.price) : '–'}</b></div>
         <div><span>공급가액</span><b>${m.hasPrice ? won(m.net) : '–'}</b></div>
         <div><span>식재료 원가</span><b>${won(m.foodCost)}</b></div>
-        <div><span>원가율</span><b class="${m.grade.key}">${m.hasPrice ? pct(m.foodRate) : '–'}</b></div>
+        <div><span>원가율</span><b class="${esc(m.grade.key)}">${m.hasPrice ? pct(m.foodRate) : '–'}</b></div>
         <div><span>총원가</span><b>${won(m.totalCost)}</b></div>
         <div><span>마진</span><b>${m.hasPrice ? won(m.margin) : '–'}</b></div>
       </div>
@@ -2827,12 +2834,12 @@ function printCards(names) {
         </tbody>
       </table>
 
-      ${m.steps && m.steps.length ? `<h2>조리 방법</h2><ol class="psteps">${m.steps.map((x) => `<li>${x}</li>`).join('')}</ol>` : ''}
-      ${m.garnish ? `<h2>가니쉬 · 플레이팅</h2><p class="pgar">${m.garnish}</p>` : ''}
+      ${m.steps && m.steps.length ? `<h2>조리 방법</h2><ol class="psteps">${m.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+      ${m.garnish ? `<h2>가니쉬 · 플레이팅</h2><p class="pgar">${esc(m.garnish)}</p>` : ''}
 
       <footer class="pf">
-        <span>${brand}${brand ? ' · ' : ''}${new Date().toLocaleDateString('ko-KR')} 기준</span>
-        <span>${lic}</span>
+        <span>${esc(brand)}${brand ? ' · ' : ''}${new Date().toLocaleDateString('ko-KR')} 기준</span>
+        <span>${esc(lic)}</span>
       </footer>`;
     root.appendChild(card);
   });
@@ -3013,12 +3020,12 @@ function openImport(kind) {
         const isNew = !(kind === 'ingredients' ? state.data.ingredients : state.data.menus).some((y) => y.name === it.name);
         const tr = el('tr');
         if (kind === 'ingredients') {
-          tr.innerHTML = `<td class="name">${it.name}</td><td class="num">${won(it.price)}</td>
+          tr.innerHTML = `<td class="name">${esc(it.name)}</td><td class="num">${won(it.price)}</td>
             <td class="num">${won(it.weight_g)}</td>
             <td class="num"><b>${it.weight_g > 0 ? won3(it.price / it.weight_g) : '–'}</b></td>
             <td><span class="badge-grade ${isNew ? 'g-good' : 'g-warn'}">${isNew ? '추가' : '갱신'}</span></td>`;
         } else {
-          tr.innerHTML = `<td class="name">${it.name}</td><td class="dim">${it.category || '(기본)'}</td>
+          tr.innerHTML = `<td class="name">${esc(it.name)}</td><td class="dim">${esc(it.category || '(기본)')}</td>
             <td class="num">${won(it.price)}</td>
             <td><span class="badge-grade ${isNew ? 'g-good' : 'g-warn'}">${isNew ? '추가' : '갱신'}</span></td>`;
         }
@@ -3031,7 +3038,7 @@ function openImport(kind) {
     if (bad.length) {
       const w = el('div', 'notebox');
       w.innerHTML = '<b>건너뛴 줄</b><br>' +
-        bad.slice(0, 8).map((b) => `${b.line}번째 줄 — ${b.why}: ${b.raw}`).join('<br>');
+        bad.slice(0, 8).map((b) => `${b.line}번째 줄 — ${esc(b.why)}: ${esc(b.raw)}`).join('<br>');
       out.appendChild(w);
     }
   }
@@ -3343,8 +3350,8 @@ function viewFix(root) {
     const box = el('div', 'notebox');
     box.style.cssText = 'margin:0 0 14px;background:var(--accent-soft);color:var(--accent-ink);border-color:transparent';
     box.innerHTML = `<b>이 파일의 사용권자</b><br>
-      ${li.licensee}${li.licenseId ? ` &nbsp;·&nbsp; 발급번호 <span style="font-family:var(--mono)">${li.licenseId}</span>` : ''}
-      ${li.issuedAt ? ` &nbsp;·&nbsp; ${li.issuedAt} 발급` : ''}<br>
+      ${esc(li.licensee)}${li.licenseId ? ` &nbsp;·&nbsp; 발급번호 <span style="font-family:var(--mono)">${esc(li.licenseId)}</span>` : ''}
+      ${li.issuedAt ? ` &nbsp;·&nbsp; ${esc(li.issuedAt)} 발급` : ''}<br>
       <span style="font-size:12px;opacity:.85">이 파일은 위 사용권자에게 발급된 것입니다. 무단 복제·재배포는 허가 조건 위반입니다.</span>`;
     s5.body.appendChild(box);
   }
