@@ -13,7 +13,8 @@
     "build:single": "node tools/build-single.js",
     "build:template": "node tools/build-single.js public/downloads/원가분석_템플릿.html data/template.json",
     "build:manual": "node tools/build-manual.js",
-    "build:all": "npm run build:xlsx && npm run build:single && npm run build:template && npm run build:manual"
+    "build:all": "npm run build:xlsx && npm run build:single && npm run build:template && npm run build:manual",
+    "build:demo": "DATASET=data/template.json node tools/build-static.js"
   },
   "repository": {
     "type": "git",

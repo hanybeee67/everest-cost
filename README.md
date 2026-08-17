@@ -267,6 +267,10 @@ PC에서 고친 단가를 주방 태블릿에서도 그대로 봐야 한다면 [
    | Build Command | `npm ci && npm run build:static` |
    | Publish Directory | `public` |
 
+   > **어떤 데이터로 배포할지 고르기**
+   > - `npm run build:static` — 에베레스트 실데이터 (메뉴 87개)
+   > - `npm run build:demo` — 범용 템플릿 (예시 3개) · **판매용 데모 사이트에 적합**
+
 4. **Create Static Site** → 2~3분 뒤 `https://everest-cost.onrender.com` 같은 주소가 나옵니다.
 5. (선택) **Redirects/Rewrites** 에 `Source: /*` → `Destination: /index.html` → `Action: Rewrite` 를 추가하면
    주소를 잘못 입력해도 앱으로 들어옵니다.
@@ -289,6 +293,8 @@ PC에서 고친 단가를 주방 태블릿에서도 그대로 봐야 한다면 [
    | Build Command | `npm ci --omit=dev` |
    | Start Command | `node server/index.js` |
    | Health Check Path | `/healthz` |
+
+   > 템플릿으로 서비스하려면 환경변수 `DATASET=data/template.json` 을 추가하세요.
 
 3. 값을 재배포 후에도 보존하려면 **Starter 이상 플랜 + Disk**(mount `/var/data`)를 붙이고
    환경변수 `DATA_DIR=/var/data` 를 넣습니다.

@@ -14,6 +14,8 @@ services:
     runtime: static
     name: everest-cost
     plan: free
+    # 에베레스트 실데이터로 배포:  npm ci && npm run build:static
+    # 범용 템플릿(데모/판매용)으로 배포: npm ci && npm run build:demo
     buildCommand: npm ci && npm run build:static
     staticPublishPath: ./public
     autoDeploy: true
@@ -40,6 +42,7 @@ services:
   #   plan: free            # 값 보존이 필요하면 starter 이상 + 아래 disk 사용
   #   region: singapore
   #   buildCommand: npm ci --omit=dev
+  #   # 템플릿으로 서비스하려면 환경변수 DATASET=data/template.json 을 추가하세요
   #   startCommand: node server/index.js
   #   healthCheckPath: /healthz
   #   autoDeploy: true

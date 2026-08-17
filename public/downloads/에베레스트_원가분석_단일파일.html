@@ -1724,7 +1724,7 @@ else self.XlsxBuilder = { build, ordering };
 if (typeof require === 'function' && typeof module === 'object' && require.main === module) {
   const fs = require('fs');
   const path = require('path');
-  const dataPath = path.join(__dirname, '..', 'data', 'dataset.json');
+  const dataPath = path.join(__dirname, '..', process.argv[3] || 'data/dataset.json');
   const out = process.argv[2] || path.join(__dirname, '..', 'public', 'downloads', '에베레스트_원가분석서.xlsx');
   fs.mkdirSync(path.dirname(out), { recursive: true });
   const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
