@@ -41,9 +41,127 @@ const state = {
   savedAt: null,
   loadedFromFile: false,
   serverOk: true,
+  authed: false,       // 관리자 로그인 여부 — false 면 화면은 보이되 수정은 막는다
 };
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
+
+/* ── 관리자 로그인 ─────────────────────────────────────
+   서버가 없는 단일 파일 특성상 완전한 보안은 아니다(코드를 열어 보면 로직이 보임).
+   직원 실수로 값이 바뀌는 걸 막는 「보기 전용 / 수정 가능」 구분 용도다.
+   로그인 상태는 이 탭에만 유지되고(sessionStorage), 파일을 다시 열면 다시 로그인해야 한다. */
+const AUTH_KEY = 'ec-admin-authed';
+const sessionStore = {
+  get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); return true; } catch (_) { return false; } },
+  remove(k) { try { sessionStorage.removeItem(k); } catch (_) {} },
+};
+async function sha256Hex(text) {
+  if (self.crypto && crypto.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  let h = 0;                              // 구형 브라우저 대비 — 평문 저장만은 피한다
+  for (let i = 0; i < text.length; i++) h = (Math.imul(31, h) + text.charCodeAt(i)) | 0;
+  return 'fnv' + (h >>> 0).toString(16);
+}
+function adminAccount() { return (state.data.settings && state.data.settings.admin) || {}; }
+function hasAdminAccount() { return !!adminAccount().passHash; }
+async function checkLogin(id, pw) {
+  const a = adminAccount();
+  if (id !== a.id) return false;
+  return (await sha256Hex((a.salt || '') + pw)) === a.passHash;
+}
+/** 아직 계정이 없으면 지금 입력한 값으로 등록하고, 있으면 맞는지 확인한다 */
+async function attemptLogin(id, pw) {
+  if (!hasAdminAccount()) {
+    const salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    state.data.settings.admin = { id, salt, passHash: await sha256Hex(salt + pw) };
+    commit('관리자 계정 등록');
+    return { ok: true, registered: true };
+  }
+  return { ok: await checkLogin(id, pw), registered: false };
+}
+/** 수정 동작 진입점에서 호출 — 로그인 안 돼 있으면 로그인창을 띄우고 막는다 */
+function requireAuth() {
+  if (state.authed) return true;
+  openLogin();
+  return false;
+}
+function setAuthed(v) {
+  state.authed = v;
+  if (v) sessionStore.set(AUTH_KEY, '1'); else sessionStore.remove(AUTH_KEY);
+}
+function logout() {
+  setAuthed(false);
+  closeSheet();
+  render();
+  toast('로그아웃했습니다 — 이제 수정할 수 없습니다');
+}
+function openLogin() {
+  $('#loginId').value = '';
+  $('#loginPw').value = '';
+  $('#loginError').hidden = true;
+  const has = hasAdminAccount();
+  $('#loginDesc').textContent = has
+    ? '수정하려면 관리자 아이디와 비밀번호를 입력하세요.'
+    : '처음 사용하시는군요. 원하시는 아이디·비밀번호를 정해서 입력하면 그대로 등록됩니다.';
+  $('#loginSubmit').textContent = has ? '로그인' : '등록하고 로그인';
+  $('#loginModal').hidden = false;
+  $('#loginBackdrop').hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => $('#loginId').focus(), 30);
+}
+function closeLogin() {
+  $('#loginModal').hidden = true;
+  $('#loginBackdrop').hidden = true;
+  document.body.style.overflow = '';
+}
+function loginError(msg) {
+  const e = $('#loginError');
+  e.textContent = msg;
+  e.hidden = false;
+}
+function resetAdminAccount() {
+  if (!confirm('관리자 계정을 초기화할까요?\n초기화하면 지금부터 로그인창에 입력하는 아이디·비밀번호로 새로 등록됩니다.')) return;
+  state.data.settings.admin = { id: 'admin', salt: '', passHash: '' };
+  commit('관리자 계정 초기화');
+  $('#loginId').value = ''; $('#loginPw').value = '';
+  $('#loginDesc').textContent = '계정을 초기화했습니다. 원하시는 아이디·비밀번호를 입력하면 새로 등록됩니다.';
+  $('#loginSubmit').textContent = '등록하고 로그인';
+  loginError('계정이 초기화되었습니다.');
+}
+async function submitLogin() {
+  const id = $('#loginId').value.trim();
+  const pw = $('#loginPw').value;
+  if (!id || !pw) { loginError('아이디와 비밀번호를 입력하세요'); return; }
+  if (!hasAdminAccount() && pw.length < 4) { loginError('비밀번호는 4자 이상으로 정해 주세요'); return; }
+  const wasNew = !hasAdminAccount();
+  const { ok } = await attemptLogin(id, pw);
+  if (!ok) { loginError('아이디 또는 비밀번호가 올바르지 않습니다'); return; }
+  setAuthed(true);
+  closeLogin();
+  render();
+  toast(wasNew ? `관리자 계정을 등록했습니다 (아이디: ${id})` : '로그인했습니다');
+}
+/** 화면이 그려진 뒤 호출 — 로그인 안 돼 있으면 수정용 입력·버튼을 잠근다 */
+function applyLock(container) {
+  if (!container) return;
+  const locked = !state.authed;
+  container.querySelectorAll('input, select, textarea, button').forEach((elx) => {
+    if (elx.dataset.keep === '1') return;
+    elx.disabled = locked;
+  });
+}
+function paintAuth() {
+  const authed = state.authed;
+  const icon = $('#btnAuth');
+  if (icon) { icon.textContent = authed ? '🔓' : '🔒'; icon.title = authed ? '로그아웃' : '관리자 로그인'; icon.classList.toggle('authed', authed); }
+  const side = $('#btnAuthSide');
+  if (side) { side.textContent = authed ? '🔓 로그아웃 (관리자 모드)' : '🔒 관리자 로그인'; side.classList.toggle('authed', authed); }
+  const banner = $('#viewLockBanner');
+  if (banner) banner.hidden = authed;
+}
 
 /* ── 되돌리기 / 다시 실행 ──────────────────────────────
    값을 바꾸기 직전 상태를 쌓아 둔다. 실수로 지워도 Ctrl+Z 로 복구된다.
@@ -60,6 +178,7 @@ function pushHistory(label) {
 function takeSnapshot() { history.snapshot = JSON.stringify(state.data); }
 
 function undo() {
+  if (!requireAuth()) return;
   if (!history.undo.length) return;
   const step = history.undo.pop();
   history.redo.push({ json: JSON.stringify(state.data), label: step.label });
@@ -67,6 +186,7 @@ function undo() {
   afterTimeTravel(`되돌렸습니다 — ${step.label}`);
 }
 function redo() {
+  if (!requireAuth()) return;
   if (!history.redo.length) return;
   const step = history.redo.pop();
   history.undo.push({ json: JSON.stringify(state.data), label: step.label });
@@ -386,9 +506,11 @@ function render(opts = {}) {
   root.innerHTML = '';
   ({ dash: viewDash, menu: viewMenu, ing: viewIng, prep: viewPrep, fix: viewFix, issue: viewIssue }[state.view] || viewDash)(root);
   root.scrollTop = keep;
+  applyLock(root);
   paintSync();
   paintBrand();
   paintLicense();
+  paintAuth();
   paintHistoryButtons();
 }
 
@@ -574,10 +696,12 @@ function viewMenu(root) {
   const bar1 = el('div', 'filters');
   const search = el('input', 'search');
   search.type = 'search'; search.placeholder = '메뉴 검색…'; search.value = f.q;
+  search.dataset.keep = '1';
   search.oninput = () => { f.q = search.value; paint(); };
   bar1.appendChild(search);
 
   const sel = el('select', 'sel');
+  sel.dataset.keep = '1';
   [['cat', '카테고리 순'], ['rate-desc', '원가율 높은 순'], ['rate-asc', '원가율 낮은 순'],
    ['margin-desc', '마진 큰 순'], ['price-desc', '판매가 높은 순'], ['name', '이름순']]
     .forEach(([v, l]) => { const o = el('option', null, l); o.value = v; sel.appendChild(o); });
@@ -586,12 +710,14 @@ function viewMenu(root) {
   bar1.appendChild(sel);
 
   const gsel = el('select', 'sel');
+  gsel.dataset.keep = '1';
   [['all', '전체 판정'], ['good', '✅ 양호'], ['warn', '🟡 주의'], ['bad', '🔴 과다'], ['none', '⬜ 판매가 미입력']]
     .forEach(([v, l]) => { const o = el('option', null, l); o.value = v; gsel.appendChild(o); });
   gsel.value = f.grade;
   gsel.onchange = () => { f.grade = gsel.value; paint(); };
   bar1.appendChild(gsel);
   const pAll = el('button', 'btn', '🖨 레시피 카드 인쇄');
+  pAll.dataset.keep = '1';
   pAll.onclick = () => printCards(list().map((m) => m.name));
   bar1.appendChild(pAll);
   root.appendChild(bar1);
@@ -601,6 +727,7 @@ function viewMenu(root) {
   const cats = ['all', ...state.data.categoryOrder.filter((c) => r.menus.some((m) => m.category === c))];
   cats.forEach((c) => {
     const b = el('button', 'chip', c === 'all' ? '전체' : `${state.data.categoryIcon[c] || ''} ${c}`);
+    b.dataset.keep = '1';
     b.setAttribute('aria-pressed', String(f.cat === c));
     b.onclick = () => { f.cat = c; paint(); };
     chips.appendChild(b);
@@ -939,6 +1066,8 @@ function openMenu(name) {
   };
   body.appendChild(danger);
 
+  applyLock(body);
+  pbtn.disabled = false;   // 인쇄는 보기 전용에서도 가능
   $('#sheet').hidden = false;
   $('#sheetBackdrop').hidden = false;
   document.body.style.overflow = 'hidden';
@@ -957,6 +1086,7 @@ function viewIng(root) {
   const bar1 = el('div', 'filters');
   const search = el('input', 'search');
   search.type = 'search'; search.placeholder = '식재료 검색…'; search.value = f.ingQ;
+  search.dataset.keep = '1';
   search.oninput = () => { f.ingQ = search.value; paint(); };
   bar1.appendChild(search);
   const info = el('div');
@@ -1311,6 +1441,7 @@ function openImport(kind) {
   ta.onpaste = () => setTimeout(preview, 0);
 
   btnApply.onclick = () => {
+    if (!requireAuth()) return;
     const { added, updated } = spec.apply(parsed);
     commit(`${spec.title} (${parsed.length}건)`);
     closeSheet();
@@ -1318,6 +1449,7 @@ function openImport(kind) {
     toast(`${added}건 추가, ${updated}건 갱신했습니다`);
   };
 
+  applyLock(body);
   $('#sheet').hidden = false;
   $('#sheetBackdrop').hidden = false;
   document.body.style.overflow = 'hidden';
@@ -1571,6 +1703,35 @@ function viewFix(root) {
   be.appendChild(bi);
   s4.body.appendChild(be);
 
+  /* 관리자 계정 변경 */
+  const acctWrap = el('div');
+  acctWrap.style.marginTop = '16px';
+  acctWrap.appendChild(el('div', 'l', `관리자 계정 (현재 아이디: ${adminAccount().id || 'admin'})`));
+  const acctRow = el('div', 'newform');
+  acctRow.style.cssText = 'padding:8px 0 0;border-top:0';
+  const newId = el('input'); newId.type = 'text'; newId.placeholder = '새 아이디 (바꿀 때만 입력)';
+  const newPw = el('input'); newPw.type = 'password'; newPw.placeholder = '새 비밀번호 (바꿀 때만 입력)'; newPw.autocomplete = 'new-password';
+  const acctBtn = el('button', 'btn', '계정 정보 변경');
+  acctBtn.onclick = async () => {
+    const idv = newId.value.trim(), pwv = newPw.value;
+    if (!idv && !pwv) { toast('바꿀 아이디나 비밀번호를 입력하세요'); return; }
+    if (pwv && pwv.length < 4) { toast('비밀번호는 4자 이상으로 정해 주세요'); return; }
+    const a = adminAccount();
+    if (idv) a.id = idv;
+    if (pwv) { const salt = Math.random().toString(36).slice(2) + Date.now().toString(36); a.salt = salt; a.passHash = await sha256Hex(salt + pwv); }
+    state.data.settings.admin = a;
+    newId.value = ''; newPw.value = '';
+    commit('관리자 계정 변경'); render({ keepScroll: true });
+    toast('관리자 계정 정보를 변경했습니다');
+  };
+  acctRow.append(newId, newPw, acctBtn);
+  acctWrap.appendChild(acctRow);
+  const acctNote = el('div', 'small');
+  acctNote.style.cssText = 'color:var(--muted);margin-top:6px';
+  acctNote.textContent = '서버 없이 이 파일 안에만 저장되는 계정입니다 — 비밀번호를 잊으면 되찾을 방법이 없으니 잘 기억해 두세요.';
+  acctWrap.appendChild(acctNote);
+  s4.body.appendChild(acctWrap);
+
   const catWrap = el('div');
   catWrap.style.marginTop = '14px';
   catWrap.appendChild(el('div', 'l', '메뉴 카테고리 (메뉴를 추가할 때 고를 수 있습니다)'));
@@ -1811,8 +1972,12 @@ function backup() {
   a.click();
   toast('백업 파일을 저장했습니다');
 }
-function restore() { $('#fileRestore').click(); }
+function restore() {
+  if (!requireAuth()) return;
+  $('#fileRestore').click();
+}
 function resetAll() {
+  if (!requireAuth()) return;
   if (!confirm('추가·수정한 내용을 모두 지우고 처음 상태로 되돌립니다. 계속할까요?')) return;
   state.data = clone(state.base);
   commit('처음 상태로 되돌리기'); render();
@@ -1862,6 +2027,8 @@ async function boot() {
 
   state.data = pickData(state.base, parseSaved(payload.saved));
   state.sync = state.serverOk ? 'synced' : 'local';
+  state.data.settings.admin = state.data.settings.admin || { id: 'admin', salt: '', passHash: '' };
+  state.authed = sessionStore.get(AUTH_KEY) === '1';
 
   // 브라우저가 저장을 받아주는지 미리 확인 → 못 쓰면 바로 알림
   if (!state.serverOk && !saveLocal()) warnIfCannotSave(false);
@@ -1889,7 +2056,7 @@ async function boot() {
   $('#sheetClose').onclick = closeSheet;
   $('#sheetBackdrop').onclick = closeSheet;
   addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeSheet(); $('#morePop').hidden = true; return; }
+    if (e.key === 'Escape') { closeSheet(); closeLogin(); $('#morePop').hidden = true; return; }
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
     const k = e.key.toLowerCase();
@@ -1899,7 +2066,19 @@ async function boot() {
   $('#btnUndo').onclick = undo;
   $('#btnRedo').onclick = redo;
 
+  const toggleAuth = () => { if (state.authed) logout(); else openLogin(); };
+  $('#btnAuth').onclick = toggleAuth;
+  $('#btnAuthSide').onclick = toggleAuth;
+  $('#viewLockBtn').onclick = openLogin;
+  $('#loginClose').onclick = closeLogin;
+  $('#loginBackdrop').onclick = closeLogin;
+  $('#loginSubmit').onclick = submitLogin;
+  $('#loginPw').onkeydown = (e) => { if (e.key === 'Enter') submitLogin(); };
+  $('#loginId').onkeydown = (e) => { if (e.key === 'Enter') $('#loginPw').focus(); };
+  $('#loginForgot').onclick = (e) => { e.preventDefault(); resetAdminAccount(); };
+
   $('#fileRestore').onchange = async (e) => {
+    if (!requireAuth()) { e.target.value = ''; return; }
     const f = e.target.files[0];
     if (!f) return;
     try {

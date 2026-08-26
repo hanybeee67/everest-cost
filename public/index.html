@@ -26,6 +26,7 @@
     </div>
     <nav class="nav" id="navDesktop"></nav>
     <div class="sidebar-foot">
+      <button class="btn btn-block authbtn" id="btnAuthSide">🔒 관리자 로그인</button>
       <div class="sync" id="syncBox"><span class="dot"></span><span id="syncText">동기화됨</span></div>
       <button class="btn btn-primary btn-block" id="btnExcel">엑셀 내려받기</button>
       <button class="btn btn-block" id="btnPortable">이 값 그대로 파일 저장</button>
@@ -48,6 +49,7 @@
       </div>
       <div class="topbar-actions">
         <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
+        <button class="icon-btn" id="btnAuth" title="관리자 로그인">🔒</button>
         <button class="icon-btn" id="btnUndo" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
         <button class="icon-btn" id="btnRedo" title="다시 실행 (Ctrl+Shift+Z)" disabled>↷</button>
         <button class="icon-btn" id="btnTheme" title="화면 밝기 전환">◐</button>
@@ -55,6 +57,10 @@
       </div>
     </header>
 
+    <div class="viewlock" id="viewLockBanner" hidden>
+      🔒 <b>보기 전용 모드입니다.</b> 메뉴·식재료·고정비를 수정하려면 관리자 로그인을 해 주세요.
+      <button class="viewlock-btn" id="viewLockBtn">관리자 로그인</button>
+    </div>
     <div class="savewarn" id="saveWarn" hidden>
       ⚠️ <b>이 브라우저에 자동 저장을 할 수 없습니다.</b>
       시크릿(비공개) 모드이거나 저장공간이 막혀 있습니다.
@@ -88,6 +94,23 @@
     <button data-act="restore">백업 복원</button>
     <button data-act="reset" class="danger">수정값 초기화</button>
   </div>
+
+  <!-- ══════════ 관리자 로그인 ══════════ -->
+  <div class="sheet-backdrop" id="loginBackdrop" hidden></div>
+  <section class="login-modal" id="loginModal" hidden aria-modal="true" role="dialog">
+    <header>
+      <h2>관리자 로그인</h2>
+      <button class="icon-btn" id="loginClose" aria-label="닫기">✕</button>
+    </header>
+    <p class="login-desc" id="loginDesc">메뉴·식재료·고정비를 수정하려면 관리자 아이디와 비밀번호가 필요합니다.</p>
+    <div class="login-body">
+      <label>아이디<input type="text" id="loginId" autocomplete="username"></label>
+      <label>비밀번호<input type="password" id="loginPw" autocomplete="current-password"></label>
+      <div class="login-error" id="loginError" hidden></div>
+      <button class="btn btn-primary btn-block" id="loginSubmit">로그인</button>
+      <a href="#" id="loginForgot" class="login-forgot">비밀번호를 잊으셨나요? 계정 초기화</a>
+    </div>
+  </section>
 
   <div class="toast" id="toast" hidden></div>
 </div>

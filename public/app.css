@@ -162,6 +162,52 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
 }
 .savewarn-x:hover{background:color-mix(in srgb,var(--bad) 15%,transparent)}
 
+/* ── 보기 전용(비로그인) 배너 · 잠금 표시 ─────────────── */
+.viewlock{
+  margin:14px 22px 0;padding:11px 14px;border-radius:var(--r);
+  background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  color:var(--accent-ink);font-size:13px;line-height:1.5;
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+}
+.viewlock b{font-weight:750}
+.viewlock-btn{
+  margin-left:auto;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);
+  background:transparent;color:var(--accent-ink);font-weight:700;font-size:12.5px;
+  padding:6px 12px;border-radius:8px;cursor:pointer;
+}
+.viewlock-btn:hover{background:var(--accent-soft)}
+
+#viewRoot input:disabled,#viewRoot select:disabled,#viewRoot textarea:disabled,
+.sheet-body input:disabled,.sheet-body select:disabled,.sheet-body textarea:disabled{
+  opacity:.5;cursor:not-allowed;background:var(--surface-2);
+}
+#viewRoot button:disabled,.sheet-body button:disabled{opacity:.35;cursor:not-allowed}
+#viewRoot button:disabled:hover,.sheet-body button:disabled:hover{background:transparent}
+
+/* ── 관리자 로그인 ─────────────────────────────────── */
+.authbtn{font-weight:700}
+.authbtn.authed{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+#btnAuth.authed{color:var(--accent-ink)}
+
+.login-modal{
+  position:fixed;z-index:80;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(360px,calc(100% - 32px));background:var(--surface);border-radius:var(--r-lg,16px);
+  box-shadow:var(--shadow-lg);border:1px solid var(--line);
+}
+.login-modal header{display:flex;align-items:center;gap:10px;padding:16px 18px 0}
+.login-modal h2{font-size:17px;flex:1}
+.login-desc{font-size:12.5px;color:var(--muted);padding:6px 18px 0;margin:0;line-height:1.5}
+.login-body{display:flex;flex-direction:column;gap:12px;padding:16px 18px 20px}
+.login-body label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:var(--muted)}
+.login-body input{
+  font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+}
+.login-body input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.login-error{background:var(--bad-bg);color:var(--bad);border-radius:9px;padding:9px 11px;font-size:12.5px}
+.login-forgot{display:block;text-align:center;font-size:12px;color:var(--muted);text-decoration:none;margin-top:2px}
+.login-forgot:hover{color:var(--accent-ink);text-decoration:underline}
+
 /* ── 카드 / 섹션 ──────────────────────────────────── */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
 .card + .card{margin-top:16px}

@@ -8575,7 +8575,8 @@
   "warnFoodCostRate": 0.38,
   "targetTotalCostRate": 0.8,
   "vatIncluded": true,
-  "vatRate": 0.1
+  "vatRate": 0.1,
+  "admin": { "id": "admin", "salt": "", "passHash": "" }
  },
  "issues": [
   {

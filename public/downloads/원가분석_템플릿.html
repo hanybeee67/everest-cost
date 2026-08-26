@@ -9,7 +9,7 @@
 <!--
   ═══════════════════════════════════════════════════════════════
    우리 매장 · 메뉴 원가 분석서  (단일 파일 버전)
-   생성일 2026-08-19
+   생성일 2026-08-26
 
    · 이 파일 하나면 끝입니다. 인터넷도, 설치도, 서버도 필요 없습니다.
    · 파일을 더블클릭하면 브라우저에서 바로 열립니다.
@@ -183,6 +183,52 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
   background:transparent;color:inherit;cursor:pointer;font-size:13px;
 }
 .savewarn-x:hover{background:color-mix(in srgb,var(--bad) 15%,transparent)}
+
+/* ── 보기 전용(비로그인) 배너 · 잠금 표시 ─────────────── */
+.viewlock{
+  margin:14px 22px 0;padding:11px 14px;border-radius:var(--r);
+  background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  color:var(--accent-ink);font-size:13px;line-height:1.5;
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+}
+.viewlock b{font-weight:750}
+.viewlock-btn{
+  margin-left:auto;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);
+  background:transparent;color:var(--accent-ink);font-weight:700;font-size:12.5px;
+  padding:6px 12px;border-radius:8px;cursor:pointer;
+}
+.viewlock-btn:hover{background:var(--accent-soft)}
+
+#viewRoot input:disabled,#viewRoot select:disabled,#viewRoot textarea:disabled,
+.sheet-body input:disabled,.sheet-body select:disabled,.sheet-body textarea:disabled{
+  opacity:.5;cursor:not-allowed;background:var(--surface-2);
+}
+#viewRoot button:disabled,.sheet-body button:disabled{opacity:.35;cursor:not-allowed}
+#viewRoot button:disabled:hover,.sheet-body button:disabled:hover{background:transparent}
+
+/* ── 관리자 로그인 ─────────────────────────────────── */
+.authbtn{font-weight:700}
+.authbtn.authed{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+#btnAuth.authed{color:var(--accent-ink)}
+
+.login-modal{
+  position:fixed;z-index:80;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(360px,calc(100% - 32px));background:var(--surface);border-radius:var(--r-lg,16px);
+  box-shadow:var(--shadow-lg);border:1px solid var(--line);
+}
+.login-modal header{display:flex;align-items:center;gap:10px;padding:16px 18px 0}
+.login-modal h2{font-size:17px;flex:1}
+.login-desc{font-size:12.5px;color:var(--muted);padding:6px 18px 0;margin:0;line-height:1.5}
+.login-body{display:flex;flex-direction:column;gap:12px;padding:16px 18px 20px}
+.login-body label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:var(--muted)}
+.login-body input{
+  font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+}
+.login-body input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.login-error{background:var(--bad-bg);color:var(--bad);border-radius:9px;padding:9px 11px;font-size:12.5px}
+.login-forgot{display:block;text-align:center;font-size:12px;color:var(--muted);text-decoration:none;margin-top:2px}
+.login-forgot:hover{color:var(--accent-ink);text-decoration:underline}
 
 /* ── 카드 / 섹션 ──────────────────────────────────── */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
@@ -549,6 +595,7 @@ body.printing #printRoot{display:block}
     </div>
     <nav class="nav" id="navDesktop"></nav>
     <div class="sidebar-foot">
+      <button class="btn btn-block authbtn" id="btnAuthSide">🔒 관리자 로그인</button>
       <div class="sync" id="syncBox"><span class="dot"></span><span id="syncText">동기화됨</span></div>
       <button class="btn btn-primary btn-block" id="btnExcel">엑셀 내려받기</button>
       <button class="btn btn-block" id="btnPortable">이 값 그대로 파일 저장</button>
@@ -571,6 +618,7 @@ body.printing #printRoot{display:block}
       </div>
       <div class="topbar-actions">
         <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
+        <button class="icon-btn" id="btnAuth" title="관리자 로그인">🔒</button>
         <button class="icon-btn" id="btnUndo" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
         <button class="icon-btn" id="btnRedo" title="다시 실행 (Ctrl+Shift+Z)" disabled>↷</button>
         <button class="icon-btn" id="btnTheme" title="화면 밝기 전환">◐</button>
@@ -578,6 +626,10 @@ body.printing #printRoot{display:block}
       </div>
     </header>
 
+    <div class="viewlock" id="viewLockBanner" hidden>
+      🔒 <b>보기 전용 모드입니다.</b> 메뉴·식재료·고정비를 수정하려면 관리자 로그인을 해 주세요.
+      <button class="viewlock-btn" id="viewLockBtn">관리자 로그인</button>
+    </div>
     <div class="savewarn" id="saveWarn" hidden>
       ⚠️ <b>이 브라우저에 자동 저장을 할 수 없습니다.</b>
       시크릿(비공개) 모드이거나 저장공간이 막혀 있습니다.
@@ -612,6 +664,23 @@ body.printing #printRoot{display:block}
     <button data-act="reset" class="danger">수정값 초기화</button>
   </div>
 
+  <!-- ══════════ 관리자 로그인 ══════════ -->
+  <div class="sheet-backdrop" id="loginBackdrop" hidden></div>
+  <section class="login-modal" id="loginModal" hidden aria-modal="true" role="dialog">
+    <header>
+      <h2>관리자 로그인</h2>
+      <button class="icon-btn" id="loginClose" aria-label="닫기">✕</button>
+    </header>
+    <p class="login-desc" id="loginDesc">메뉴·식재료·고정비를 수정하려면 관리자 아이디와 비밀번호가 필요합니다.</p>
+    <div class="login-body">
+      <label>아이디<input type="text" id="loginId" autocomplete="username"></label>
+      <label>비밀번호<input type="password" id="loginPw" autocomplete="current-password"></label>
+      <div class="login-error" id="loginError" hidden></div>
+      <button class="btn btn-primary btn-block" id="loginSubmit">로그인</button>
+      <a href="#" id="loginForgot" class="login-forgot">비밀번호를 잊으셨나요? 계정 초기화</a>
+    </div>
+  </section>
+
   <div class="toast" id="toast" hidden></div>
 </div>
 
@@ -619,7 +688,7 @@ body.printing #printRoot{display:block}
 <div id="printRoot" aria-hidden="true"></div>
 
 <script id="ovData" type="application/json">null</script>
-<script>window.LICENSE_INFO = {"licensee":"","licenseId":"","issuedAt":"2026-08-19"};</script>
+<script>window.LICENSE_INFO = {"licensee":"","licenseId":"","issuedAt":"2026-08-26"};</script>
 
 <!-- ═══════════════════════════════════════════════════════════════
      오픈소스 라이선스 고지 (Third-Party Notice)
@@ -694,7 +763,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
  * @copyright Louis-Dominique Dubeau
  */function i(e){return e>=65&&e<=90||95===e||e>=97&&e<=122||e>=192&&e<=214||e>=216&&e<=246||e>=248&&e<=767||e>=880&&e<=893||e>=895&&e<=8191||e>=8204&&e<=8205||e>=8304&&e<=8591||e>=11264&&e<=12271||e>=12289&&e<=55295||e>=63744&&e<=64975||e>=65008&&e<=65533||e>=65536&&e<=983039}Object.defineProperty(r,"__esModule",{value:!0}),r.NC_NAME_START_CHAR="A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd\ud800\udc00-\udb7f\udfff",r.NC_NAME_CHAR="-"+r.NC_NAME_START_CHAR+".0-9\xb7\u0300-\u036f\u203f-\u2040",r.NC_NAME_START_CHAR_RE=new RegExp("^["+r.NC_NAME_START_CHAR+"]$","u"),r.NC_NAME_CHAR_RE=new RegExp("^["+r.NC_NAME_CHAR+"]$","u"),r.NC_NAME_RE=new RegExp("^["+r.NC_NAME_START_CHAR+"]["+r.NC_NAME_CHAR+"]*$","u"),r.isNCNameStartChar=i,r.isNCNameChar=function(e){return i(e)||45===e||46===e||e>=48&&e<=57||183===e||e>=768&&e<=879||e>=8255&&e<=8256}},{}]},{},[15])(15)}));
 //# sourceMappingURL=exceljs.bare.min.js.map</script>
-<script>window.EMBEDDED_DATASET = {"meta":{"brand":"우리 매장","title":"메뉴 원가 분석서","source":"원가 분석 템플릿 · 예시 데이터가 들어 있습니다","version":"1.0","template":true},"categoryOrder":["메인 요리","사이드","음료","세트메뉴"],"categoryIcon":{"메인 요리":"🍳","사이드":"🥗","음료":"🥤","세트메뉴":"🍽"},"ingredients":[{"name":"닭가슴살","price":12000,"pack_qty":1,"unit":"kg","weight_g":1000},{"name":"쌀","price":62000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"양파","price":14000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"당근","price":16500,"pack_qty":3,"unit":"kg","weight_g":3000},{"name":"감자","price":35000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"우유","price":1650,"pack_qty":1,"unit":"L","weight_g":1000},{"name":"버터","price":14500,"pack_qty":13.1,"unit":"kg","weight_g":13100},{"name":"식용유","price":49500,"pack_qty":18,"unit":"L","weight_g":18000},{"name":"간장","price":5500,"pack_qty":1.8,"unit":"L","weight_g":1800},{"name":"소금","price":15000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"후추","price":9000,"pack_qty":0.4,"unit":"kg","weight_g":400},{"name":"대파","price":4980,"pack_qty":0.5,"unit":"kg","weight_g":500}],"preps":[{"name":"기본 볶음 소스","yield_g":1200,"yield_rate":0.8,"items":[{"kind":"식재료","name":"양파","raw":"","qty":1000},{"kind":"식재료","name":"간장","raw":"","qty":300},{"kind":"식재료","name":"식용유","raw":"","qty":200},{"kind":"식재료","name":"소금","raw":"","qty":50}]}],"menus":[{"name":"치킨 볶음밥","category":"메인 요리","icon":"🍳","en":"Chicken Fried Rice","time":"총 조리시간: 약 10분","serving":"1인분 기준","price":9000,"lines":[{"kind":"식재료","name":"쌀","raw":"","qty":200,"unit":"g","yield":1,"note":"지은 밥 기준"},{"kind":"식재료","name":"닭가슴살","raw":"","qty":100,"unit":"g","yield":0.9,"note":"손질 손실 10% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"당근","raw":"","qty":20,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"식용유","raw":"","qty":15,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"후추","raw":"","qty":1,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"대파","raw":"","qty":10,"unit":"g","yield":1,"note":"고명"},{"kind":"프렙","name":"기본 볶음 소스","raw":"","qty":40,"unit":"g","yield":1,"note":"미리 만들어 둔 소스"}],"steps":["닭가슴살을 사방 1cm 크기로 썰고 소금·후추로 밑간한다.","달군 팬에 식용유를 두르고 닭고기를 넣어 겉면이 익을 때까지 볶는다.","양파와 당근을 넣어 2분간 함께 볶는다.","밥을 넣고 기본 볶음 소스를 둘러 센불에서 고루 볶는다.","소금·후추로 간을 맞추고 대파를 올려 마무리한다."],"garnish":"대파 흰 부분을 얇게 썰어 가운데 올리고, 접시 가장자리를 닦아 낸다."},{"name":"감자 크림 수프","category":"사이드","icon":"🥗","en":"Potato Cream Soup","time":"총 조리시간: 약 15분","serving":"1인분 기준","price":5000,"lines":[{"kind":"식재료","name":"감자","raw":"","qty":150,"unit":"g","yield":0.85,"note":"껍질 손실 15% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"우유","raw":"","qty":120,"unit":"g","yield":1,"note":"120ml ≈ 120g"},{"kind":"식재료","name":"버터","raw":"","qty":10,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"무료","name":"물","raw":"","qty":100,"unit":"g","yield":1,"note":"수돗물 — 원가 0원 처리"}],"steps":["감자는 껍질을 벗겨 얇게 썰고, 양파도 채 썬다.","냄비에 버터를 녹이고 양파를 투명해질 때까지 볶는다.","감자와 물을 넣어 감자가 완전히 무를 때까지 끓인다.","우유를 붓고 곱게 갈아 소금으로 간을 맞춘다."],"garnish":"가운데에 크림을 한 방울 떨어뜨리고 후추를 살짝 뿌린다."},{"name":"런치 세트","category":"세트메뉴","icon":"🍽","en":"Lunch Set","time":"","serving":"1인 세트","price":12000,"lines":[{"kind":"메뉴","name":"치킨 볶음밥","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"},{"kind":"메뉴","name":"감자 크림 수프","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"}],"steps":["치킨 볶음밥과 감자 크림 수프를 각각 조리한다.","쟁반에 함께 담아 낸다."],"garnish":"수프는 왼쪽 앞, 볶음밥은 오른쪽 뒤에 배치한다."}],"fixedCosts":[{"name":"인건비","amount":8000000,"include":true,"note":"급여 · 4대보험 사용자 부담분","reason":""},{"name":"임대료","amount":3000000,"include":true,"note":"월 임대료 · 관리비","reason":""},{"name":"공과금","amount":800000,"include":true,"note":"수도 · 전기 · 가스","reason":""},{"name":"배달·광고 수수료","amount":1500000,"include":true,"note":"배달앱 수수료 · 마케팅비","reason":""},{"name":"식재료 매입비","amount":6000000,"include":false,"note":"","reason":"메뉴별 식재료 원가에 이미 반영 → 고정비 배분에서 제외 (이중 계산 방지)"}],"settings":{"monthlyRevenue":30000000,"targetFoodCostRate":0.3,"warnFoodCostRate":0.38,"vatIncluded":true,"vatRate":0.1},"issues":[{"type":"시작하기","menu":"-","name":"① 회사 이름 바꾸기","note":"[고정비] 화면 맨 아래 「기본 정보」에서 회사·매장 이름을 입력하세요. 화면과 엑셀 제목에 반영됩니다."},{"type":"시작하기","menu":"-","name":"② 식재료 등록","note":"[식재료] 화면에서 「＋ 식재료 추가」로 우리 매장이 쓰는 재료와 구매가격·규격을 넣으세요."},{"type":"시작하기","menu":"-","name":"③ 고정비 입력","note":"[고정비] 화면에서 우리 매장의 월 고정비와 월 추정매출을 실제 값으로 바꾸세요."},{"type":"시작하기","menu":"-","name":"④ 메뉴 등록","note":"[메뉴] 화면 아래 입력칸에 메뉴 이름·카테고리·판매가를 넣고 「＋ 메뉴 추가」를 누르면 상세가 열립니다."},{"type":"시작하기","menu":"-","name":"⑤ 예시 데이터 정리","note":"치킨 볶음밥 · 감자 크림 수프 · 런치 세트는 사용법을 보여주기 위한 예시입니다. 다 익히셨으면 지우세요."},{"type":"예시 데이터","menu":"치킨 볶음밥","name":"식재료 + 프렙 사용 예시","note":"일반 식재료와 미리 만들어 둔 프렙(반제품)을 함께 쓰는 메뉴의 예시입니다."},{"type":"예시 데이터","menu":"감자 크림 수프","name":"수율 · 무료 항목 예시","note":"껍질을 벗겨 버리는 손실(수율 85%)과 원가가 들지 않는 수돗물(무료) 처리 예시입니다."},{"type":"예시 데이터","menu":"런치 세트","name":"세트메뉴 예시","note":"다른 메뉴를 구성품으로 넣으면 그 메뉴의 식재료 원가가 자동으로 합산됩니다."}]};</script>
+<script>window.EMBEDDED_DATASET = {"meta":{"brand":"우리 매장","title":"메뉴 원가 분석서","source":"원가 분석 템플릿 · 예시 데이터가 들어 있습니다","version":"1.0","template":true},"categoryOrder":["메인 요리","사이드","음료","세트메뉴"],"categoryIcon":{"메인 요리":"🍳","사이드":"🥗","음료":"🥤","세트메뉴":"🍽"},"ingredients":[{"name":"닭가슴살","price":12000,"pack_qty":1,"unit":"kg","weight_g":1000},{"name":"쌀","price":62000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"양파","price":14000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"당근","price":16500,"pack_qty":3,"unit":"kg","weight_g":3000},{"name":"감자","price":35000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"우유","price":1650,"pack_qty":1,"unit":"L","weight_g":1000},{"name":"버터","price":14500,"pack_qty":13.1,"unit":"kg","weight_g":13100},{"name":"식용유","price":49500,"pack_qty":18,"unit":"L","weight_g":18000},{"name":"간장","price":5500,"pack_qty":1.8,"unit":"L","weight_g":1800},{"name":"소금","price":15000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"후추","price":9000,"pack_qty":0.4,"unit":"kg","weight_g":400},{"name":"대파","price":4980,"pack_qty":0.5,"unit":"kg","weight_g":500}],"preps":[{"name":"기본 볶음 소스","yield_g":1200,"yield_rate":0.8,"items":[{"kind":"식재료","name":"양파","raw":"","qty":1000},{"kind":"식재료","name":"간장","raw":"","qty":300},{"kind":"식재료","name":"식용유","raw":"","qty":200},{"kind":"식재료","name":"소금","raw":"","qty":50}]}],"menus":[{"name":"치킨 볶음밥","category":"메인 요리","icon":"🍳","en":"Chicken Fried Rice","time":"총 조리시간: 약 10분","serving":"1인분 기준","price":9000,"lines":[{"kind":"식재료","name":"쌀","raw":"","qty":200,"unit":"g","yield":1,"note":"지은 밥 기준"},{"kind":"식재료","name":"닭가슴살","raw":"","qty":100,"unit":"g","yield":0.9,"note":"손질 손실 10% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"당근","raw":"","qty":20,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"식용유","raw":"","qty":15,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"후추","raw":"","qty":1,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"대파","raw":"","qty":10,"unit":"g","yield":1,"note":"고명"},{"kind":"프렙","name":"기본 볶음 소스","raw":"","qty":40,"unit":"g","yield":1,"note":"미리 만들어 둔 소스"}],"steps":["닭가슴살을 사방 1cm 크기로 썰고 소금·후추로 밑간한다.","달군 팬에 식용유를 두르고 닭고기를 넣어 겉면이 익을 때까지 볶는다.","양파와 당근을 넣어 2분간 함께 볶는다.","밥을 넣고 기본 볶음 소스를 둘러 센불에서 고루 볶는다.","소금·후추로 간을 맞추고 대파를 올려 마무리한다."],"garnish":"대파 흰 부분을 얇게 썰어 가운데 올리고, 접시 가장자리를 닦아 낸다."},{"name":"감자 크림 수프","category":"사이드","icon":"🥗","en":"Potato Cream Soup","time":"총 조리시간: 약 15분","serving":"1인분 기준","price":5000,"lines":[{"kind":"식재료","name":"감자","raw":"","qty":150,"unit":"g","yield":0.85,"note":"껍질 손실 15% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"우유","raw":"","qty":120,"unit":"g","yield":1,"note":"120ml ≈ 120g"},{"kind":"식재료","name":"버터","raw":"","qty":10,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"무료","name":"물","raw":"","qty":100,"unit":"g","yield":1,"note":"수돗물 — 원가 0원 처리"}],"steps":["감자는 껍질을 벗겨 얇게 썰고, 양파도 채 썬다.","냄비에 버터를 녹이고 양파를 투명해질 때까지 볶는다.","감자와 물을 넣어 감자가 완전히 무를 때까지 끓인다.","우유를 붓고 곱게 갈아 소금으로 간을 맞춘다."],"garnish":"가운데에 크림을 한 방울 떨어뜨리고 후추를 살짝 뿌린다."},{"name":"런치 세트","category":"세트메뉴","icon":"🍽","en":"Lunch Set","time":"","serving":"1인 세트","price":12000,"lines":[{"kind":"메뉴","name":"치킨 볶음밥","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"},{"kind":"메뉴","name":"감자 크림 수프","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"}],"steps":["치킨 볶음밥과 감자 크림 수프를 각각 조리한다.","쟁반에 함께 담아 낸다."],"garnish":"수프는 왼쪽 앞, 볶음밥은 오른쪽 뒤에 배치한다."}],"fixedCosts":[{"name":"인건비","amount":8000000,"include":true,"note":"급여 · 4대보험 사용자 부담분","reason":""},{"name":"임대료","amount":3000000,"include":true,"note":"월 임대료 · 관리비","reason":""},{"name":"공과금","amount":800000,"include":true,"note":"수도 · 전기 · 가스","reason":""},{"name":"배달·광고 수수료","amount":1500000,"include":true,"note":"배달앱 수수료 · 마케팅비","reason":""},{"name":"식재료 매입비","amount":6000000,"include":false,"note":"","reason":"메뉴별 식재료 원가에 이미 반영 → 고정비 배분에서 제외 (이중 계산 방지)"}],"settings":{"monthlyRevenue":30000000,"targetFoodCostRate":0.3,"warnFoodCostRate":0.38,"vatIncluded":true,"vatRate":0.1,"admin":{"id":"admin","salt":"","passHash":""}},"issues":[{"type":"시작하기","menu":"-","name":"① 회사 이름 바꾸기","note":"[고정비] 화면 맨 아래 「기본 정보」에서 회사·매장 이름을 입력하세요. 화면과 엑셀 제목에 반영됩니다."},{"type":"시작하기","menu":"-","name":"② 식재료 등록","note":"[식재료] 화면에서 「＋ 식재료 추가」로 우리 매장이 쓰는 재료와 구매가격·규격을 넣으세요."},{"type":"시작하기","menu":"-","name":"③ 고정비 입력","note":"[고정비] 화면에서 우리 매장의 월 고정비와 월 추정매출을 실제 값으로 바꾸세요."},{"type":"시작하기","menu":"-","name":"④ 메뉴 등록","note":"[메뉴] 화면 아래 입력칸에 메뉴 이름·카테고리·판매가를 넣고 「＋ 메뉴 추가」를 누르면 상세가 열립니다."},{"type":"시작하기","menu":"-","name":"⑤ 예시 데이터 정리","note":"치킨 볶음밥 · 감자 크림 수프 · 런치 세트는 사용법을 보여주기 위한 예시입니다. 다 익히셨으면 지우세요."},{"type":"시작하기","menu":"-","name":"⑥ 관리자 로그인 등록","note":"화면 위쪽의 🔒 아이콘(또는 왼쪽 「관리자 로그인」)을 눌러 원하는 아이디·비밀번호를 등록하세요. 등록 전까지는 아무 아이디·비밀번호로나 로그인하면 그 값으로 등록됩니다 — 반드시 직접 한 번 등록해 두세요."},{"type":"예시 데이터","menu":"치킨 볶음밥","name":"식재료 + 프렙 사용 예시","note":"일반 식재료와 미리 만들어 둔 프렙(반제품)을 함께 쓰는 메뉴의 예시입니다."},{"type":"예시 데이터","menu":"감자 크림 수프","name":"수율 · 무료 항목 예시","note":"껍질을 벗겨 버리는 손실(수율 85%)과 원가가 들지 않는 수돗물(무료) 처리 예시입니다."},{"type":"예시 데이터","menu":"런치 세트","name":"세트메뉴 예시","note":"다른 메뉴를 구성품으로 넣으면 그 메뉴의 식재료 원가가 자동으로 합산됩니다."}]};</script>
 <script>/* =====================================================================
  *  원가 계산 엔진  (브라우저 / Node 공용)
  *  엑셀 수식과 1:1 로 동일한 로직 — 어디서 계산해도 같은 값이 나온다.
@@ -1776,9 +1845,127 @@ const state = {
   savedAt: null,
   loadedFromFile: false,
   serverOk: true,
+  authed: false,       // 관리자 로그인 여부 — false 면 화면은 보이되 수정은 막는다
 };
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
+
+/* ── 관리자 로그인 ─────────────────────────────────────
+   서버가 없는 단일 파일 특성상 완전한 보안은 아니다(코드를 열어 보면 로직이 보임).
+   직원 실수로 값이 바뀌는 걸 막는 「보기 전용 / 수정 가능」 구분 용도다.
+   로그인 상태는 이 탭에만 유지되고(sessionStorage), 파일을 다시 열면 다시 로그인해야 한다. */
+const AUTH_KEY = 'ec-admin-authed';
+const sessionStore = {
+  get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); return true; } catch (_) { return false; } },
+  remove(k) { try { sessionStorage.removeItem(k); } catch (_) {} },
+};
+async function sha256Hex(text) {
+  if (self.crypto && crypto.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  let h = 0;                              // 구형 브라우저 대비 — 평문 저장만은 피한다
+  for (let i = 0; i < text.length; i++) h = (Math.imul(31, h) + text.charCodeAt(i)) | 0;
+  return 'fnv' + (h >>> 0).toString(16);
+}
+function adminAccount() { return (state.data.settings && state.data.settings.admin) || {}; }
+function hasAdminAccount() { return !!adminAccount().passHash; }
+async function checkLogin(id, pw) {
+  const a = adminAccount();
+  if (id !== a.id) return false;
+  return (await sha256Hex((a.salt || '') + pw)) === a.passHash;
+}
+/** 아직 계정이 없으면 지금 입력한 값으로 등록하고, 있으면 맞는지 확인한다 */
+async function attemptLogin(id, pw) {
+  if (!hasAdminAccount()) {
+    const salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    state.data.settings.admin = { id, salt, passHash: await sha256Hex(salt + pw) };
+    commit('관리자 계정 등록');
+    return { ok: true, registered: true };
+  }
+  return { ok: await checkLogin(id, pw), registered: false };
+}
+/** 수정 동작 진입점에서 호출 — 로그인 안 돼 있으면 로그인창을 띄우고 막는다 */
+function requireAuth() {
+  if (state.authed) return true;
+  openLogin();
+  return false;
+}
+function setAuthed(v) {
+  state.authed = v;
+  if (v) sessionStore.set(AUTH_KEY, '1'); else sessionStore.remove(AUTH_KEY);
+}
+function logout() {
+  setAuthed(false);
+  closeSheet();
+  render();
+  toast('로그아웃했습니다 — 이제 수정할 수 없습니다');
+}
+function openLogin() {
+  $('#loginId').value = '';
+  $('#loginPw').value = '';
+  $('#loginError').hidden = true;
+  const has = hasAdminAccount();
+  $('#loginDesc').textContent = has
+    ? '수정하려면 관리자 아이디와 비밀번호를 입력하세요.'
+    : '처음 사용하시는군요. 원하시는 아이디·비밀번호를 정해서 입력하면 그대로 등록됩니다.';
+  $('#loginSubmit').textContent = has ? '로그인' : '등록하고 로그인';
+  $('#loginModal').hidden = false;
+  $('#loginBackdrop').hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => $('#loginId').focus(), 30);
+}
+function closeLogin() {
+  $('#loginModal').hidden = true;
+  $('#loginBackdrop').hidden = true;
+  document.body.style.overflow = '';
+}
+function loginError(msg) {
+  const e = $('#loginError');
+  e.textContent = msg;
+  e.hidden = false;
+}
+function resetAdminAccount() {
+  if (!confirm('관리자 계정을 초기화할까요?\n초기화하면 지금부터 로그인창에 입력하는 아이디·비밀번호로 새로 등록됩니다.')) return;
+  state.data.settings.admin = { id: 'admin', salt: '', passHash: '' };
+  commit('관리자 계정 초기화');
+  $('#loginId').value = ''; $('#loginPw').value = '';
+  $('#loginDesc').textContent = '계정을 초기화했습니다. 원하시는 아이디·비밀번호를 입력하면 새로 등록됩니다.';
+  $('#loginSubmit').textContent = '등록하고 로그인';
+  loginError('계정이 초기화되었습니다.');
+}
+async function submitLogin() {
+  const id = $('#loginId').value.trim();
+  const pw = $('#loginPw').value;
+  if (!id || !pw) { loginError('아이디와 비밀번호를 입력하세요'); return; }
+  if (!hasAdminAccount() && pw.length < 4) { loginError('비밀번호는 4자 이상으로 정해 주세요'); return; }
+  const wasNew = !hasAdminAccount();
+  const { ok } = await attemptLogin(id, pw);
+  if (!ok) { loginError('아이디 또는 비밀번호가 올바르지 않습니다'); return; }
+  setAuthed(true);
+  closeLogin();
+  render();
+  toast(wasNew ? `관리자 계정을 등록했습니다 (아이디: ${id})` : '로그인했습니다');
+}
+/** 화면이 그려진 뒤 호출 — 로그인 안 돼 있으면 수정용 입력·버튼을 잠근다 */
+function applyLock(container) {
+  if (!container) return;
+  const locked = !state.authed;
+  container.querySelectorAll('input, select, textarea, button').forEach((elx) => {
+    if (elx.dataset.keep === '1') return;
+    elx.disabled = locked;
+  });
+}
+function paintAuth() {
+  const authed = state.authed;
+  const icon = $('#btnAuth');
+  if (icon) { icon.textContent = authed ? '🔓' : '🔒'; icon.title = authed ? '로그아웃' : '관리자 로그인'; icon.classList.toggle('authed', authed); }
+  const side = $('#btnAuthSide');
+  if (side) { side.textContent = authed ? '🔓 로그아웃 (관리자 모드)' : '🔒 관리자 로그인'; side.classList.toggle('authed', authed); }
+  const banner = $('#viewLockBanner');
+  if (banner) banner.hidden = authed;
+}
 
 /* ── 되돌리기 / 다시 실행 ──────────────────────────────
    값을 바꾸기 직전 상태를 쌓아 둔다. 실수로 지워도 Ctrl+Z 로 복구된다.
@@ -1795,6 +1982,7 @@ function pushHistory(label) {
 function takeSnapshot() { history.snapshot = JSON.stringify(state.data); }
 
 function undo() {
+  if (!requireAuth()) return;
   if (!history.undo.length) return;
   const step = history.undo.pop();
   history.redo.push({ json: JSON.stringify(state.data), label: step.label });
@@ -1802,6 +1990,7 @@ function undo() {
   afterTimeTravel(`되돌렸습니다 — ${step.label}`);
 }
 function redo() {
+  if (!requireAuth()) return;
   if (!history.redo.length) return;
   const step = history.redo.pop();
   history.undo.push({ json: JSON.stringify(state.data), label: step.label });
@@ -2121,9 +2310,11 @@ function render(opts = {}) {
   root.innerHTML = '';
   ({ dash: viewDash, menu: viewMenu, ing: viewIng, prep: viewPrep, fix: viewFix, issue: viewIssue }[state.view] || viewDash)(root);
   root.scrollTop = keep;
+  applyLock(root);
   paintSync();
   paintBrand();
   paintLicense();
+  paintAuth();
   paintHistoryButtons();
 }
 
@@ -2309,10 +2500,12 @@ function viewMenu(root) {
   const bar1 = el('div', 'filters');
   const search = el('input', 'search');
   search.type = 'search'; search.placeholder = '메뉴 검색…'; search.value = f.q;
+  search.dataset.keep = '1';
   search.oninput = () => { f.q = search.value; paint(); };
   bar1.appendChild(search);
 
   const sel = el('select', 'sel');
+  sel.dataset.keep = '1';
   [['cat', '카테고리 순'], ['rate-desc', '원가율 높은 순'], ['rate-asc', '원가율 낮은 순'],
    ['margin-desc', '마진 큰 순'], ['price-desc', '판매가 높은 순'], ['name', '이름순']]
     .forEach(([v, l]) => { const o = el('option', null, l); o.value = v; sel.appendChild(o); });
@@ -2321,12 +2514,14 @@ function viewMenu(root) {
   bar1.appendChild(sel);
 
   const gsel = el('select', 'sel');
+  gsel.dataset.keep = '1';
   [['all', '전체 판정'], ['good', '✅ 양호'], ['warn', '🟡 주의'], ['bad', '🔴 과다'], ['none', '⬜ 판매가 미입력']]
     .forEach(([v, l]) => { const o = el('option', null, l); o.value = v; gsel.appendChild(o); });
   gsel.value = f.grade;
   gsel.onchange = () => { f.grade = gsel.value; paint(); };
   bar1.appendChild(gsel);
   const pAll = el('button', 'btn', '🖨 레시피 카드 인쇄');
+  pAll.dataset.keep = '1';
   pAll.onclick = () => printCards(list().map((m) => m.name));
   bar1.appendChild(pAll);
   root.appendChild(bar1);
@@ -2336,6 +2531,7 @@ function viewMenu(root) {
   const cats = ['all', ...state.data.categoryOrder.filter((c) => r.menus.some((m) => m.category === c))];
   cats.forEach((c) => {
     const b = el('button', 'chip', c === 'all' ? '전체' : `${state.data.categoryIcon[c] || ''} ${c}`);
+    b.dataset.keep = '1';
     b.setAttribute('aria-pressed', String(f.cat === c));
     b.onclick = () => { f.cat = c; paint(); };
     chips.appendChild(b);
@@ -2674,6 +2870,8 @@ function openMenu(name) {
   };
   body.appendChild(danger);
 
+  applyLock(body);
+  pbtn.disabled = false;   // 인쇄는 보기 전용에서도 가능
   $('#sheet').hidden = false;
   $('#sheetBackdrop').hidden = false;
   document.body.style.overflow = 'hidden';
@@ -2692,6 +2890,7 @@ function viewIng(root) {
   const bar1 = el('div', 'filters');
   const search = el('input', 'search');
   search.type = 'search'; search.placeholder = '식재료 검색…'; search.value = f.ingQ;
+  search.dataset.keep = '1';
   search.oninput = () => { f.ingQ = search.value; paint(); };
   bar1.appendChild(search);
   const info = el('div');
@@ -3046,6 +3245,7 @@ function openImport(kind) {
   ta.onpaste = () => setTimeout(preview, 0);
 
   btnApply.onclick = () => {
+    if (!requireAuth()) return;
     const { added, updated } = spec.apply(parsed);
     commit(`${spec.title} (${parsed.length}건)`);
     closeSheet();
@@ -3053,6 +3253,7 @@ function openImport(kind) {
     toast(`${added}건 추가, ${updated}건 갱신했습니다`);
   };
 
+  applyLock(body);
   $('#sheet').hidden = false;
   $('#sheetBackdrop').hidden = false;
   document.body.style.overflow = 'hidden';
@@ -3306,6 +3507,35 @@ function viewFix(root) {
   be.appendChild(bi);
   s4.body.appendChild(be);
 
+  /* 관리자 계정 변경 */
+  const acctWrap = el('div');
+  acctWrap.style.marginTop = '16px';
+  acctWrap.appendChild(el('div', 'l', `관리자 계정 (현재 아이디: ${adminAccount().id || 'admin'})`));
+  const acctRow = el('div', 'newform');
+  acctRow.style.cssText = 'padding:8px 0 0;border-top:0';
+  const newId = el('input'); newId.type = 'text'; newId.placeholder = '새 아이디 (바꿀 때만 입력)';
+  const newPw = el('input'); newPw.type = 'password'; newPw.placeholder = '새 비밀번호 (바꿀 때만 입력)'; newPw.autocomplete = 'new-password';
+  const acctBtn = el('button', 'btn', '계정 정보 변경');
+  acctBtn.onclick = async () => {
+    const idv = newId.value.trim(), pwv = newPw.value;
+    if (!idv && !pwv) { toast('바꿀 아이디나 비밀번호를 입력하세요'); return; }
+    if (pwv && pwv.length < 4) { toast('비밀번호는 4자 이상으로 정해 주세요'); return; }
+    const a = adminAccount();
+    if (idv) a.id = idv;
+    if (pwv) { const salt = Math.random().toString(36).slice(2) + Date.now().toString(36); a.salt = salt; a.passHash = await sha256Hex(salt + pwv); }
+    state.data.settings.admin = a;
+    newId.value = ''; newPw.value = '';
+    commit('관리자 계정 변경'); render({ keepScroll: true });
+    toast('관리자 계정 정보를 변경했습니다');
+  };
+  acctRow.append(newId, newPw, acctBtn);
+  acctWrap.appendChild(acctRow);
+  const acctNote = el('div', 'small');
+  acctNote.style.cssText = 'color:var(--muted);margin-top:6px';
+  acctNote.textContent = '서버 없이 이 파일 안에만 저장되는 계정입니다 — 비밀번호를 잊으면 되찾을 방법이 없으니 잘 기억해 두세요.';
+  acctWrap.appendChild(acctNote);
+  s4.body.appendChild(acctWrap);
+
   const catWrap = el('div');
   catWrap.style.marginTop = '14px';
   catWrap.appendChild(el('div', 'l', '메뉴 카테고리 (메뉴를 추가할 때 고를 수 있습니다)'));
@@ -3546,8 +3776,12 @@ function backup() {
   a.click();
   toast('백업 파일을 저장했습니다');
 }
-function restore() { $('#fileRestore').click(); }
+function restore() {
+  if (!requireAuth()) return;
+  $('#fileRestore').click();
+}
 function resetAll() {
+  if (!requireAuth()) return;
   if (!confirm('추가·수정한 내용을 모두 지우고 처음 상태로 되돌립니다. 계속할까요?')) return;
   state.data = clone(state.base);
   commit('처음 상태로 되돌리기'); render();
@@ -3597,6 +3831,8 @@ async function boot() {
 
   state.data = pickData(state.base, parseSaved(payload.saved));
   state.sync = state.serverOk ? 'synced' : 'local';
+  state.data.settings.admin = state.data.settings.admin || { id: 'admin', salt: '', passHash: '' };
+  state.authed = sessionStore.get(AUTH_KEY) === '1';
 
   // 브라우저가 저장을 받아주는지 미리 확인 → 못 쓰면 바로 알림
   if (!state.serverOk && !saveLocal()) warnIfCannotSave(false);
@@ -3624,7 +3860,7 @@ async function boot() {
   $('#sheetClose').onclick = closeSheet;
   $('#sheetBackdrop').onclick = closeSheet;
   addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeSheet(); $('#morePop').hidden = true; return; }
+    if (e.key === 'Escape') { closeSheet(); closeLogin(); $('#morePop').hidden = true; return; }
     const mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
     const k = e.key.toLowerCase();
@@ -3634,7 +3870,19 @@ async function boot() {
   $('#btnUndo').onclick = undo;
   $('#btnRedo').onclick = redo;
 
+  const toggleAuth = () => { if (state.authed) logout(); else openLogin(); };
+  $('#btnAuth').onclick = toggleAuth;
+  $('#btnAuthSide').onclick = toggleAuth;
+  $('#viewLockBtn').onclick = openLogin;
+  $('#loginClose').onclick = closeLogin;
+  $('#loginBackdrop').onclick = closeLogin;
+  $('#loginSubmit').onclick = submitLogin;
+  $('#loginPw').onkeydown = (e) => { if (e.key === 'Enter') submitLogin(); };
+  $('#loginId').onkeydown = (e) => { if (e.key === 'Enter') $('#loginPw').focus(); };
+  $('#loginForgot').onclick = (e) => { e.preventDefault(); resetAdminAccount(); };
+
   $('#fileRestore').onchange = async (e) => {
+    if (!requireAuth()) { e.target.value = ''; return; }
     const f = e.target.files[0];
     if (!f) return;
     try {
