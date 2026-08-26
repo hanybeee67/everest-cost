@@ -1810,7 +1810,22 @@ if (typeof require === 'function' && typeof module === 'object' && require.main 
 (() => {
 'use strict';
 
-const LS_KEY = 'everest-cost-overrides-v2';
+/* 저장 칸(localStorage) 키 — 실제 값은 boot() 에서 이 파일의 데이터셋에 맞춰 다시 정해진다.
+   file:// 로 연 로컬 HTML 파일은 브라우저(Chrome 등)가 전부 「같은 origin」으로 취급해서
+   localStorage 를 공유한다 — 즉, 이 값을 고정해 두면 템플릿 파일과 실데이터 파일처럼
+   서로 다른 파일을 같은 브라우저에서 열었을 때 값이 뒤섞인다. 데이터셋마다 다른 칸에
+   저장해서 이를 막는다. */
+let LS_KEY = 'everest-cost-overrides-v2';
+const LS_KEY_LEGACY = 'everest-cost-overrides-v2';
+function computeLsKey(base) {
+  const seed = JSON.stringify([
+    (base.meta && base.meta.brand) || '', (base.meta && base.meta.title) || '',
+    (base.menus || []).length, (base.ingredients || []).length,
+  ]);
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+  return 'everest-cost-overrides-v3:' + (h >>> 0).toString(36);
+}
 
 /* localStorage 는 시크릿 모드·정책에 따라 접근만 해도 예외를 던진다.
    화면이 통째로 멈추지 않도록 전부 이 래퍼를 통해서만 쓴다. */
@@ -1854,7 +1869,7 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
    서버가 없는 단일 파일 특성상 완전한 보안은 아니다(코드를 열어 보면 로직이 보임).
    직원 실수로 값이 바뀌는 걸 막는 「보기 전용 / 수정 가능」 구분 용도다.
    로그인 상태는 이 탭에만 유지되고(sessionStorage), 파일을 다시 열면 다시 로그인해야 한다. */
-const AUTH_KEY = 'ec-admin-authed';
+let AUTH_KEY = 'ec-admin-authed';   // LS_KEY 와 마찬가지로 boot() 에서 데이터셋별로 다시 정해진다
 const sessionStore = {
   get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
   set(k, v) { try { sessionStorage.setItem(k, v); return true; } catch (_) { return false; } },
@@ -2113,7 +2128,23 @@ function saveLocal() {
   return store.set(LS_KEY, JSON.stringify({ savedAt: new Date().toISOString(), data: state.data }));
 }
 /** 저장된 것 읽기 — 예전 형식(수정값만 저장)도 그대로 읽어 데이터로 바꿔 준다 */
-function readLocal() { return parseSaved(store.get(LS_KEY)); }
+/** 예전 공용 저장칸의 값이 「지금 이 데이터셋」의 것이 맞는지 대충 확인한다.
+    (브랜드명이 같고, 메뉴 수가 비슷해야 한다 — 안 그러면 다른 파일의 값을 잘못 가져오게 된다) */
+function legacyMatchesBase(saved) {
+  const d = saved && saved.data;
+  if (!d) return false;
+  const sameBrand = (d.meta && d.meta.brand) === (state.base.meta && state.base.meta.brand);
+  const menuDiff = Math.abs((d.menus || []).length - (state.base.menus || []).length);
+  return sameBrand && menuDiff <= 5;
+}
+function readLocal() {
+  const own = parseSaved(store.get(LS_KEY));
+  if (own) return own;
+  if (LS_KEY === LS_KEY_LEGACY) return null;
+  // 이 저장칸 분리 이전에 저장된 값(예전 공용 키)이 「이 데이터셋의 것」이 맞을 때만 옮겨 온다
+  const legacy = parseSaved(store.get(LS_KEY_LEGACY));
+  return legacyMatchesBase(legacy) ? legacy : null;
+}
 
 function parseSaved(raw) {
   try {
@@ -3828,6 +3859,8 @@ async function boot() {
   state.base = payload.dataset;
   state.base.categoryOrder = state.base.categoryOrder || [];
   state.base.categoryIcon = state.base.categoryIcon || {};
+  LS_KEY = computeLsKey(state.base);   // 이 데이터셋 전용 저장칸 — 다른 파일과 값이 섞이지 않도록
+  AUTH_KEY = 'ec-admin-authed:' + LS_KEY;   // 로그인 상태도 데이터셋별로 분리
 
   state.data = pickData(state.base, parseSaved(payload.saved));
   state.sync = state.serverOk ? 'synced' : 'local';
