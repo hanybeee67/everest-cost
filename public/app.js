@@ -223,6 +223,11 @@ function paintHistoryButtons() {
            u.title = history.undo.length ? `되돌리기 — ${history.undo[history.undo.length - 1].label} (Ctrl+Z)` : '되돌릴 내용이 없습니다'; }
   if (r) { r.disabled = !history.redo.length;
            r.title = history.redo.length ? `다시 실행 (Ctrl+Shift+Z)` : '다시 실행할 내용이 없습니다'; }
+  // 모바일에서는 같은 기능이 ⋯ 메뉴에 들어 있다
+  const pu = $('#popUndo'), pr = $('#popRedo');
+  if (pu) { pu.disabled = !history.undo.length;
+            pu.textContent = history.undo.length ? `↶ 되돌리기 — ${history.undo[history.undo.length - 1].label}` : '↶ 되돌리기'; }
+  if (pr) pr.disabled = !history.redo.length;
 }
 
 /* ── 계산 · 저장 트리거 ─────────────────────────────── */
@@ -834,7 +839,7 @@ function viewMenu(root) {
       tr.onclick = () => openMenu(m.name);
       t.tbody.appendChild(tr);
     });
-    t.wrap.classList.add('desktop-only');
+    c.card.classList.add('desktop-only');   // 표와 입력폼을 통째로 — 모바일에서는 아래 카드 목록만 쓴다
     c.body.appendChild(t.wrap);
     c.card.appendChild(newMenuForm());
     host.appendChild(c.card);
@@ -1144,7 +1149,7 @@ function viewIng(root) {
       const was = baseIng(it.name);
       const tr = el('tr');
 
-      const nameTd = el('td');
+      const nameTd = el('td', 'head');
       nameTd.appendChild(textInput(d.name, (v) => {
         if (state.data.ingredients.some((x) => x !== d && x.name === v)) { toast('같은 이름이 이미 있습니다'); render({ keepScroll: true }); return; }
         renameRef('식재료', d.name, v); d.name = v; commit(); render({ keepScroll: true });
@@ -1152,16 +1157,19 @@ function viewIng(root) {
       tr.appendChild(nameTd);
 
       const p = el('td', 'num');
+      p.dataset.l = '구매가격';
       p.appendChild(numInput(d.price, (v) => { d.price = v; commit(); render({ keepScroll: true }); },
         { changed: diff(d.price, was && was.price) }));
       tr.appendChild(p);
 
       const q = el('td', 'num');
+      q.dataset.l = '규격';
       q.appendChild(numInput(d.pack_qty, (v) => { d.pack_qty = v; commit(); render({ keepScroll: true }); },
         { changed: diff(d.pack_qty, was && was.pack_qty), step: 'any' }));
       tr.appendChild(q);
 
       const u = el('td');
+      u.dataset.l = '단위';
       const us = el('input', 'inp inp-text');
       us.type = 'text'; us.value = d.unit || 'kg'; us.style.maxWidth = '70px';
       us.onchange = () => { d.unit = us.value.trim() || 'kg'; commit(); };
@@ -1169,15 +1177,18 @@ function viewIng(root) {
       tr.appendChild(u);
 
       const w = el('td', 'num');
+      w.dataset.l = '총중량(g)';
       w.appendChild(numInput(d.weight_g, (v) => { d.weight_g = v; commit(); render({ keepScroll: true }); },
         { changed: diff(d.weight_g, was && was.weight_g), step: 'any' }));
       tr.appendChild(w);
 
       const uc = el('td', 'num', won3(it.unitCost));
+      uc.dataset.l = 'g당 단가';
       uc.style.cssText = 'font-weight:750;color:var(--accent-ink)';
       tr.appendChild(uc);
 
       const st = el('td');
+      st.dataset.l = '상태';
       st.innerHTML = it.valid ? '<span class="badge-grade g-good">✓ 정상</span>'
                               : '<span class="badge-grade g-warn">⚠ 값 확인</span>';
       tr.appendChild(st);
@@ -1191,6 +1202,7 @@ function viewIng(root) {
       t.tbody.appendChild(tr);
     });
     if (!rows.length) t.tbody.appendChild(Object.assign(el('tr'), { innerHTML: '<td colspan="8" class="dim" style="text-align:center;padding:28px">해당하는 식재료가 없습니다.</td>' }));
+    t.wrap.querySelector('table').classList.add('tbl-stack');   // 좁은 화면에서는 행마다 카드로 쌓인다
     c.body.appendChild(t.wrap);
     const bar2 = el('div', 'addbar');
     bar2.style.display = 'grid';
@@ -1524,14 +1536,22 @@ function viewPrep(root) {
     p.items.forEach((it, ix) => {
       const di = d.items[ix];
       const tr = el('tr');
-      tr.appendChild(kindCell(di, ['식재료', '프렙'], () => render({ keepScroll: true })));
-      tr.appendChild(refCell(di, () => render({ keepScroll: true })));
+      const kc = kindCell(di, ['식재료', '프렙'], () => render({ keepScroll: true }));
+      kc.dataset.l = '구분';
+      tr.appendChild(kc);
+      const rc = refCell(di, () => render({ keepScroll: true }));
+      rc.classList.add('head');
+      tr.appendChild(rc);
       const q = el('td', 'num');
+      q.dataset.l = '투입량(g)';
       q.appendChild(numInput(di.qty, (v) => { di.qty = v; commit(); render({ keepScroll: true }); },
         { changed: diff(di.qty, was && was.items[ix] && was.items[ix].qty), step: 'any' }));
       tr.appendChild(q);
-      tr.appendChild(el('td', 'num', won3(it.unitCost)));
+      const ucTd = el('td', 'num', won3(it.unitCost));
+      ucTd.dataset.l = 'g당 단가';
+      tr.appendChild(ucTd);
       const cs = el('td', 'num', won1(it.cost));
+      cs.dataset.l = '재료비';
       cs.style.fontWeight = '700';
       tr.appendChild(cs);
       const act = el('td', 'act');
@@ -1539,10 +1559,11 @@ function viewPrep(root) {
       tr.appendChild(act);
       t.tbody.appendChild(tr);
     });
-    const sum = el('tr');
-    sum.innerHTML = `<td class="name" colspan="2">합 계</td><td class="num dim">${won(p.inputG)}</td><td></td>
-                     <td class="num" style="font-weight:800;color:var(--accent-ink)">${won(p.totalCost)}</td><td></td>`;
+    const sum = el('tr', 'sumrow');
+    sum.innerHTML = `<td class="name head" colspan="2">합 계</td><td class="num dim" data-l="투입 합계">${won(p.inputG)}</td><td></td>
+                     <td class="num" data-l="총 재료비" style="font-weight:800;color:var(--accent-ink)">${won(p.totalCost)}</td><td></td>`;
     t.tbody.appendChild(sum);
+    t.wrap.querySelector('table').classList.add('tbl-stack');   // 좁은 화면에서는 행마다 카드로 쌓인다
     c.body.appendChild(t.wrap);
     c.card.appendChild(addBar('재료 추가', () => {
       d.items.push({ kind: '식재료', name: (state.data.ingredients[0] || {}).name || '', raw: '', qty: 0 });
@@ -1619,19 +1640,21 @@ function viewFix(root) {
     const was = baseFix(f.name);
     const tr = el('tr');
 
-    const nameTd = el('td');
+    const nameTd = el('td', 'head');
     nameTd.appendChild(textInput(d.name, (v) => {
       if (state.data.fixedCosts.some((x) => x !== d && x.name === v)) { toast('같은 이름이 이미 있습니다'); render({ keepScroll: true }); return; }
       d.name = v; commit(); render({ keepScroll: true });
     }, { changed: !was }));
     tr.appendChild(nameTd);
 
-    const a = el('td', 'num');
+    const a = el('td', 'num full');
+    a.dataset.l = '월간 금액(원)';
     a.appendChild(numInput(d.amount, (v) => { d.amount = v; commit(); render({ keepScroll: true }); },
       { changed: diff(d.amount, was && was.amount) }));
     tr.appendChild(a);
 
-    const sw = el('td');
+    const sw = el('td', 'full');
+    sw.dataset.l = '배분 포함';
     const lab = el('label', 'switch');
     const cb = el('input'); cb.type = 'checkbox'; cb.checked = d.include !== false;
     cb.onchange = () => { d.include = cb.checked; commit(); render({ keepScroll: true }); };
@@ -1639,10 +1662,10 @@ function viewFix(root) {
     sw.appendChild(lab);
     tr.appendChild(sw);
 
-    const noteTd = el('td');
-    const ni = el('input', 'inp inp-text');
+    const noteTd = el('td', 'full');
+    noteTd.dataset.l = '비고';
+    const ni = el('input', 'inp inp-text inp-note');
     ni.type = 'text'; ni.value = d.reason || d.note || ''; ni.placeholder = '메모';
-    ni.style.maxWidth = '280px';
     ni.onchange = () => { d.note = ni.value; d.reason = ''; commit(); };
     if (d.reason) ni.style.color = 'var(--warn)';
     noteTd.appendChild(ni);
@@ -1656,6 +1679,7 @@ function viewFix(root) {
     tr.appendChild(act);
     t.tbody.appendChild(tr);
   });
+  t.wrap.querySelector('table').classList.add('tbl-stack');   // 좁은 화면에서는 행마다 카드로 쌓인다
   c.body.appendChild(t.wrap);
   c.card.appendChild(addBar('비용 항목 추가', addFixedCost));
   root.appendChild(c.card);
@@ -2131,7 +2155,7 @@ async function boot() {
   pop.querySelectorAll('button').forEach((b) => {
     b.onclick = () => {
       pop.hidden = true;
-      ({ excel: downloadExcel, portable: savePortable, backup, restore, reset: resetAll }[b.dataset.act] || (() => {}))();
+      ({ undo, redo, excel: downloadExcel, portable: savePortable, backup, restore, reset: resetAll }[b.dataset.act] || (() => {}))();
     };
   });
 

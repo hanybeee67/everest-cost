@@ -9,7 +9,7 @@
 <!--
   ═══════════════════════════════════════════════════════════════
    우리 매장 · 메뉴 원가 분석서  (단일 파일 버전)
-   생성일 2026-08-26
+   생성일 2026-08-31
 
    · 이 파일 하나면 끝입니다. 인터넷도, 설치도, 서버도 필요 없습니다.
    · 파일을 더블클릭하면 브라우저에서 바로 열립니다.
@@ -131,9 +131,13 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
   padding:14px 22px;background:color-mix(in srgb,var(--bg) 88%,transparent);
   backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);
 }
-.topbar-title h1{font-size:19px}
-.topbar-title p{margin:1px 0 0;font-size:12.5px;color:var(--muted)}
-.topbar-actions{margin-left:auto;display:flex;gap:6px}
+/* 제목 칸이 줄어들 수 있게 min-width:0 을 주고, 좁으면 「…」 로 줄인다.
+   (이게 없으면 좁은 화면에서 한 글자씩 세로로 쪼개져 헤더가 화면을 다 덮는다) */
+.topbar-title{flex:1 1 auto;min-width:0}
+.topbar-title h1{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-title p{margin:1px 0 0;font-size:12.5px;color:var(--muted);
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-actions{margin-left:auto;display:flex;gap:6px;flex:0 0 auto}
 .scroll{flex:1;padding:20px 22px 40px;overflow:auto}
 
 /* ── 버튼 ─────────────────────────────────────────── */
@@ -279,6 +283,7 @@ tr.clickable{cursor:pointer}
 
 /* ── 편집 (추가 · 삭제) ──────────────────────────── */
 .inp-text{max-width:200px;text-align:left;font-weight:650}
+.inp-note{max-width:280px}
 .del-btn{
   width:26px;height:26px;border-radius:8px;border:1px solid transparent;background:transparent;
   color:var(--faint);cursor:pointer;font-size:12px;line-height:1;
@@ -439,6 +444,9 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
 }
 .popover button:hover{background:var(--surface-2)}
 .popover button.danger{color:var(--bad)}
+.popover button:disabled{opacity:.35;cursor:default}
+.popover button:disabled:hover{background:transparent}
+.popover button{max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .tabbar{display:none}
 .only-mobile{display:none}
@@ -449,8 +457,13 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   body{font-size:15px}
   .sidebar{display:none}
   .only-mobile{display:grid}
-  .topbar{padding:12px 14px}
-  .topbar-title h1{font-size:17px}
+  .topbar{padding:10px 12px;gap:8px}
+  .topbar-title h1{font-size:16.5px}
+  .topbar-title p{font-size:11.5px}
+  /* 좁은 화면에서는 아이콘 수를 줄여 제목 자리를 확보한다 (되돌리기·다시실행은 ⋯ 메뉴로) */
+  .no-mobile{display:none !important}
+  .topbar-actions{gap:4px}
+  .topbar-actions .icon-btn{width:32px;height:32px;font-size:14px}
   .scroll{padding:14px 14px calc(env(safe-area-inset-bottom) + 84px)}
   .kpis{grid-template-columns:1fr 1fr;gap:9px}
   .kpi{padding:12px 13px}
@@ -488,6 +501,9 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .search{max-width:none}
   .sync-pill{display:inline-flex}
   .savewarn{margin:12px 14px 0}
+  .viewlock{margin:12px 14px 0;padding:9px 11px;font-size:12.5px;gap:8px;flex-wrap:nowrap}
+  .viewlock-more{display:none}          /* 좁은 화면에서는 한 줄로 줄인다 */
+  .viewlock-btn{margin-left:auto;padding:5px 10px;font-size:12px;white-space:nowrap}
 
   /* 요약 카드: 2열, 여백 축소 */
   .breakdown{grid-template-columns:1fr 1fr;gap:8px}
@@ -510,8 +526,44 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .line-foot .c-name{grid-column:auto;margin:0}
   .line-foot .c-qty,.line-foot .c-yield,.line-foot .c-unit,.line-foot .c-del{display:none}
   .line-foot .c-cost{background:transparent;padding:0}
+
+  /* 열이 많은 표(식재료·고정비)는 좁은 화면에서 한 줄씩 쌓아 카드처럼 보여준다.
+     가로로 스크롤하지 않아도 이름·값이 전부 보이게 하기 위함. */
+  .tbl-stack thead{display:none}
+  .tbl-stack,.tbl-stack tbody{display:block}
+  .tbl-stack tr{
+    position:relative;display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;
+    border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin:0 0 9px;
+    background:var(--surface);
+  }
+  .tbl-stack td{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    border:0;padding:0;font-size:13.5px;text-align:left;white-space:normal;
+  }
+  .tbl-stack td[data-l]::before{
+    content:attr(data-l);font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;
+  }
+  .tbl-stack td.full{grid-column:1/-1}
+  .tbl-stack td.head{grid-column:1/-1;padding-right:32px}
+  .tbl-stack td:empty{display:none}
+  .tbl-stack td.head .inp,.tbl-stack td.full .inp,
+  .tbl-stack td.head .sel,.tbl-stack td.full .sel{max-width:none;width:100%}
+  .tbl-stack td.act{position:absolute;top:9px;right:10px;padding:0}
+  .tbl-stack .inp{max-width:112px}
+  .tbl-stack .sel{max-width:100%}
+  .tbl-stack .switch{gap:7px}
+  .tbl-stack tr.sumrow{background:var(--surface-2);gap:6px 10px}
 }
 @media (min-width:861px){ .cards{display:none} .mobile-only{display:none} }
+
+/* 아주 좁은 화면(구형 폰·메일 뷰어 등) — 저장 표시는 점만 남기고 제목 자리를 더 준다 */
+@media (max-width:480px){
+  .topbar{padding:9px 10px;gap:6px}
+  .topbar-title h1{font-size:15.5px}
+  .sync-pill{font-size:0;gap:0;padding:7px}
+  .sync-pill::before{width:9px;height:9px}
+  .topbar-actions .icon-btn{width:30px;height:30px;font-size:13.5px}
+}
 
 /* ══════════ 레시피 카드 인쇄 ══════════ */
 /* 사용권자가 새겨진 파일이면 인쇄물에 옅은 워터마크를 깐다 */
@@ -574,7 +626,7 @@ body.printing #printRoot{display:block}
   .pcard + .pcard{border-top:0}
   .ptab,.psteps,.pkpi{page-break-inside:avoid;break-inside:avoid}
 }
-@media (max-width:860px){ .tablewrap.desktop-only{display:none} }
+@media (max-width:860px){ .desktop-only{display:none !important} }
 
 </style>
 </head>
@@ -619,15 +671,16 @@ body.printing #printRoot{display:block}
       <div class="topbar-actions">
         <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
         <button class="icon-btn" id="btnAuth" title="관리자 로그인">🔒</button>
-        <button class="icon-btn" id="btnUndo" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
-        <button class="icon-btn" id="btnRedo" title="다시 실행 (Ctrl+Shift+Z)" disabled>↷</button>
+        <button class="icon-btn no-mobile" id="btnUndo" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
+        <button class="icon-btn no-mobile" id="btnRedo" title="다시 실행 (Ctrl+Shift+Z)" disabled>↷</button>
         <button class="icon-btn" id="btnTheme" title="화면 밝기 전환">◐</button>
         <button class="icon-btn only-mobile" id="btnMenu" title="메뉴">⋯</button>
       </div>
     </header>
 
     <div class="viewlock" id="viewLockBanner" hidden>
-      🔒 <b>보기 전용 모드입니다.</b> 메뉴·식재료·고정비를 수정하려면 관리자 로그인을 해 주세요.
+      🔒 <b>보기 전용 모드입니다.</b>
+      <span class="viewlock-more">메뉴·식재료·고정비를 수정하려면 관리자 로그인을 해 주세요.</span>
       <button class="viewlock-btn" id="viewLockBtn">관리자 로그인</button>
     </div>
     <div class="savewarn" id="saveWarn" hidden>
@@ -657,6 +710,8 @@ body.printing #printRoot{display:block}
 
   <!-- ══════════ 모바일 더보기 ══════════ -->
   <div class="popover" id="morePop" hidden>
+    <button data-act="undo" id="popUndo">↶ 되돌리기</button>
+    <button data-act="redo" id="popRedo">↷ 다시 실행</button>
     <button data-act="excel">엑셀 내려받기</button>
     <button data-act="portable">이 값 그대로 파일 저장</button>
     <button data-act="backup">백업 파일 저장</button>
@@ -688,7 +743,7 @@ body.printing #printRoot{display:block}
 <div id="printRoot" aria-hidden="true"></div>
 
 <script id="ovData" type="application/json">null</script>
-<script>window.LICENSE_INFO = {"licensee":"","licenseId":"","issuedAt":"2026-08-26"};</script>
+<script>window.LICENSE_INFO = {"licensee":"","licenseId":"","issuedAt":"2026-08-31"};</script>
 
 <!-- ═══════════════════════════════════════════════════════════════
      오픈소스 라이선스 고지 (Third-Party Notice)
@@ -2027,6 +2082,11 @@ function paintHistoryButtons() {
            u.title = history.undo.length ? `되돌리기 — ${history.undo[history.undo.length - 1].label} (Ctrl+Z)` : '되돌릴 내용이 없습니다'; }
   if (r) { r.disabled = !history.redo.length;
            r.title = history.redo.length ? `다시 실행 (Ctrl+Shift+Z)` : '다시 실행할 내용이 없습니다'; }
+  // 모바일에서는 같은 기능이 ⋯ 메뉴에 들어 있다
+  const pu = $('#popUndo'), pr = $('#popRedo');
+  if (pu) { pu.disabled = !history.undo.length;
+            pu.textContent = history.undo.length ? `↶ 되돌리기 — ${history.undo[history.undo.length - 1].label}` : '↶ 되돌리기'; }
+  if (pr) pr.disabled = !history.redo.length;
 }
 
 /* ── 계산 · 저장 트리거 ─────────────────────────────── */
@@ -2638,7 +2698,7 @@ function viewMenu(root) {
       tr.onclick = () => openMenu(m.name);
       t.tbody.appendChild(tr);
     });
-    t.wrap.classList.add('desktop-only');
+    c.card.classList.add('desktop-only');   // 표와 입력폼을 통째로 — 모바일에서는 아래 카드 목록만 쓴다
     c.body.appendChild(t.wrap);
     c.card.appendChild(newMenuForm());
     host.appendChild(c.card);
@@ -2948,7 +3008,7 @@ function viewIng(root) {
       const was = baseIng(it.name);
       const tr = el('tr');
 
-      const nameTd = el('td');
+      const nameTd = el('td', 'head');
       nameTd.appendChild(textInput(d.name, (v) => {
         if (state.data.ingredients.some((x) => x !== d && x.name === v)) { toast('같은 이름이 이미 있습니다'); render({ keepScroll: true }); return; }
         renameRef('식재료', d.name, v); d.name = v; commit(); render({ keepScroll: true });
@@ -2956,16 +3016,19 @@ function viewIng(root) {
       tr.appendChild(nameTd);
 
       const p = el('td', 'num');
+      p.dataset.l = '구매가격';
       p.appendChild(numInput(d.price, (v) => { d.price = v; commit(); render({ keepScroll: true }); },
         { changed: diff(d.price, was && was.price) }));
       tr.appendChild(p);
 
       const q = el('td', 'num');
+      q.dataset.l = '규격';
       q.appendChild(numInput(d.pack_qty, (v) => { d.pack_qty = v; commit(); render({ keepScroll: true }); },
         { changed: diff(d.pack_qty, was && was.pack_qty), step: 'any' }));
       tr.appendChild(q);
 
       const u = el('td');
+      u.dataset.l = '단위';
       const us = el('input', 'inp inp-text');
       us.type = 'text'; us.value = d.unit || 'kg'; us.style.maxWidth = '70px';
       us.onchange = () => { d.unit = us.value.trim() || 'kg'; commit(); };
@@ -2973,15 +3036,18 @@ function viewIng(root) {
       tr.appendChild(u);
 
       const w = el('td', 'num');
+      w.dataset.l = '총중량(g)';
       w.appendChild(numInput(d.weight_g, (v) => { d.weight_g = v; commit(); render({ keepScroll: true }); },
         { changed: diff(d.weight_g, was && was.weight_g), step: 'any' }));
       tr.appendChild(w);
 
       const uc = el('td', 'num', won3(it.unitCost));
+      uc.dataset.l = 'g당 단가';
       uc.style.cssText = 'font-weight:750;color:var(--accent-ink)';
       tr.appendChild(uc);
 
       const st = el('td');
+      st.dataset.l = '상태';
       st.innerHTML = it.valid ? '<span class="badge-grade g-good">✓ 정상</span>'
                               : '<span class="badge-grade g-warn">⚠ 값 확인</span>';
       tr.appendChild(st);
@@ -2995,6 +3061,7 @@ function viewIng(root) {
       t.tbody.appendChild(tr);
     });
     if (!rows.length) t.tbody.appendChild(Object.assign(el('tr'), { innerHTML: '<td colspan="8" class="dim" style="text-align:center;padding:28px">해당하는 식재료가 없습니다.</td>' }));
+    t.wrap.querySelector('table').classList.add('tbl-stack');   // 좁은 화면에서는 행마다 카드로 쌓인다
     c.body.appendChild(t.wrap);
     const bar2 = el('div', 'addbar');
     bar2.style.display = 'grid';
@@ -3328,14 +3395,22 @@ function viewPrep(root) {
     p.items.forEach((it, ix) => {
       const di = d.items[ix];
       const tr = el('tr');
-      tr.appendChild(kindCell(di, ['식재료', '프렙'], () => render({ keepScroll: true })));
-      tr.appendChild(refCell(di, () => render({ keepScroll: true })));
+      const kc = kindCell(di, ['식재료', '프렙'], () => render({ keepScroll: true }));
+      kc.dataset.l = '구분';
+      tr.appendChild(kc);
+      const rc = refCell(di, () => render({ keepScroll: true }));
+      rc.classList.add('head');
+      tr.appendChild(rc);
       const q = el('td', 'num');
+      q.dataset.l = '투입량(g)';
       q.appendChild(numInput(di.qty, (v) => { di.qty = v; commit(); render({ keepScroll: true }); },
         { changed: diff(di.qty, was && was.items[ix] && was.items[ix].qty), step: 'any' }));
       tr.appendChild(q);
-      tr.appendChild(el('td', 'num', won3(it.unitCost)));
+      const ucTd = el('td', 'num', won3(it.unitCost));
+      ucTd.dataset.l = 'g당 단가';
+      tr.appendChild(ucTd);
       const cs = el('td', 'num', won1(it.cost));
+      cs.dataset.l = '재료비';
       cs.style.fontWeight = '700';
       tr.appendChild(cs);
       const act = el('td', 'act');
@@ -3343,10 +3418,11 @@ function viewPrep(root) {
       tr.appendChild(act);
       t.tbody.appendChild(tr);
     });
-    const sum = el('tr');
-    sum.innerHTML = `<td class="name" colspan="2">합 계</td><td class="num dim">${won(p.inputG)}</td><td></td>
-                     <td class="num" style="font-weight:800;color:var(--accent-ink)">${won(p.totalCost)}</td><td></td>`;
+    const sum = el('tr', 'sumrow');
+    sum.innerHTML = `<td class="name head" colspan="2">합 계</td><td class="num dim" data-l="투입 합계">${won(p.inputG)}</td><td></td>
+                     <td class="num" data-l="총 재료비" style="font-weight:800;color:var(--accent-ink)">${won(p.totalCost)}</td><td></td>`;
     t.tbody.appendChild(sum);
+    t.wrap.querySelector('table').classList.add('tbl-stack');   // 좁은 화면에서는 행마다 카드로 쌓인다
     c.body.appendChild(t.wrap);
     c.card.appendChild(addBar('재료 추가', () => {
       d.items.push({ kind: '식재료', name: (state.data.ingredients[0] || {}).name || '', raw: '', qty: 0 });
@@ -3423,19 +3499,21 @@ function viewFix(root) {
     const was = baseFix(f.name);
     const tr = el('tr');
 
-    const nameTd = el('td');
+    const nameTd = el('td', 'head');
     nameTd.appendChild(textInput(d.name, (v) => {
       if (state.data.fixedCosts.some((x) => x !== d && x.name === v)) { toast('같은 이름이 이미 있습니다'); render({ keepScroll: true }); return; }
       d.name = v; commit(); render({ keepScroll: true });
     }, { changed: !was }));
     tr.appendChild(nameTd);
 
-    const a = el('td', 'num');
+    const a = el('td', 'num full');
+    a.dataset.l = '월간 금액(원)';
     a.appendChild(numInput(d.amount, (v) => { d.amount = v; commit(); render({ keepScroll: true }); },
       { changed: diff(d.amount, was && was.amount) }));
     tr.appendChild(a);
 
-    const sw = el('td');
+    const sw = el('td', 'full');
+    sw.dataset.l = '배분 포함';
     const lab = el('label', 'switch');
     const cb = el('input'); cb.type = 'checkbox'; cb.checked = d.include !== false;
     cb.onchange = () => { d.include = cb.checked; commit(); render({ keepScroll: true }); };
@@ -3443,10 +3521,10 @@ function viewFix(root) {
     sw.appendChild(lab);
     tr.appendChild(sw);
 
-    const noteTd = el('td');
-    const ni = el('input', 'inp inp-text');
+    const noteTd = el('td', 'full');
+    noteTd.dataset.l = '비고';
+    const ni = el('input', 'inp inp-text inp-note');
     ni.type = 'text'; ni.value = d.reason || d.note || ''; ni.placeholder = '메모';
-    ni.style.maxWidth = '280px';
     ni.onchange = () => { d.note = ni.value; d.reason = ''; commit(); };
     if (d.reason) ni.style.color = 'var(--warn)';
     noteTd.appendChild(ni);
@@ -3460,6 +3538,7 @@ function viewFix(root) {
     tr.appendChild(act);
     t.tbody.appendChild(tr);
   });
+  t.wrap.querySelector('table').classList.add('tbl-stack');   // 좁은 화면에서는 행마다 카드로 쌓인다
   c.body.appendChild(t.wrap);
   c.card.appendChild(addBar('비용 항목 추가', addFixedCost));
   root.appendChild(c.card);
@@ -3935,7 +4014,7 @@ async function boot() {
   pop.querySelectorAll('button').forEach((b) => {
     b.onclick = () => {
       pop.hidden = true;
-      ({ excel: downloadExcel, portable: savePortable, backup, restore, reset: resetAll }[b.dataset.act] || (() => {}))();
+      ({ undo, redo, excel: downloadExcel, portable: savePortable, backup, restore, reset: resetAll }[b.dataset.act] || (() => {}))();
     };
   });
 

@@ -109,9 +109,13 @@ h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
   padding:14px 22px;background:color-mix(in srgb,var(--bg) 88%,transparent);
   backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);
 }
-.topbar-title h1{font-size:19px}
-.topbar-title p{margin:1px 0 0;font-size:12.5px;color:var(--muted)}
-.topbar-actions{margin-left:auto;display:flex;gap:6px}
+/* 제목 칸이 줄어들 수 있게 min-width:0 을 주고, 좁으면 「…」 로 줄인다.
+   (이게 없으면 좁은 화면에서 한 글자씩 세로로 쪼개져 헤더가 화면을 다 덮는다) */
+.topbar-title{flex:1 1 auto;min-width:0}
+.topbar-title h1{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-title p{margin:1px 0 0;font-size:12.5px;color:var(--muted);
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-actions{margin-left:auto;display:flex;gap:6px;flex:0 0 auto}
 .scroll{flex:1;padding:20px 22px 40px;overflow:auto}
 
 /* ── 버튼 ─────────────────────────────────────────── */
@@ -257,6 +261,7 @@ tr.clickable{cursor:pointer}
 
 /* ── 편집 (추가 · 삭제) ──────────────────────────── */
 .inp-text{max-width:200px;text-align:left;font-weight:650}
+.inp-note{max-width:280px}
 .del-btn{
   width:26px;height:26px;border-radius:8px;border:1px solid transparent;background:transparent;
   color:var(--faint);cursor:pointer;font-size:12px;line-height:1;
@@ -417,6 +422,9 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
 }
 .popover button:hover{background:var(--surface-2)}
 .popover button.danger{color:var(--bad)}
+.popover button:disabled{opacity:.35;cursor:default}
+.popover button:disabled:hover{background:transparent}
+.popover button{max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .tabbar{display:none}
 .only-mobile{display:none}
@@ -427,8 +435,13 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   body{font-size:15px}
   .sidebar{display:none}
   .only-mobile{display:grid}
-  .topbar{padding:12px 14px}
-  .topbar-title h1{font-size:17px}
+  .topbar{padding:10px 12px;gap:8px}
+  .topbar-title h1{font-size:16.5px}
+  .topbar-title p{font-size:11.5px}
+  /* 좁은 화면에서는 아이콘 수를 줄여 제목 자리를 확보한다 (되돌리기·다시실행은 ⋯ 메뉴로) */
+  .no-mobile{display:none !important}
+  .topbar-actions{gap:4px}
+  .topbar-actions .icon-btn{width:32px;height:32px;font-size:14px}
   .scroll{padding:14px 14px calc(env(safe-area-inset-bottom) + 84px)}
   .kpis{grid-template-columns:1fr 1fr;gap:9px}
   .kpi{padding:12px 13px}
@@ -466,6 +479,9 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .search{max-width:none}
   .sync-pill{display:inline-flex}
   .savewarn{margin:12px 14px 0}
+  .viewlock{margin:12px 14px 0;padding:9px 11px;font-size:12.5px;gap:8px;flex-wrap:nowrap}
+  .viewlock-more{display:none}          /* 좁은 화면에서는 한 줄로 줄인다 */
+  .viewlock-btn{margin-left:auto;padding:5px 10px;font-size:12px;white-space:nowrap}
 
   /* 요약 카드: 2열, 여백 축소 */
   .breakdown{grid-template-columns:1fr 1fr;gap:8px}
@@ -488,8 +504,44 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .line-foot .c-name{grid-column:auto;margin:0}
   .line-foot .c-qty,.line-foot .c-yield,.line-foot .c-unit,.line-foot .c-del{display:none}
   .line-foot .c-cost{background:transparent;padding:0}
+
+  /* 열이 많은 표(식재료·고정비)는 좁은 화면에서 한 줄씩 쌓아 카드처럼 보여준다.
+     가로로 스크롤하지 않아도 이름·값이 전부 보이게 하기 위함. */
+  .tbl-stack thead{display:none}
+  .tbl-stack,.tbl-stack tbody{display:block}
+  .tbl-stack tr{
+    position:relative;display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;
+    border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin:0 0 9px;
+    background:var(--surface);
+  }
+  .tbl-stack td{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    border:0;padding:0;font-size:13.5px;text-align:left;white-space:normal;
+  }
+  .tbl-stack td[data-l]::before{
+    content:attr(data-l);font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;
+  }
+  .tbl-stack td.full{grid-column:1/-1}
+  .tbl-stack td.head{grid-column:1/-1;padding-right:32px}
+  .tbl-stack td:empty{display:none}
+  .tbl-stack td.head .inp,.tbl-stack td.full .inp,
+  .tbl-stack td.head .sel,.tbl-stack td.full .sel{max-width:none;width:100%}
+  .tbl-stack td.act{position:absolute;top:9px;right:10px;padding:0}
+  .tbl-stack .inp{max-width:112px}
+  .tbl-stack .sel{max-width:100%}
+  .tbl-stack .switch{gap:7px}
+  .tbl-stack tr.sumrow{background:var(--surface-2);gap:6px 10px}
 }
 @media (min-width:861px){ .cards{display:none} .mobile-only{display:none} }
+
+/* 아주 좁은 화면(구형 폰·메일 뷰어 등) — 저장 표시는 점만 남기고 제목 자리를 더 준다 */
+@media (max-width:480px){
+  .topbar{padding:9px 10px;gap:6px}
+  .topbar-title h1{font-size:15.5px}
+  .sync-pill{font-size:0;gap:0;padding:7px}
+  .sync-pill::before{width:9px;height:9px}
+  .topbar-actions .icon-btn{width:30px;height:30px;font-size:13.5px}
+}
 
 /* ══════════ 레시피 카드 인쇄 ══════════ */
 /* 사용권자가 새겨진 파일이면 인쇄물에 옅은 워터마크를 깐다 */
@@ -552,4 +604,4 @@ body.printing #printRoot{display:block}
   .pcard + .pcard{border-top:0}
   .ptab,.psteps,.pkpi{page-break-inside:avoid;break-inside:avoid}
 }
-@media (max-width:860px){ .tablewrap.desktop-only{display:none} }
+@media (max-width:860px){ .desktop-only{display:none !important} }
