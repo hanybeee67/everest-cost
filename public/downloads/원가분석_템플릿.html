@@ -361,6 +361,15 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
 @media (max-width:860px){ .modeswitch-side{display:none} }
 @media (min-width:861px){ #modeSwitch{display:none} }   /* PC 는 사이드바 것만 */
 
+/* 한 / EN — 주방 화면에서만 나온다 */
+.langswitch{display:flex;gap:2px;padding:3px;background:var(--surface-2);border-radius:999px;flex:0 0 auto}
+.langswitch[hidden]{display:none}
+.langswitch button{
+  border:0;background:transparent;cursor:pointer;padding:6px 11px;border-radius:999px;
+  font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.2px;
+}
+.langswitch button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
 .rcount{font-size:12.5px;color:var(--muted);font-weight:600;margin:2px 0 12px}
 .allergy-row{align-items:center;margin-bottom:12px}
 .allergy-row .l{font-size:11.5px;color:var(--muted);font-weight:700;margin-right:2px}
@@ -706,6 +715,7 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
 
   /* 레시피북 — 휴대폰 */
   .modeswitch button{padding:6px 10px;font-size:12px}
+  .langswitch button{padding:6px 8px;font-size:11.5px}
   .rgrid{grid-template-columns:1fr 1fr;gap:10px}
   .rcard-img{aspect-ratio:16/11}          /* 휴대폰에서 사진이 화면을 다 먹지 않게 */
   .rcard-img.noimg{font-size:34px}
@@ -744,6 +754,11 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .sync-pill{font-size:0;gap:0;padding:7px}
   .sync-pill::before{width:9px;height:9px}
   .topbar-actions .icon-btn{width:30px;height:30px;font-size:13.5px}
+  /* 주방/사장은 그림만 남긴다 — 제목이 한 글자로 잘리지 않도록 */
+  .modeswitch button .tx{display:none}
+  .modeswitch button{padding:6px 9px}
+  .langswitch{padding:2px}
+  .langswitch button{padding:5px 7px;font-size:11px}
 }
 
 /* ══════════ 레시피 카드 인쇄 ══════════ */
@@ -862,6 +877,10 @@ body.printing #printRoot{display:block}
         <div class="modeswitch" id="modeSwitch" role="group" aria-label="화면 모드">
           <button data-mode="kitchen" aria-pressed="true"><span class="ic">🍳</span><span class="tx">주방</span></button>
           <button data-mode="owner" aria-pressed="false"><span class="ic">💰</span><span class="tx">사장</span></button>
+        </div>
+        <div class="langswitch" id="langSwitch" role="group" aria-label="언어 / Language">
+          <button data-lang="ko" aria-pressed="true">한</button>
+          <button data-lang="en" aria-pressed="false">EN</button>
         </div>
         <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
         <button class="icon-btn" id="btnAuth" title="관리자 로그인">🔒</button>
@@ -1012,7 +1031,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
  * @copyright Louis-Dominique Dubeau
  */function i(e){return e>=65&&e<=90||95===e||e>=97&&e<=122||e>=192&&e<=214||e>=216&&e<=246||e>=248&&e<=767||e>=880&&e<=893||e>=895&&e<=8191||e>=8204&&e<=8205||e>=8304&&e<=8591||e>=11264&&e<=12271||e>=12289&&e<=55295||e>=63744&&e<=64975||e>=65008&&e<=65533||e>=65536&&e<=983039}Object.defineProperty(r,"__esModule",{value:!0}),r.NC_NAME_START_CHAR="A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd\ud800\udc00-\udb7f\udfff",r.NC_NAME_CHAR="-"+r.NC_NAME_START_CHAR+".0-9\xb7\u0300-\u036f\u203f-\u2040",r.NC_NAME_START_CHAR_RE=new RegExp("^["+r.NC_NAME_START_CHAR+"]$","u"),r.NC_NAME_CHAR_RE=new RegExp("^["+r.NC_NAME_CHAR+"]$","u"),r.NC_NAME_RE=new RegExp("^["+r.NC_NAME_START_CHAR+"]["+r.NC_NAME_CHAR+"]*$","u"),r.isNCNameStartChar=i,r.isNCNameChar=function(e){return i(e)||45===e||46===e||e>=48&&e<=57||183===e||e>=768&&e<=879||e>=8255&&e<=8256}},{}]},{},[15])(15)}));
 //# sourceMappingURL=exceljs.bare.min.js.map</script>
-<script>window.EMBEDDED_DATASET = {"meta":{"brand":"우리 매장","title":"레시피 · 원가 관리","source":"예시 데이터가 들어 있습니다 — 지우고 우리 가게 것으로 채우세요","version":"2.0","template":true},"categoryOrder":["메인 요리","사이드","음료","세트메뉴"],"categoryIcon":{"메인 요리":"🍳","사이드":"🥗","음료":"🥤","세트메뉴":"🍽"},"ingredients":[{"name":"닭가슴살","price":12000,"pack_qty":1,"unit":"kg","weight_g":1000},{"name":"쌀","price":62000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"양파","price":14000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"당근","price":16500,"pack_qty":3,"unit":"kg","weight_g":3000},{"name":"감자","price":35000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"우유","price":1650,"pack_qty":1,"unit":"L","weight_g":1000},{"name":"버터","price":14500,"pack_qty":13.1,"unit":"kg","weight_g":13100},{"name":"식용유","price":49500,"pack_qty":18,"unit":"L","weight_g":18000},{"name":"간장","price":5500,"pack_qty":1.8,"unit":"L","weight_g":1800},{"name":"소금","price":15000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"후추","price":9000,"pack_qty":0.4,"unit":"kg","weight_g":400},{"name":"대파","price":4980,"pack_qty":0.5,"unit":"kg","weight_g":500},{"name":"콜라 (355ml 캔)","price":21000,"pack_qty":24,"unit":"개","weight_g":0,"byCount":true,"note":"개수로 사는 품목 — 한 박스 24개에 21,000원"},{"name":"배달 용기 (중)","price":60000,"pack_qty":500,"unit":"개","weight_g":0,"byCount":true,"note":"배달하신다면 반드시 메뉴 원가에 넣으세요"}],"preps":[{"name":"기본 볶음 소스","nameEn":"Basic Stir-fry Sauce","yield_g":1200,"yield_rate":0.8,"image":"","time":"약 20분","items":[{"kind":"식재료","name":"양파","raw":"","qty":1000},{"kind":"식재료","name":"간장","raw":"","qty":300},{"kind":"식재료","name":"식용유","raw":"","qty":200},{"kind":"식재료","name":"소금","raw":"","qty":50}],"steps":["양파를 잘게 썰어 기름에 갈색이 돌 때까지 볶는다.","간장과 소금을 넣고 약불에서 10분간 졸인다.","식혀서 밀폐용기에 담아 냉장 보관한다. (3일 이내 사용)"]}],"menus":[{"name":"치킨 볶음밥","nameEn":"Chicken Fried Rice","category":"메인 요리","icon":"🍳","en":"Chicken Fried Rice","time":"약 10분","serving":"1인분 기준","price":9000,"image":"","tags":["닭고기","밥류"],"allergens":["대두"],"lines":[{"kind":"식재료","name":"쌀","raw":"","qty":200,"unit":"g","yield":1,"note":"지은 밥 기준"},{"kind":"식재료","name":"닭가슴살","raw":"","qty":100,"unit":"g","yield":0.9,"note":"손질 손실 10% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"당근","raw":"","qty":20,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"식용유","raw":"","qty":15,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"후추","raw":"","qty":1,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"대파","raw":"","qty":10,"unit":"g","yield":1,"note":"고명"},{"kind":"프렙","name":"기본 볶음 소스","raw":"","qty":40,"unit":"g","yield":1,"note":"미리 만들어 둔 소스"}],"steps":["닭가슴살을 사방 1cm 크기로 썰고 소금·후추로 밑간한다.","달군 팬에 식용유를 두르고 닭고기를 넣어 겉면이 익을 때까지 볶는다.","양파와 당근을 넣어 2분간 함께 볶는다.","밥을 넣고 기본 볶음 소스를 둘러 센불에서 고루 볶는다.","소금·후추로 간을 맞추고 대파를 올려 마무리한다."],"garnish":"대파 흰 부분을 얇게 썰어 가운데 올리고, 접시 가장자리를 닦아 낸다."},{"name":"감자 크림 수프","nameEn":"Potato Cream Soup","category":"사이드","icon":"🥗","en":"Potato Cream Soup","time":"약 15분","serving":"1인분 기준","price":5000,"image":"","tags":["채식","부드러움"],"allergens":["우유"],"lines":[{"kind":"식재료","name":"감자","raw":"","qty":150,"unit":"g","yield":0.85,"note":"껍질 손실 15% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"우유","raw":"","qty":120,"unit":"g","yield":1,"note":"120ml ≈ 120g"},{"kind":"식재료","name":"버터","raw":"","qty":10,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"무료","name":"물","raw":"","qty":100,"unit":"g","yield":1,"note":"수돗물 — 원가 0원 처리"}],"steps":["감자는 껍질을 벗겨 얇게 썰고, 양파도 채 썬다.","냄비에 버터를 녹이고 양파를 투명해질 때까지 볶는다.","감자와 물을 넣어 감자가 완전히 무를 때까지 끓인다.","우유를 붓고 곱게 갈아 소금으로 간을 맞춘다."],"garnish":"가운데에 크림을 한 방울 떨어뜨리고 후추를 살짝 뿌린다."},{"name":"콜라","nameEn":"Cola","category":"음료","icon":"🥤","en":"Cola","time":"","serving":"355ml 캔 1개","price":2000,"image":"","tags":["음료"],"allergens":[],"lines":[{"kind":"식재료","name":"콜라 (355ml 캔)","raw":"","qty":1,"unit":"개","yield":1,"note":"개수로 계산되는 예시입니다"}],"steps":["차갑게 보관한 캔을 컵과 함께 낸다."],"garnish":"얼음을 채운 잔을 함께 낸다."},{"name":"런치 세트","nameEn":"Lunch Set","category":"세트메뉴","icon":"🍽","en":"Lunch Set","time":"","serving":"1인 세트","price":12000,"image":"","tags":["세트"],"allergens":["우유","대두"],"lines":[{"kind":"메뉴","name":"치킨 볶음밥","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"},{"kind":"메뉴","name":"감자 크림 수프","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"}],"steps":["치킨 볶음밥과 감자 크림 수프를 각각 조리한다.","쟁반에 함께 담아 낸다."],"garnish":"수프는 왼쪽 앞, 볶음밥은 오른쪽 뒤에 배치한다."}],"fixedCosts":[{"name":"인건비","amount":8000000,"include":true,"note":"급여 · 4대보험 사용자 부담분","reason":""},{"name":"임대료","amount":3000000,"include":true,"note":"월 임대료 · 관리비","reason":""},{"name":"공과금","amount":800000,"include":true,"note":"수도 · 전기 · 가스","reason":""},{"name":"배달·광고 수수료","amount":1500000,"include":true,"note":"배달앱 수수료 · 마케팅비","reason":""},{"name":"식재료 매입비","amount":6000000,"include":false,"note":"","reason":"메뉴별 식재료 원가에 이미 반영 → 고정비 배분에서 제외 (이중 계산 방지)"}],"settings":{"monthlyRevenue":30000000,"targetFoodCostRate":0.3,"warnFoodCostRate":0.38,"vatIncluded":true,"vatRate":0.1,"admin":{"id":"admin","salt":"","passHash":""}},"issues":[{"type":"시작하기","menu":"-","name":"① 관리자 로그인 등록","note":"화면 위 🔒 을 눌러 원하는 아이디·비밀번호를 정하세요. 등록 전에는 아무 값으로나 로그인되니, 직원에게 파일을 주기 전에 먼저 등록해 두세요."},{"type":"시작하기","menu":"-","name":"② 가게 이름 바꾸기","note":"[고정비] 화면 맨 아래 「기본 정보」에서 가게 이름을 입력하세요. 화면과 엑셀 제목에 반영됩니다."},{"type":"시작하기","menu":"-","name":"③ 식재료 등록","note":"[식재료] 화면에서 사 오는 재료와 구매가격·규격을 넣으세요. 엑셀을 쓰고 계시면 「📋 엑셀에서 일괄 등록」으로 한 번에 넣을 수 있습니다."},{"type":"시작하기","menu":"-","name":"④ 고정비·월매출 입력","note":"[고정비] 화면에서 인건비·임대료와 월 추정매출을 우리 가게 값으로 바꾸세요. 이 둘로 메뉴마다 붙는 고정비가 정해집니다."},{"type":"시작하기","menu":"-","name":"⑤ 메뉴와 레시피 등록","note":"[메뉴] 화면에서 메뉴를 추가하고, 메뉴를 눌러 재료·조리법·사진을 채우세요. 주방 화면에 그대로 나갑니다."},{"type":"시작하기","menu":"-","name":"⑥ 배달하신다면 포장용기를 꼭 넣으세요","note":"포장용기·수저·비닐봉투는 개수로 사는 품목이라 빠뜨리기 쉽습니다. [식재료]에 「개수」 단위로 등록한 뒤 배달 메뉴에 재료로 넣으면 원가에 반영됩니다. 예시로 「배달 용기 (중)」을 넣어 두었습니다."},{"type":"시작하기","menu":"-","name":"⑦ 예시 데이터 정리","note":"치킨 볶음밥 · 감자 크림 수프 · 콜라 · 런치 세트는 사용법을 보여주기 위한 예시입니다. 다 익히셨으면 지우세요."},{"type":"예시 데이터","menu":"치킨 볶음밥","name":"식재료 + 프렙 사용 예시","note":"일반 식재료와 미리 만들어 둔 프렙(반제품)을 함께 쓰는 메뉴입니다. 수율 90%도 함께 보여줍니다."},{"type":"예시 데이터","menu":"감자 크림 수프","name":"수율 · 무료 항목 예시","note":"껍질을 벗겨 버리는 손실(수율 85%)과 원가가 들지 않는 수돗물(무료) 처리 예시입니다."},{"type":"예시 데이터","menu":"콜라","name":"개수 단위 예시","note":"캔·병·포장용기처럼 무게가 아니라 개수로 사는 품목의 원가 계산 예시입니다. 24개 21,000원 → 1개 875원."},{"type":"예시 데이터","menu":"런치 세트","name":"세트메뉴 예시","note":"다른 메뉴를 구성품으로 넣으면 그 메뉴의 식재료 원가가 자동으로 합산됩니다."}]};</script>
+<script>window.EMBEDDED_DATASET = {"meta":{"brand":"우리 매장","title":"레시피 · 원가 관리","source":"예시 데이터가 들어 있습니다 — 지우고 우리 가게 것으로 채우세요","version":"2.0","template":true},"categoryOrder":["메인 요리","사이드","음료","세트메뉴"],"categoryIcon":{"메인 요리":"🍳","사이드":"🥗","음료":"🥤","세트메뉴":"🍽"},"ingredients":[{"name":"닭가슴살","price":12000,"pack_qty":1,"unit":"kg","weight_g":1000,"nameEn":"Chicken breast"},{"name":"쌀","price":62000,"pack_qty":20,"unit":"kg","weight_g":20000,"nameEn":"Rice"},{"name":"양파","price":14000,"pack_qty":15,"unit":"kg","weight_g":15000,"nameEn":"Onion"},{"name":"당근","price":16500,"pack_qty":3,"unit":"kg","weight_g":3000,"nameEn":"Carrot"},{"name":"감자","price":35000,"pack_qty":20,"unit":"kg","weight_g":20000,"nameEn":"Potato"},{"name":"우유","price":1650,"pack_qty":1,"unit":"L","weight_g":1000,"nameEn":"Milk"},{"name":"버터","price":14500,"pack_qty":13.1,"unit":"kg","weight_g":13100,"nameEn":"Butter"},{"name":"식용유","price":49500,"pack_qty":18,"unit":"L","weight_g":18000,"nameEn":"Cooking oil"},{"name":"간장","price":5500,"pack_qty":1.8,"unit":"L","weight_g":1800,"nameEn":"Soy sauce"},{"name":"소금","price":15000,"pack_qty":15,"unit":"kg","weight_g":15000,"nameEn":"Salt"},{"name":"후추","price":9000,"pack_qty":0.4,"unit":"kg","weight_g":400,"nameEn":"Black pepper"},{"name":"대파","price":4980,"pack_qty":0.5,"unit":"kg","weight_g":500,"nameEn":"Spring onion"},{"name":"콜라 (355ml 캔)","price":21000,"pack_qty":24,"unit":"개","weight_g":0,"byCount":true,"note":"개수로 사는 품목 — 한 박스 24개에 21,000원","nameEn":"Cola (355ml can)"},{"name":"배달 용기 (중)","price":60000,"pack_qty":500,"unit":"개","weight_g":0,"byCount":true,"note":"배달하신다면 반드시 메뉴 원가에 넣으세요","nameEn":"Delivery container (M)"}],"preps":[{"name":"기본 볶음 소스","nameEn":"Basic Stir-fry Sauce","yield_g":1200,"yield_rate":0.8,"image":"","time":"약 20분","items":[{"kind":"식재료","name":"양파","raw":"","qty":1000,"nameEn":"Onion"},{"kind":"식재료","name":"간장","raw":"","qty":300,"nameEn":"Soy sauce"},{"kind":"식재료","name":"식용유","raw":"","qty":200,"nameEn":"Cooking oil"},{"kind":"식재료","name":"소금","raw":"","qty":50,"nameEn":"Salt"}],"steps":["양파를 잘게 썰어 기름에 갈색이 돌 때까지 볶는다.","간장과 소금을 넣고 약불에서 10분간 졸인다.","식혀서 밀폐용기에 담아 냉장 보관한다. (3일 이내 사용)"],"timeEn":"About 20 min","stepsEn":["Finely chop the onion and fry it in oil until it turns golden brown.","Add the soy sauce and salt and reduce over low heat for 10 minutes.","Cool, transfer to an airtight container and refrigerate. (Use within 3 days.)"]}],"menus":[{"name":"치킨 볶음밥","nameEn":"Chicken Fried Rice","category":"메인 요리","icon":"🍳","en":"Chicken Fried Rice","time":"약 10분","serving":"1인분 기준","price":9000,"image":"","tags":["닭고기","밥류"],"allergens":["대두"],"lines":[{"kind":"식재료","name":"쌀","raw":"","qty":200,"unit":"g","yield":1,"note":"지은 밥 기준","nameEn":"Rice","noteEn":"Cooked rice"},{"kind":"식재료","name":"닭가슴살","raw":"","qty":100,"unit":"g","yield":0.9,"note":"손질 손실 10% 반영","nameEn":"Chicken breast","noteEn":"10% trim loss applied"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":"잘게 썰기","nameEn":"Onion","noteEn":"Finely diced"},{"kind":"식재료","name":"당근","raw":"","qty":20,"unit":"g","yield":1,"note":"잘게 썰기","nameEn":"Carrot","noteEn":"Finely diced"},{"kind":"식재료","name":"식용유","raw":"","qty":15,"unit":"g","yield":1,"note":"","nameEn":"Cooking oil"},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":"","nameEn":"Salt"},{"kind":"식재료","name":"후추","raw":"","qty":1,"unit":"g","yield":1,"note":"","nameEn":"Black pepper"},{"kind":"식재료","name":"대파","raw":"","qty":10,"unit":"g","yield":1,"note":"고명","nameEn":"Spring onion","noteEn":"Garnish"},{"kind":"프렙","name":"기본 볶음 소스","raw":"","qty":40,"unit":"g","yield":1,"note":"미리 만들어 둔 소스","nameEn":"Basic Stir-fry Sauce","noteEn":"Made ahead as prep"}],"steps":["닭가슴살을 사방 1cm 크기로 썰고 소금·후추로 밑간한다.","달군 팬에 식용유를 두르고 닭고기를 넣어 겉면이 익을 때까지 볶는다.","양파와 당근을 넣어 2분간 함께 볶는다.","밥을 넣고 기본 볶음 소스를 둘러 센불에서 고루 볶는다.","소금·후추로 간을 맞추고 대파를 올려 마무리한다."],"garnish":"대파 흰 부분을 얇게 썰어 가운데 올리고, 접시 가장자리를 닦아 낸다.","categoryEn":"Main","servingEn":"Per 1 serving","timeEn":"About 10 min","tagsEn":["Chicken","Rice"],"stepsEn":["Cut the chicken breast into 1cm cubes and season with salt and pepper.","Heat oil in a pan and stir-fry the chicken until the surface is cooked through.","Add the onion and carrot and stir-fry together for 2 minutes.","Add the rice, pour the basic stir-fry sauce around the pan and toss over high heat.","Adjust the seasoning with salt and pepper, top with spring onion and serve."],"garnishEn":"Slice the white part of the spring onion thinly, place it in the centre and wipe the rim of the plate.","allergensEn":["Soy"]},{"name":"감자 크림 수프","nameEn":"Potato Cream Soup","category":"사이드","icon":"🥗","en":"Potato Cream Soup","time":"약 15분","serving":"1인분 기준","price":5000,"image":"","tags":["채식","부드러움"],"allergens":["우유"],"lines":[{"kind":"식재료","name":"감자","raw":"","qty":150,"unit":"g","yield":0.85,"note":"껍질 손실 15% 반영","nameEn":"Potato","noteEn":"15% peeling loss applied"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":"","nameEn":"Onion"},{"kind":"식재료","name":"우유","raw":"","qty":120,"unit":"g","yield":1,"note":"120ml ≈ 120g","nameEn":"Milk","noteEn":"120ml ≈ 120g"},{"kind":"식재료","name":"버터","raw":"","qty":10,"unit":"g","yield":1,"note":"","nameEn":"Butter"},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":"","nameEn":"Salt"},{"kind":"무료","name":"물","raw":"","qty":100,"unit":"g","yield":1,"note":"수돗물 — 원가 0원 처리","nameEn":"Water","noteEn":"Tap water — counted as zero cost"}],"steps":["감자는 껍질을 벗겨 얇게 썰고, 양파도 채 썬다.","냄비에 버터를 녹이고 양파를 투명해질 때까지 볶는다.","감자와 물을 넣어 감자가 완전히 무를 때까지 끓인다.","우유를 붓고 곱게 갈아 소금으로 간을 맞춘다."],"garnish":"가운데에 크림을 한 방울 떨어뜨리고 후추를 살짝 뿌린다.","categoryEn":"Side","servingEn":"Per 1 serving","timeEn":"About 15 min","tagsEn":["Vegetarian","Creamy"],"stepsEn":["Peel and thinly slice the potato, and julienne the onion.","Melt the butter in a pot and sweat the onion until translucent.","Add the potato and water and simmer until the potato is completely soft.","Pour in the milk, blend until smooth and season with salt."],"garnishEn":"Drop a swirl of cream in the centre and finish with a little black pepper.","allergensEn":["Milk"]},{"name":"콜라","nameEn":"Cola","category":"음료","icon":"🥤","en":"Cola","time":"","serving":"355ml 캔 1개","price":2000,"image":"","tags":["음료"],"allergens":[],"lines":[{"kind":"식재료","name":"콜라 (355ml 캔)","raw":"","qty":1,"unit":"개","yield":1,"note":"개수로 계산되는 예시입니다","nameEn":"Cola (355ml can)","noteEn":"Example of costing by the piece"}],"steps":["차갑게 보관한 캔을 컵과 함께 낸다."],"garnish":"얼음을 채운 잔을 함께 낸다.","categoryEn":"Drinks","servingEn":"One 355ml can","timeEn":"","tagsEn":["Drink"],"stepsEn":["Serve the chilled can together with a glass."],"garnishEn":"Serve with a glass full of ice."},{"name":"런치 세트","nameEn":"Lunch Set","category":"세트메뉴","icon":"🍽","en":"Lunch Set","time":"","serving":"1인 세트","price":12000,"image":"","tags":["세트"],"allergens":["우유","대두"],"lines":[{"kind":"메뉴","name":"치킨 볶음밥","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다","nameEn":"Chicken Fried Rice","noteEn":"Takes the à-la-carte cost as it is"},{"kind":"메뉴","name":"감자 크림 수프","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다","nameEn":"Potato Cream Soup","noteEn":"Takes the à-la-carte cost as it is"}],"steps":["치킨 볶음밥과 감자 크림 수프를 각각 조리한다.","쟁반에 함께 담아 낸다."],"garnish":"수프는 왼쪽 앞, 볶음밥은 오른쪽 뒤에 배치한다.","categoryEn":"Set Menu","servingEn":"Set for one","timeEn":"","tagsEn":["Set"],"stepsEn":["Cook the Chicken Fried Rice and the Potato Cream Soup separately.","Plate them together on one tray and serve."],"garnishEn":"Soup front left, fried rice back right.","allergensEn":["Milk","Soy"]}],"fixedCosts":[{"name":"인건비","amount":8000000,"include":true,"note":"급여 · 4대보험 사용자 부담분","reason":""},{"name":"임대료","amount":3000000,"include":true,"note":"월 임대료 · 관리비","reason":""},{"name":"공과금","amount":800000,"include":true,"note":"수도 · 전기 · 가스","reason":""},{"name":"배달·광고 수수료","amount":1500000,"include":true,"note":"배달앱 수수료 · 마케팅비","reason":""},{"name":"식재료 매입비","amount":6000000,"include":false,"note":"","reason":"메뉴별 식재료 원가에 이미 반영 → 고정비 배분에서 제외 (이중 계산 방지)"}],"settings":{"monthlyRevenue":30000000,"targetFoodCostRate":0.3,"warnFoodCostRate":0.38,"vatIncluded":true,"vatRate":0.1,"admin":{"id":"admin","salt":"","passHash":""}},"issues":[{"type":"시작하기","menu":"-","name":"① 관리자 로그인 등록","note":"화면 위 🔒 을 눌러 원하는 아이디·비밀번호를 정하세요. 등록 전에는 아무 값으로나 로그인되니, 직원에게 파일을 주기 전에 먼저 등록해 두세요."},{"type":"시작하기","menu":"-","name":"② 가게 이름 바꾸기","note":"[고정비] 화면 맨 아래 「기본 정보」에서 가게 이름을 입력하세요. 화면과 엑셀 제목에 반영됩니다."},{"type":"시작하기","menu":"-","name":"③ 식재료 등록","note":"[식재료] 화면에서 사 오는 재료와 구매가격·규격을 넣으세요. 엑셀을 쓰고 계시면 「📋 엑셀에서 일괄 등록」으로 한 번에 넣을 수 있습니다."},{"type":"시작하기","menu":"-","name":"④ 고정비·월매출 입력","note":"[고정비] 화면에서 인건비·임대료와 월 추정매출을 우리 가게 값으로 바꾸세요. 이 둘로 메뉴마다 붙는 고정비가 정해집니다."},{"type":"시작하기","menu":"-","name":"⑤ 메뉴와 레시피 등록","note":"[메뉴] 화면에서 메뉴를 추가하고, 메뉴를 눌러 재료·조리법·사진을 채우세요. 주방 화면에 그대로 나갑니다."},{"type":"시작하기","menu":"-","name":"⑥ 배달하신다면 포장용기를 꼭 넣으세요","note":"포장용기·수저·비닐봉투는 개수로 사는 품목이라 빠뜨리기 쉽습니다. [식재료]에 「개수」 단위로 등록한 뒤 배달 메뉴에 재료로 넣으면 원가에 반영됩니다. 예시로 「배달 용기 (중)」을 넣어 두었습니다."},{"type":"시작하기","menu":"-","name":"⑦ 예시 데이터 정리","note":"치킨 볶음밥 · 감자 크림 수프 · 콜라 · 런치 세트는 사용법을 보여주기 위한 예시입니다. 다 익히셨으면 지우세요."},{"type":"예시 데이터","menu":"치킨 볶음밥","name":"식재료 + 프렙 사용 예시","note":"일반 식재료와 미리 만들어 둔 프렙(반제품)을 함께 쓰는 메뉴입니다. 수율 90%도 함께 보여줍니다."},{"type":"예시 데이터","menu":"감자 크림 수프","name":"수율 · 무료 항목 예시","note":"껍질을 벗겨 버리는 손실(수율 85%)과 원가가 들지 않는 수돗물(무료) 처리 예시입니다."},{"type":"예시 데이터","menu":"콜라","name":"개수 단위 예시","note":"캔·병·포장용기처럼 무게가 아니라 개수로 사는 품목의 원가 계산 예시입니다. 24개 21,000원 → 1개 875원."},{"type":"예시 데이터","menu":"런치 세트","name":"세트메뉴 예시","note":"다른 메뉴를 구성품으로 넣으면 그 메뉴의 식재료 원가가 자동으로 합산됩니다."}]};</script>
 <script>/* =====================================================================
  *  원가 계산 엔진  (브라우저 / Node 공용)
  *  엑셀 수식과 1:1 로 동일한 로직 — 어디서 계산해도 같은 값이 나온다.
@@ -2115,9 +2134,10 @@ function recipeMatches(m, q) {
   const needle = q.toLowerCase().trim();
   if (!needle) return true;
   const hay = [
-    m.name, m.nameEn || m.en || '', m.category,
-    ...(m.tags || []),
+    m.name, m.nameEn || m.en || '', m.category, m.categoryEn || '',
+    ...(m.tags || []), ...(m.tagsEn || []),
     ...(m.lines || []).map((l) => l.name),
+    ...(m.lines || []).map((l) => l.nameEn || ''),
   ].join(' ');
   return hay.toLowerCase().includes(needle) || chosung(hay).includes(needle);
 }
@@ -2137,6 +2157,7 @@ const state = {
   base: null,          // 처음 들어 있던 원본 (되돌리기·변경표시 기준)
   data: null,          // 지금 편집 중인 데이터 (이걸 저장한다)
   mode: 'kitchen',     // kitchen(주방 · 레시피북) | owner(사장 · 원가)
+  lang: 'ko',          // ko | en — 주방 화면의 표시 언어 (외국인 직원용)
   view: 'recipe',
   recipeOpen: null,    // 주방 모드에서 펼쳐 놓은 레시피 이름
   scale: 1,            // 레시피 분량 배율 (×1 ~ ×4)
@@ -2272,7 +2293,14 @@ function paintAuth() {
   const side = $('#btnAuthSide');
   if (side) { side.textContent = authed ? '🔓 로그아웃 (관리자 모드)' : '🔒 관리자 로그인'; side.classList.toggle('authed', authed); }
   const banner = $('#viewLockBanner');
-  if (banner) banner.hidden = authed;
+  if (banner) {
+    banner.hidden = authed;
+    const b = banner.querySelector('b'), more = banner.querySelector('.viewlock-more'), btn = $('#viewLockBtn');
+    if (b)    b.textContent    = tx('보기 전용 모드입니다.', 'View-only mode.');
+    if (more) more.textContent = tx('레시피·원가를 수정하려면 관리자 로그인을 해 주세요.',
+                                    'Sign in as administrator to change recipes or costs.');
+    if (btn)  btn.textContent  = tx('관리자 로그인', 'Admin sign-in');
+  }
 }
 
 /* ── 되돌리기 / 다시 실행 ──────────────────────────────
@@ -2461,8 +2489,11 @@ function parseSaved(raw) {
    그래서 저장값에 비어 있는 내용 칸만 파일 쪽에서 채워 준다.
    (사장님이 직접 넣은 사진이나 일부러 뺀 사진은 건드리지 않는다) */
 const CONTENT_KEYS_MENU = ['image', 'tags', 'nameEn', 'time', 'cookTimeMin', 'cookTimeMax',
-                           'allergens', 'serving', 'icon', 'en'];
-const CONTENT_KEYS_PREP = ['image', 'tags', 'nameEn', 'time', 'steps'];
+                           'allergens', 'serving', 'icon', 'en',
+                           'categoryEn', 'servingEn', 'timeEn', 'tagsEn', 'stepsEn', 'garnishEn',
+                           'allergensEn'];
+const CONTENT_KEYS_PREP = ['image', 'tags', 'nameEn', 'time', 'steps', 'timeEn', 'stepsEn'];
+const CONTENT_KEYS_LINE = ['nameEn', 'noteEn'];
 
 /** 값이 「아직 채워지지 않은 칸」인가 — null 은 일부러 비운 것이라 건드리지 않는다 */
 function isBlank(v) {
@@ -2485,8 +2516,21 @@ function backfillContent(data, base) {
       }
     });
   };
-  (data.menus || []).forEach((m) => fill(m, bm.get(m.name), CONTENT_KEYS_MENU));
-  (data.preps || []).forEach((p) => fill(p, bp.get(p.name), CONTENT_KEYS_PREP));
+  /* 재료 줄의 영어 이름 — 줄 순서는 원본과 같다 */
+  const fillLines = (mine, theirs) => {
+    if (!mine || !theirs || mine.length !== theirs.length) return;
+    mine.forEach((l, ix) => fill(l, theirs[ix], CONTENT_KEYS_LINE));
+  };
+  (data.menus || []).forEach((m) => {
+    const src = bm.get(m.name);
+    fill(m, src, CONTENT_KEYS_MENU);
+    if (src) fillLines(m.lines, src.lines);
+  });
+  (data.preps || []).forEach((p) => {
+    const src = bp.get(p.name);
+    fill(p, src, CONTENT_KEYS_PREP);
+    if (src) fillLines(p.items, src.items);
+  });
   return filled;
 }
 
@@ -2619,9 +2663,11 @@ function pickData(base, serverSaved) {
    사장 모드 — 원가·마진·판정 (사장이 가끔 보는 화면)            */
 const VIEWS = [
   { id: 'recipe', mode: 'kitchen', icon: '🍳', label: '레시피', title: '레시피북',
-    desc: '메뉴를 누르면 재료와 조리법이 나옵니다' },
+    desc: '메뉴를 누르면 재료와 조리법이 나옵니다',
+    labelEn: 'Recipes', titleEn: 'Recipe Book', descEn: 'Tap a dish to see its ingredients and steps' },
   { id: 'cook',  mode: 'kitchen', icon: '🧪', label: '프렙',   title: '프렙(반제품)',
-    desc: '미리 만들어 두는 소스·반제품' },
+    desc: '미리 만들어 두는 소스·반제품',
+    labelEn: 'Prep', titleEn: 'Prep (sub-recipes)', descEn: 'Sauces and bases made ahead of service' },
 
   { id: 'dash',  mode: 'owner', icon: '📊', label: '대시보드', title: '대시보드',        desc: '전체 원가 현황 요약' },
   { id: 'menu',  mode: 'owner', icon: '🍽', label: '메뉴',     title: '메뉴 원가',       desc: '메뉴를 누르면 레시피와 원가 상세가 열립니다' },
@@ -2640,7 +2686,7 @@ function buildNav() {
   viewsFor(state.mode).forEach((v) => {
     const mk = () => {
       const b = el('button');
-      b.innerHTML = `<span class="ic">${esc(v.icon)}</span><span>${esc(v.label)}</span>`;
+      b.innerHTML = `<span class="ic">${esc(v.icon)}</span><span>${esc(EN() && v.labelEn ? v.labelEn : v.label)}</span>`;
       if (v.id === 'issue') b.appendChild(el('span', 'badge', String((state.data.issues || []).length)));
       b.onclick = () => go(v.id);
       b.dataset.id = v.id;
@@ -2666,6 +2712,7 @@ function setMode(mode) {
   location.hash = state.view;
   buildNav();
   paintMode();
+  paintLang();
   render();
 }
 function paintMode() {
@@ -2692,8 +2739,8 @@ function paintBrand() {
 
 function render(opts = {}) {
   const v = VIEWS.find((x) => x.id === state.view) || VIEWS[0];
-  $('#viewTitle').textContent = v.title;
-  $('#viewDesc').textContent = v.desc;
+  $('#viewTitle').textContent = (EN() && v.titleEn) ? v.titleEn : v.title;
+  $('#viewDesc').textContent = (EN() && v.descEn) ? v.descEn : v.desc;
   document.querySelectorAll('.nav button, .tabbar button')
     .forEach((b) => b.setAttribute('aria-current', String(b.dataset.id === state.view)));
   const root = $('#viewRoot');
@@ -2855,6 +2902,61 @@ function pickPhoto(menuName, kind = 'menu') {
 /* ═══════════════ 주방 모드 · 레시피북 ═══════════════
    직원이 매일 보는 화면이다. 원가는 사장이 볼 때만 겹쳐 보인다. */
 
+/* ── 한국어 / 영어 ──────────────────────────────────────
+   주방에 외국인 직원이 많다. 한국어로만 적혀 있으면 실제로는 안 읽힌다.
+   레시피 내용은 데이터에 영어가 함께 들어 있고, 화면 글자는 여기서 바꾼다.
+   사장 화면(원가·세무 용어)은 그대로 한국어로 둔다 — 쓰는 사람이 사장 본인이다. */
+const EN = () => state.lang === 'en' && state.mode === 'kitchen';
+const tx = (ko, en) => (EN() ? en : ko);
+
+const pick = (obj, key, enKey) => {
+  const v = EN() ? obj[enKey] : null;
+  if (Array.isArray(v)) return v.length ? v : (obj[key] || []);
+  return v || obj[key] || (Array.isArray(obj[key]) ? [] : '');
+};
+const mName    = (m) => (EN() && m.nameEn) ? m.nameEn : m.name;
+const mSub     = (m) => (EN() ? m.name : (m.nameEn || ''));      // 반대쪽 언어를 작게 보여 준다
+const mCat     = (m) => pick(m, 'category', 'categoryEn');
+const mServing = (m) => pick(m, 'serving', 'servingEn');
+const mTime    = (m) => pick(m, 'time', 'timeEn');
+const mTags    = (m) => pick(m, 'tags', 'tagsEn');
+const mSteps   = (m) => pick(m, 'steps', 'stepsEn');
+const mGarnish = (m) => pick(m, 'garnish', 'garnishEn');
+const lName    = (l) => (EN() && l.nameEn) ? l.nameEn : l.name;
+const lNote    = (l) => pick(l, 'note', 'noteEn');
+
+/** 카테고리 이름의 영어 짝 — 메뉴에 붙어 있는 것을 모아서 쓴다 */
+function catLabel(cat) {
+  if (!EN()) return cat;
+  const hit = (state.result.menus || []).find((m) => m.category === cat && m.categoryEn);
+  return hit ? hit.categoryEn : cat;
+}
+/** 같은 자리에 놓인 영어 낱말을 찾는다 — tags/tagsEn, allergens/allergensEn 은 순서가 같다 */
+function pairLabel(word, key, enKey) {
+  if (!EN()) return word;
+  for (const m of (state.result.menus || [])) {
+    const i = (m[key] || []).indexOf(word);
+    if (i >= 0 && (m[enKey] || [])[i]) return m[enKey][i];
+  }
+  return word;
+}
+const tagLabel = (t) => pairLabel(t, 'tags', 'tagsEn');
+const alLabel  = (a) => pairLabel(a, 'allergens', 'allergensEn');
+function setLang(l) {
+  if (state.lang === l) return;
+  state.lang = l;
+  store.set('ec-lang', l);
+  paintLang();
+  buildNav();          // 메뉴바 글자도 같이 바뀐다
+  render();
+}
+function paintLang() {
+  document.querySelectorAll('#langSwitch button').forEach((b) =>
+    b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang)));
+  const box = $('#langSwitch');
+  if (box) box.hidden = state.mode !== 'kitchen';   // 주방 화면에서만 쓴다
+}
+
 /** 조리 단계 체크 상태 — 이 기기에만 남는다 */
 function cookState() {
   try { return JSON.parse(store.get('ec-cook') || '{}') || {}; } catch (_) { return {}; }
@@ -2884,7 +2986,8 @@ function recipeList(root) {
   const bar = el('div', 'filters');
   const search = el('input', 'search');
   search.type = 'search';
-  search.placeholder = '메뉴 · 재료 · 초성으로 찾기 (예: 감자, ㅊㅋ, chicken)';
+  search.placeholder = tx('메뉴 · 재료 · 초성으로 찾기 (예: 감자, ㅊㅋ, chicken)',
+                          'Search dish or ingredient (e.g. chicken, potato)');
   search.value = f.rq;
   search.dataset.keep = '1';
   search.oninput = () => { f.rq = search.value; paint(); };
@@ -2892,13 +2995,14 @@ function recipeList(root) {
 
   const sort = el('select', 'sel');
   sort.dataset.keep = '1';
-  [['cat', '분류순 (메뉴판)'], ['name', '이름순'], ['time', '조리시간 짧은순'], ['few', '재료 적은순']]
+  [['cat', tx('분류순 (메뉴판)', 'By category')], ['name', tx('이름순', 'By name')],
+   ['time', tx('조리시간 짧은순', 'Fastest first')], ['few', tx('재료 적은순', 'Fewest ingredients')]]
     .forEach(([v, l]) => { const o = el('option', null, l); o.value = v; sort.appendChild(o); });
   sort.value = f.rsort;
   sort.onchange = () => { f.rsort = sort.value; paint(); };
   bar.appendChild(sort);
 
-  const pAll = el('button', 'btn', '🖨 전체 인쇄');
+  const pAll = el('button', 'btn', tx('🖨 전체 인쇄', '🖨 Print all'));
   pAll.dataset.keep = '1';
   pAll.onclick = () => printCards(list().map((m) => m.name));
   bar.appendChild(pAll);
@@ -2912,7 +3016,7 @@ function recipeList(root) {
     const n = c === 'all' ? r.menus.length : r.menus.filter((m) => m.category === c).length;
     const b = el('button', 'chip');
     b.dataset.keep = '1';
-    b.innerHTML = `${c === 'all' ? '전체' : `${esc(state.data.categoryIcon[c] || '')} ${esc(c)}`} <span class="chip-n">${n}</span>`;
+    b.innerHTML = `${c === 'all' ? tx('전체', 'All') : `${esc(state.data.categoryIcon[c] || '')} ${esc(catLabel(c))}`} <span class="chip-n">${n}</span>`;
     b.onclick = () => { f.rcat = c; paint(); };
     chips.appendChild(b);
   });
@@ -2924,11 +3028,11 @@ function recipeList(root) {
   const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([t]) => t);
   if (topTags.length) {
     const trow = el('div', 'chips tag-row');
-    trow.appendChild(el('span', 'l', '태그'));
+    trow.appendChild(el('span', 'l', tx('태그', 'Tags')));
     topTags.forEach((t) => {
       const b = el('button', 'chip chip-sm');
       b.dataset.keep = '1';
-      b.textContent = `${t} ${tagCount.get(t)}`;
+      b.textContent = `${tagLabel(t)} ${tagCount.get(t)}`;
       b.dataset.tag = t;
       b.onclick = () => { f.tag = (f.tag === t ? '' : t); paint(); };
       trow.appendChild(b);
@@ -2940,11 +3044,12 @@ function recipeList(root) {
   const allAl = [...new Set(r.menus.flatMap(allergensOf))].sort();
   if (allAl.length) {
     const arow = el('div', 'chips allergy-row');
-    arow.appendChild(el('span', 'l', '이 재료 빼고 보기'));
+    arow.appendChild(el('span', 'l', tx('이 재료 빼고 보기', 'Hide dishes containing')));
     allAl.forEach((a) => {
       const b = el('button', 'chip chip-sm');
       b.dataset.keep = '1';
-      b.textContent = a;
+      b.dataset.al = a;
+      b.textContent = alLabel(a);
       b.onclick = () => { f.noTag = (f.noTag === a ? '' : a); paint(); };
       arow.appendChild(b);
     });
@@ -2962,7 +3067,7 @@ function recipeList(root) {
       recipeMatches(m, f.rq));
     const cmp = {
       cat: null,
-      name: (a, b) => a.name.localeCompare(b.name, 'ko'),
+      name: (a, b) => mName(a).localeCompare(mName(b), EN() ? 'en' : 'ko'),
       time: (a, b) => (a.cookTimeMin || 99) - (b.cookTimeMin || 99),
       few: (a, b) => a.lines.length - b.lines.length,
     }[f.rsort];
@@ -2975,16 +3080,19 @@ function recipeList(root) {
     root.querySelectorAll('.tag-row .chip').forEach((b) =>
       b.setAttribute('aria-pressed', String(b.dataset.tag === f.tag)));
     root.querySelectorAll('.allergy-row .chip').forEach((b) =>
-      b.setAttribute('aria-pressed', String(b.textContent === f.noTag)));
+      b.setAttribute('aria-pressed', String(b.dataset.al === f.noTag)));
     host.innerHTML = '';
     const rows = list();
 
     const cnt = el('div', 'rcount');
-    cnt.textContent = `${rows.length}가지${f.rq || f.tag || f.noTag || f.rcat !== 'all' ? ' (조건에 맞는 것)' : ''}`;
+    const filtered = f.rq || f.tag || f.noTag || f.rcat !== 'all';
+    cnt.textContent = EN()
+      ? `${rows.length} dish${rows.length === 1 ? '' : 'es'}${filtered ? ' (matching)' : ''}`
+      : `${rows.length}가지${filtered ? ' (조건에 맞는 것)' : ''}`;
     host.appendChild(cnt);
 
     if (!rows.length) {
-      host.appendChild(el('div', 'empty', '조건에 맞는 레시피가 없습니다.'));
+      host.appendChild(el('div', 'empty', tx('조건에 맞는 레시피가 없습니다.', 'No recipe matches these filters.')));
       return;
     }
 
@@ -2994,21 +3102,25 @@ function recipeList(root) {
       const img = el('div', 'rcard-img');
       if (m.image) {
         const i = el('img');
-        i.src = m.image; i.alt = m.name; i.loading = 'lazy';
+        i.src = m.image; i.alt = mName(m); i.loading = 'lazy';
         img.appendChild(i);
       } else {
         img.classList.add('noimg');
         img.textContent = m.icon || '🍽';
       }
-      const badge = el('span', 'rcard-cat', `${m.icon || ''} ${m.category}`);
+      const badge = el('span', 'rcard-cat', `${m.icon || ''} ${catLabel(m.category)}`);
       img.appendChild(badge);
-      if (m.time) img.appendChild(el('span', 'rcard-time', '⏱ ' + m.time));
+      const tm = mTime(m);
+      if (tm) img.appendChild(el('span', 'rcard-time', '⏱ ' + tm));
       card.appendChild(img);
 
       const body = el('div', 'rcard-body');
-      body.appendChild(el('b', null, m.name));
-      if (m.nameEn || m.en) body.appendChild(el('span', 'en', m.nameEn || m.en));
-      body.appendChild(el('span', 'meta', `재료 ${m.lines.length} · 단계 ${(m.steps || []).length}`));
+      body.appendChild(el('b', null, mName(m)));
+      const sub = mSub(m) || m.en || '';
+      if (sub) body.appendChild(el('span', 'en', sub));
+      body.appendChild(el('span', 'meta', EN()
+        ? `${m.lines.length} ingredients · ${mSteps(m).length} steps`
+        : `재료 ${m.lines.length} · 단계 ${(m.steps || []).length}`));
       if (showCost()) {
         const c = el('span', 'rcard-cost');
         c.innerHTML = m.hasPrice
@@ -3046,14 +3158,14 @@ function recipeDetail(root, name) {
   const top = el('div', 'rdetail-top');
   const back = el('button', 'btn btn-ghost');
   back.dataset.keep = '1';
-  back.textContent = '← 목록으로';
+  back.textContent = tx('← 목록으로', '← Back to list');
   back.onclick = () => { state.recipeOpen = null; render(); };
   top.appendChild(back);
   top.appendChild(el('span', 'dim', `${ix + 1} / ${all.length}`));
   const sp = el('div', 'spacer'); top.appendChild(sp);
   const prt = el('button', 'btn');
   prt.dataset.keep = '1';
-  prt.textContent = '🖨 인쇄';
+  prt.textContent = tx('🖨 인쇄', '🖨 Print');
   prt.onclick = () => printCards([m.name]);
   top.appendChild(prt);
   root.appendChild(top);
@@ -3065,13 +3177,14 @@ function recipeDetail(root, name) {
 
   const head = el('div', 'rhead');
   const chip = el('div', 'chips');
-  chip.appendChild(el('span', 'chip chip-sm', `${m.icon || ''} ${m.category}`));
-  (m.tags || []).forEach((t) => chip.appendChild(el('span', 'chip chip-sm', t)));
+  chip.appendChild(el('span', 'chip chip-sm', `${m.icon || ''} ${catLabel(m.category)}`));
+  mTags(m).forEach((t) => chip.appendChild(el('span', 'chip chip-sm', t)));
   head.appendChild(chip);
-  head.appendChild(el('h2', null, m.name));
-  if (m.nameEn || m.en) head.appendChild(el('p', 'en', m.nameEn || m.en));
+  head.appendChild(el('h2', null, mName(m)));
+  const hsub = mSub(m) || m.en || '';
+  if (hsub) head.appendChild(el('p', 'en', hsub));
   const al = allergensOf(m);
-  if (al.length) head.appendChild(el('div', 'allergy', '알레르기 · ' + al.join(', ')));
+  if (al.length) head.appendChild(el('div', 'allergy', tx('알레르기 · ', 'Allergens · ') + al.map(alLabel).join(', ')));
   main.appendChild(head);
 
   /* 원가 (사장/로그인 시에만) */
@@ -3084,13 +3197,13 @@ function recipeDetail(root, name) {
       return d;
     };
     cost.append(
-      cell('식재료 원가', won1(m.foodCost) + '원'),
-      cell('원가율', m.hasPrice ? pct(m.foodRate) : '–', 'g-' + m.grade.key),
-      cell('총원가', won(m.totalCost) + '원'),
-      cell('마진', m.hasPrice ? won(m.margin) + '원' : '–'),
+      cell(tx('식재료 원가', 'Food cost'), won1(m.foodCost) + tx('원', ' KRW')),
+      cell(tx('원가율', 'Cost ratio'), m.hasPrice ? pct(m.foodRate) : '–', 'g-' + m.grade.key),
+      cell(tx('총원가', 'Total cost'), won(m.totalCost) + tx('원', ' KRW')),
+      cell(tx('마진', 'Margin'), m.hasPrice ? won(m.margin) + tx('원', ' KRW') : '–'),
     );
     const edit = el('button', 'btn btn-add');
-    edit.textContent = '✎ 이 레시피 고치기';
+    edit.textContent = tx('✎ 이 레시피 고치기', '✎ Edit this recipe');
     edit.onclick = () => { if (!requireAuth()) return; openMenu(m.name); };
     cost.appendChild(edit);
     main.appendChild(cost);
@@ -3099,7 +3212,7 @@ function recipeDetail(root, name) {
   /* 재료 */
   const secIng = el('div', 'rsec');
   const ih = el('div', 'rsec-head');
-  ih.appendChild(el('h3', null, '🥣 재료'));
+  ih.appendChild(el('h3', null, tx('🥣 재료', '🥣 Ingredients')));
   const scales = el('div', 'scales');
   [1, 2, 3, 4].forEach((n) => {
     const b = el('button', 'scale-btn');
@@ -3111,49 +3224,52 @@ function recipeDetail(root, name) {
   });
   ih.appendChild(scales);
   secIng.appendChild(ih);
+  const serving = mServing(m) || tx('1인분 기준', 'Per 1 serving');
   secIng.appendChild(el('div', 'rsub', state.scale === 1
-    ? (m.serving || '1인분 기준')
-    : `${m.serving || '1인분 기준'} · ×${state.scale} 로 환산했습니다`));
+    ? serving
+    : tx(`${serving} · ×${state.scale} 로 환산했습니다`, `${serving} · scaled ×${state.scale}`)));
 
   const ings = el('ol', 'ringredients');
   m.lines.forEach((l) => {
     const li = el('li');
     const nm = el('div', 'ri-name');
-    if (l.kind === '프렙') nm.appendChild(el('span', 'kindtag', '프렙'));
-    if (l.kind === '메뉴') nm.appendChild(el('span', 'kindtag', '메뉴'));
-    if (l.kind === '무료') nm.appendChild(el('span', 'kindtag free', '무료'));
-    nm.appendChild(el('span', 'n', l.name));
-    if (l.note) nm.appendChild(el('span', 'note', l.note));
+    if (l.kind === '프렙') nm.appendChild(el('span', 'kindtag', tx('프렙', 'Prep')));
+    if (l.kind === '메뉴') nm.appendChild(el('span', 'kindtag', tx('메뉴', 'Dish')));
+    if (l.kind === '무료') nm.appendChild(el('span', 'kindtag free', tx('무료', 'Free')));
+    nm.appendChild(el('span', 'n', lName(l)));
+    const note = lNote(l);
+    if (note) nm.appendChild(el('span', 'note', note));
     li.appendChild(nm);
-    const unit = l.unit || (l.byCount ? '개' : 'g');
+    const unit = l.unit || (l.byCount ? tx('개', ' pc') : 'g');
     li.appendChild(el('div', 'ri-amt', `${won3(num(l.qty) * state.scale)}${unit}`));
-    if (showCost() && l.kind !== '무료') li.appendChild(el('div', 'ri-cost', won1(l.cost * state.scale) + '원'));
+    if (showCost() && l.kind !== '무료') li.appendChild(el('div', 'ri-cost', won1(l.cost * state.scale) + tx('원', '')));
     ings.appendChild(li);
   });
   secIng.appendChild(ings);
   if (showCost()) {
     const sum = el('div', 'ri-sum');
-    sum.innerHTML = `<span>합계</span><b>${won1(m.foodCost * state.scale)}원</b>`;
+    sum.innerHTML = `<span>${tx('합계', 'Total')}</span><b>${won1(m.foodCost * state.scale)}${tx('원', '')}</b>`;
     secIng.appendChild(sum);
   }
   main.appendChild(secIng);
 
   /* 조리 방법 */
-  const steps = m.steps || [];
+  const steps = mSteps(m);
   if (steps.length) {
     const done = new Set(cookState()[m.name] || []);
     const secStep = el('div', 'rsec');
     const sh = el('div', 'rsec-head');
-    sh.appendChild(el('h3', null, '👨‍🍳 조리 방법'));
+    sh.appendChild(el('h3', null, tx('👨‍🍳 조리 방법', '👨‍🍳 Method')));
     const prog = el('span', 'prog', `${done.size} / ${steps.length}`);
     sh.appendChild(prog);
     const reset = el('button', 'btn btn-ghost btn-xs');
     reset.dataset.keep = '1';
-    reset.textContent = '체크 지우기';
+    reset.textContent = tx('체크 지우기', 'Clear checks');
     reset.onclick = () => { setCooked(m.name, []); render(); };
     sh.appendChild(reset);
     secStep.appendChild(sh);
-    secStep.appendChild(el('div', 'rsub', '단계를 눌러 완료 표시를 할 수 있습니다. 이 기기에만 저장됩니다.'));
+    secStep.appendChild(el('div', 'rsub', tx('단계를 눌러 완료 표시를 할 수 있습니다. 이 기기에만 저장됩니다.',
+                                             'Tap a step to tick it off. Saved on this device only.')));
 
     const ol = el('ol', 'rsteps');
     steps.forEach((s, i) => {
@@ -3173,10 +3289,11 @@ function recipeDetail(root, name) {
     main.appendChild(secStep);
   }
 
-  if (m.garnish) {
+  const garnish = mGarnish(m);
+  if (garnish) {
     const g = el('div', 'rsec');
-    g.appendChild(el('h3', null, '✨ 가니쉬 · 플레이팅'));
-    g.appendChild(el('div', 'garnish', m.garnish));
+    g.appendChild(el('h3', null, tx('✨ 가니쉬 · 플레이팅', '✨ Garnish · Plating')));
+    g.appendChild(el('div', 'garnish', garnish));
     main.appendChild(g);
   }
 
@@ -3186,15 +3303,15 @@ function recipeDetail(root, name) {
   const side = el('div', 'rdetail-side');
   const ph = el('div', 'rphoto');
   if (m.image) {
-    const i = el('img'); i.src = m.image; i.alt = m.name;
+    const i = el('img'); i.src = m.image; i.alt = mName(m);
     ph.appendChild(i);
   } else {
     ph.classList.add('noimg');
     ph.appendChild(el('div', 'ic', m.icon || '🍽'));
-    ph.appendChild(el('div', 'tx', '사진이 없습니다'));
+    ph.appendChild(el('div', 'tx', tx('사진이 없습니다', 'No photo yet')));
     if (state.authed) {
       const up = el('button', 'btn btn-add');
-      up.textContent = '＋ 사진 넣기';
+      up.textContent = tx('＋ 사진 넣기', '＋ Add photo');
       up.onclick = () => pickPhoto(m.name);
       ph.appendChild(up);
     }
@@ -3202,9 +3319,9 @@ function recipeDetail(root, name) {
   side.appendChild(ph);
   if (m.image && state.authed) {
     const row = el('div', 'row-2');
-    const ch = el('button', 'btn btn-ghost', '사진 바꾸기');
+    const ch = el('button', 'btn btn-ghost', tx('사진 바꾸기', 'Replace photo'));
     ch.onclick = () => pickPhoto(m.name);
-    const rm = el('button', 'btn btn-ghost btn-danger', '사진 빼기');
+    const rm = el('button', 'btn btn-ghost btn-danger', tx('사진 빼기', 'Remove photo'));
     rm.onclick = () => {
       const d = state.data.menus.find((x) => x.name === m.name);
       if (!d || !requireAuth()) return;
@@ -3218,9 +3335,9 @@ function recipeDetail(root, name) {
   const facts = el('div', 'rfacts');
   const fact = (v, l) => { const d = el('div'); d.appendChild(el('b', null, v)); d.appendChild(el('span', null, l)); return d; };
   facts.append(
-    fact(m.time || '–', '조리 시간'),
-    fact(String(m.lines.length), '재료'),
-    fact(String(steps.length), '조리 단계'),
+    fact(mTime(m) || '–', tx('조리 시간', 'Cook time')),
+    fact(String(m.lines.length), tx('재료', 'Ingredients')),
+    fact(String(steps.length), tx('조리 단계', 'Steps')),
   );
   side.appendChild(facts);
   wrap.appendChild(side);
@@ -3231,30 +3348,40 @@ function recipeDetail(root, name) {
 /* ─────────── 주방 모드 · 프렙 ─────────── */
 function viewCook(root) {
   const r = state.result;
-  if (!r.preps.length) { root.appendChild(el('div', 'empty', '등록된 프렙(반제품)이 없습니다.')); return; }
-  root.appendChild(el('div', 'rsub', '미리 만들어 두는 소스·반제품입니다. 여기서 만든 것이 메뉴로 나갑니다.'));
+  if (!r.preps.length) {
+    root.appendChild(el('div', 'empty', tx('등록된 프렙(반제품)이 없습니다.', 'No prep items registered yet.')));
+    return;
+  }
+  root.appendChild(el('div', 'rsub', tx('미리 만들어 두는 소스·반제품입니다. 여기서 만든 것이 메뉴로 나갑니다.',
+                                        'Sauces and bases prepared ahead. These go into the dishes on the menu.')));
 
   r.preps.forEach((p) => {
     const used = state.data.menus.filter((mm) => mm.lines.some((l) => l.kind === '프렙' && l.name === p.name));
-    const c = card(p.name, `완성 ${won(p.yield_g)}g · 투입 ${won(p.inputG)}g${showCost() ? ` · g당 ${won3(p.unitCost)}원` : ''}`);
+    const sub = EN()
+      ? `Yield ${won(p.yield_g)}g · Input ${won(p.inputG)}g${showCost() ? ` · ${won3(p.unitCost)}/g` : ''}`
+      : `완성 ${won(p.yield_g)}g · 투입 ${won(p.inputG)}g${showCost() ? ` · g당 ${won3(p.unitCost)}원` : ''}`;
+    const c = card(mName(p), sub);
     const ol = el('ol', 'ringredients');
     p.items.forEach((it) => {
       const li = el('li');
       const nm = el('div', 'ri-name');
-      if (it.kind === '프렙') nm.appendChild(el('span', 'kindtag', '프렙'));
-      nm.appendChild(el('span', 'n', it.name));
+      if (it.kind === '프렙') nm.appendChild(el('span', 'kindtag', tx('프렙', 'Prep')));
+      nm.appendChild(el('span', 'n', lName(it)));
+      const inote = lNote(it);
+      if (inote) nm.appendChild(el('span', 'note', inote));
       li.appendChild(nm);
       li.appendChild(el('div', 'ri-amt', `${won3(num(it.qty) * state.scale)}g`));
-      if (showCost()) li.appendChild(el('div', 'ri-cost', won1(it.cost * state.scale) + '원'));
+      if (showCost()) li.appendChild(el('div', 'ri-cost', won1(it.cost * state.scale) + tx('원', '')));
       ol.appendChild(li);
     });
     c.body.appendChild(ol);
 
     const d = state.data.preps.find((x) => x.name === p.name);
-    if (d && (d.steps || []).length) {
-      c.body.appendChild(el('div', 'sec-title', '만드는 법'));
+    const dsteps = d ? mSteps(d) : [];
+    if (dsteps.length) {
+      c.body.appendChild(el('div', 'sec-title', tx('만드는 법', 'How to make')));
       const sol = el('ol', 'rsteps plain');
-      d.steps.forEach((s, i) => {
+      dsteps.forEach((s, i) => {
         const li = el('li');
         li.appendChild(el('span', 'no', String(i + 1)));
         li.appendChild(el('span', 'tx', s));
@@ -3893,7 +4020,7 @@ function printCards(names) {
     if (wmText) card.dataset.wmtext = wmText;
     const rows = m.lines.map((l) => `
       <tr>
-        <td>${l.kind === '식재료' ? '' : `<span class="pk">${esc(l.kind)}</span> `}${esc(l.name)}</td>
+        <td>${l.kind === '식재료' ? '' : `<span class="pk">${esc(l.kind)}</span> `}${esc(lName(l))}</td>
         <td class="r">${l.kind === '메뉴' ? `${l.qty}개` : `${won1(l.qty)}g`}</td>
         <td class="r">${l.kind === '식재료' || l.kind === '프렙' ? pct(l.yield || 1, 0) : '–'}</td>
         <td class="r">${l.kind === '무료' ? '0' : won3(l.unitCost)}</td>
@@ -3903,8 +4030,8 @@ function printCards(names) {
     card.innerHTML = `
       <header class="ph">
         <div>
-          <h1>${esc(m.name)}</h1>
-          <p>${esc([m.icon + ' ' + m.category, m.en, m.serving, m.time].filter(Boolean).join(' · '))}</p>
+          <h1>${esc(mName(m))}</h1>
+          <p>${esc([m.icon + ' ' + catLabel(m.category), mSub(m) || m.en, mServing(m), mTime(m)].filter(Boolean).join(' · '))}</p>
         </div>
         <div class="pbrand">${esc(brand)}</div>
       </header>
@@ -3918,17 +4045,17 @@ function printCards(names) {
         <div><span>마진</span><b>${m.hasPrice ? won(m.margin) : '–'}</b></div>
       </div>
 
-      <h2>재료</h2>
+      <h2>${tx('재료', 'Ingredients')}</h2>
       <table class="ptab">
-        <thead><tr><th>재료 / 구성</th><th class="r">사용량</th><th class="r">수율</th>
-                   <th class="r">g당 단가</th><th class="r">재료비</th></tr></thead>
+        <thead><tr><th>${tx('재료 / 구성', 'Ingredient')}</th><th class="r">${tx('사용량', 'Qty')}</th><th class="r">${tx('수율', 'Yield')}</th>
+                   <th class="r">${tx('g당 단가', 'Unit cost')}</th><th class="r">${tx('재료비', 'Cost')}</th></tr></thead>
         <tbody>${rows}
-          <tr class="psum"><td>합 계</td><td></td><td></td><td></td><td class="r b">${won1(m.foodCost)}</td></tr>
+          <tr class="psum"><td>${tx('합 계', 'Total')}</td><td></td><td></td><td></td><td class="r b">${won1(m.foodCost)}</td></tr>
         </tbody>
       </table>
 
-      ${m.steps && m.steps.length ? `<h2>조리 방법</h2><ol class="psteps">${m.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
-      ${m.garnish ? `<h2>가니쉬 · 플레이팅</h2><p class="pgar">${esc(m.garnish)}</p>` : ''}
+      ${mSteps(m).length ? `<h2>${tx('조리 방법', 'Method')}</h2><ol class="psteps">${mSteps(m).map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+      ${mGarnish(m) ? `<h2>${tx('가니쉬 · 플레이팅', 'Garnish · Plating')}</h2><p class="pgar">${esc(mGarnish(m))}</p>` : ''}
 
       <footer class="pf">
         <span>${esc(brand)}${brand ? ' · ' : ''}${new Date().toLocaleDateString('ko-KR')} 기준</span>
@@ -4814,9 +4941,11 @@ async function boot() {
   const hashed = viewById(hashView);
   state.mode = hashed ? hashed.mode : (store.get('ec-mode') === 'owner' ? 'owner' : 'kitchen');
   state.view = hashed ? hashed.id : viewsFor(state.mode)[0].id;
+  state.lang = store.get('ec-lang') === 'en' ? 'en' : 'ko';
 
   buildNav();
   paintMode();
+  paintLang();
   render();
 
   $('#boot').hidden = true;
@@ -4847,6 +4976,9 @@ async function boot() {
 
   document.querySelectorAll('.modeswitch button').forEach((b) => {
     b.onclick = () => setMode(b.dataset.mode);
+  });
+  document.querySelectorAll('#langSwitch button').forEach((b) => {
+    b.onclick = () => setLang(b.dataset.lang);
   });
 
   const toggleAuth = () => { if (state.authed) logout(); else openLogin(); };

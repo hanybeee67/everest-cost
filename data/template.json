@@ -24,84 +24,96 @@
    "price": 12000,
    "pack_qty": 1,
    "unit": "kg",
-   "weight_g": 1000
+   "weight_g": 1000,
+   "nameEn": "Chicken breast"
   },
   {
    "name": "쌀",
    "price": 62000,
    "pack_qty": 20,
    "unit": "kg",
-   "weight_g": 20000
+   "weight_g": 20000,
+   "nameEn": "Rice"
   },
   {
    "name": "양파",
    "price": 14000,
    "pack_qty": 15,
    "unit": "kg",
-   "weight_g": 15000
+   "weight_g": 15000,
+   "nameEn": "Onion"
   },
   {
    "name": "당근",
    "price": 16500,
    "pack_qty": 3,
    "unit": "kg",
-   "weight_g": 3000
+   "weight_g": 3000,
+   "nameEn": "Carrot"
   },
   {
    "name": "감자",
    "price": 35000,
    "pack_qty": 20,
    "unit": "kg",
-   "weight_g": 20000
+   "weight_g": 20000,
+   "nameEn": "Potato"
   },
   {
    "name": "우유",
    "price": 1650,
    "pack_qty": 1,
    "unit": "L",
-   "weight_g": 1000
+   "weight_g": 1000,
+   "nameEn": "Milk"
   },
   {
    "name": "버터",
    "price": 14500,
    "pack_qty": 13.1,
    "unit": "kg",
-   "weight_g": 13100
+   "weight_g": 13100,
+   "nameEn": "Butter"
   },
   {
    "name": "식용유",
    "price": 49500,
    "pack_qty": 18,
    "unit": "L",
-   "weight_g": 18000
+   "weight_g": 18000,
+   "nameEn": "Cooking oil"
   },
   {
    "name": "간장",
    "price": 5500,
    "pack_qty": 1.8,
    "unit": "L",
-   "weight_g": 1800
+   "weight_g": 1800,
+   "nameEn": "Soy sauce"
   },
   {
    "name": "소금",
    "price": 15000,
    "pack_qty": 15,
    "unit": "kg",
-   "weight_g": 15000
+   "weight_g": 15000,
+   "nameEn": "Salt"
   },
   {
    "name": "후추",
    "price": 9000,
    "pack_qty": 0.4,
    "unit": "kg",
-   "weight_g": 400
+   "weight_g": 400,
+   "nameEn": "Black pepper"
   },
   {
    "name": "대파",
    "price": 4980,
    "pack_qty": 0.5,
    "unit": "kg",
-   "weight_g": 500
+   "weight_g": 500,
+   "nameEn": "Spring onion"
   },
   {
    "name": "콜라 (355ml 캔)",
@@ -110,7 +122,8 @@
    "unit": "개",
    "weight_g": 0,
    "byCount": true,
-   "note": "개수로 사는 품목 — 한 박스 24개에 21,000원"
+   "note": "개수로 사는 품목 — 한 박스 24개에 21,000원",
+   "nameEn": "Cola (355ml can)"
   },
   {
    "name": "배달 용기 (중)",
@@ -119,7 +132,8 @@
    "unit": "개",
    "weight_g": 0,
    "byCount": true,
-   "note": "배달하신다면 반드시 메뉴 원가에 넣으세요"
+   "note": "배달하신다면 반드시 메뉴 원가에 넣으세요",
+   "nameEn": "Delivery container (M)"
   }
  ],
  "preps": [
@@ -135,31 +149,41 @@
      "kind": "식재료",
      "name": "양파",
      "raw": "",
-     "qty": 1000
+     "qty": 1000,
+     "nameEn": "Onion"
     },
     {
      "kind": "식재료",
      "name": "간장",
      "raw": "",
-     "qty": 300
+     "qty": 300,
+     "nameEn": "Soy sauce"
     },
     {
      "kind": "식재료",
      "name": "식용유",
      "raw": "",
-     "qty": 200
+     "qty": 200,
+     "nameEn": "Cooking oil"
     },
     {
      "kind": "식재료",
      "name": "소금",
      "raw": "",
-     "qty": 50
+     "qty": 50,
+     "nameEn": "Salt"
     }
    ],
    "steps": [
     "양파를 잘게 썰어 기름에 갈색이 돌 때까지 볶는다.",
     "간장과 소금을 넣고 약불에서 10분간 졸인다.",
     "식혀서 밀폐용기에 담아 냉장 보관한다. (3일 이내 사용)"
+   ],
+   "timeEn": "About 20 min",
+   "stepsEn": [
+    "Finely chop the onion and fry it in oil until it turns golden brown.",
+    "Add the soy sauce and salt and reduce over low heat for 10 minutes.",
+    "Cool, transfer to an airtight container and refrigerate. (Use within 3 days.)"
    ]
   }
  ],
@@ -174,8 +198,13 @@
    "serving": "1인분 기준",
    "price": 9000,
    "image": "",
-   "tags": ["닭고기", "밥류"],
-   "allergens": ["대두"],
+   "tags": [
+    "닭고기",
+    "밥류"
+   ],
+   "allergens": [
+    "대두"
+   ],
    "lines": [
     {
      "kind": "식재료",
@@ -184,7 +213,9 @@
      "qty": 200,
      "unit": "g",
      "yield": 1,
-     "note": "지은 밥 기준"
+     "note": "지은 밥 기준",
+     "nameEn": "Rice",
+     "noteEn": "Cooked rice"
     },
     {
      "kind": "식재료",
@@ -193,7 +224,9 @@
      "qty": 100,
      "unit": "g",
      "yield": 0.9,
-     "note": "손질 손실 10% 반영"
+     "note": "손질 손실 10% 반영",
+     "nameEn": "Chicken breast",
+     "noteEn": "10% trim loss applied"
     },
     {
      "kind": "식재료",
@@ -202,7 +235,9 @@
      "qty": 30,
      "unit": "g",
      "yield": 1,
-     "note": "잘게 썰기"
+     "note": "잘게 썰기",
+     "nameEn": "Onion",
+     "noteEn": "Finely diced"
     },
     {
      "kind": "식재료",
@@ -211,7 +246,9 @@
      "qty": 20,
      "unit": "g",
      "yield": 1,
-     "note": "잘게 썰기"
+     "note": "잘게 썰기",
+     "nameEn": "Carrot",
+     "noteEn": "Finely diced"
     },
     {
      "kind": "식재료",
@@ -220,7 +257,8 @@
      "qty": 15,
      "unit": "g",
      "yield": 1,
-     "note": ""
+     "note": "",
+     "nameEn": "Cooking oil"
     },
     {
      "kind": "식재료",
@@ -229,7 +267,8 @@
      "qty": 3,
      "unit": "g",
      "yield": 1,
-     "note": ""
+     "note": "",
+     "nameEn": "Salt"
     },
     {
      "kind": "식재료",
@@ -238,7 +277,8 @@
      "qty": 1,
      "unit": "g",
      "yield": 1,
-     "note": ""
+     "note": "",
+     "nameEn": "Black pepper"
     },
     {
      "kind": "식재료",
@@ -247,7 +287,9 @@
      "qty": 10,
      "unit": "g",
      "yield": 1,
-     "note": "고명"
+     "note": "고명",
+     "nameEn": "Spring onion",
+     "noteEn": "Garnish"
     },
     {
      "kind": "프렙",
@@ -256,7 +298,9 @@
      "qty": 40,
      "unit": "g",
      "yield": 1,
-     "note": "미리 만들어 둔 소스"
+     "note": "미리 만들어 둔 소스",
+     "nameEn": "Basic Stir-fry Sauce",
+     "noteEn": "Made ahead as prep"
     }
    ],
    "steps": [
@@ -266,7 +310,25 @@
     "밥을 넣고 기본 볶음 소스를 둘러 센불에서 고루 볶는다.",
     "소금·후추로 간을 맞추고 대파를 올려 마무리한다."
    ],
-   "garnish": "대파 흰 부분을 얇게 썰어 가운데 올리고, 접시 가장자리를 닦아 낸다."
+   "garnish": "대파 흰 부분을 얇게 썰어 가운데 올리고, 접시 가장자리를 닦아 낸다.",
+   "categoryEn": "Main",
+   "servingEn": "Per 1 serving",
+   "timeEn": "About 10 min",
+   "tagsEn": [
+    "Chicken",
+    "Rice"
+   ],
+   "stepsEn": [
+    "Cut the chicken breast into 1cm cubes and season with salt and pepper.",
+    "Heat oil in a pan and stir-fry the chicken until the surface is cooked through.",
+    "Add the onion and carrot and stir-fry together for 2 minutes.",
+    "Add the rice, pour the basic stir-fry sauce around the pan and toss over high heat.",
+    "Adjust the seasoning with salt and pepper, top with spring onion and serve."
+   ],
+   "garnishEn": "Slice the white part of the spring onion thinly, place it in the centre and wipe the rim of the plate.",
+   "allergensEn": [
+    "Soy"
+   ]
   },
   {
    "name": "감자 크림 수프",
@@ -278,8 +340,13 @@
    "serving": "1인분 기준",
    "price": 5000,
    "image": "",
-   "tags": ["채식", "부드러움"],
-   "allergens": ["우유"],
+   "tags": [
+    "채식",
+    "부드러움"
+   ],
+   "allergens": [
+    "우유"
+   ],
    "lines": [
     {
      "kind": "식재료",
@@ -288,7 +355,9 @@
      "qty": 150,
      "unit": "g",
      "yield": 0.85,
-     "note": "껍질 손실 15% 반영"
+     "note": "껍질 손실 15% 반영",
+     "nameEn": "Potato",
+     "noteEn": "15% peeling loss applied"
     },
     {
      "kind": "식재료",
@@ -297,7 +366,8 @@
      "qty": 30,
      "unit": "g",
      "yield": 1,
-     "note": ""
+     "note": "",
+     "nameEn": "Onion"
     },
     {
      "kind": "식재료",
@@ -306,7 +376,9 @@
      "qty": 120,
      "unit": "g",
      "yield": 1,
-     "note": "120ml ≈ 120g"
+     "note": "120ml ≈ 120g",
+     "nameEn": "Milk",
+     "noteEn": "120ml ≈ 120g"
     },
     {
      "kind": "식재료",
@@ -315,7 +387,8 @@
      "qty": 10,
      "unit": "g",
      "yield": 1,
-     "note": ""
+     "note": "",
+     "nameEn": "Butter"
     },
     {
      "kind": "식재료",
@@ -324,7 +397,8 @@
      "qty": 3,
      "unit": "g",
      "yield": 1,
-     "note": ""
+     "note": "",
+     "nameEn": "Salt"
     },
     {
      "kind": "무료",
@@ -333,7 +407,9 @@
      "qty": 100,
      "unit": "g",
      "yield": 1,
-     "note": "수돗물 — 원가 0원 처리"
+     "note": "수돗물 — 원가 0원 처리",
+     "nameEn": "Water",
+     "noteEn": "Tap water — counted as zero cost"
     }
    ],
    "steps": [
@@ -342,7 +418,24 @@
     "감자와 물을 넣어 감자가 완전히 무를 때까지 끓인다.",
     "우유를 붓고 곱게 갈아 소금으로 간을 맞춘다."
    ],
-   "garnish": "가운데에 크림을 한 방울 떨어뜨리고 후추를 살짝 뿌린다."
+   "garnish": "가운데에 크림을 한 방울 떨어뜨리고 후추를 살짝 뿌린다.",
+   "categoryEn": "Side",
+   "servingEn": "Per 1 serving",
+   "timeEn": "About 15 min",
+   "tagsEn": [
+    "Vegetarian",
+    "Creamy"
+   ],
+   "stepsEn": [
+    "Peel and thinly slice the potato, and julienne the onion.",
+    "Melt the butter in a pot and sweat the onion until translucent.",
+    "Add the potato and water and simmer until the potato is completely soft.",
+    "Pour in the milk, blend until smooth and season with salt."
+   ],
+   "garnishEn": "Drop a swirl of cream in the centre and finish with a little black pepper.",
+   "allergensEn": [
+    "Milk"
+   ]
   },
   {
    "name": "콜라",
@@ -354,7 +447,9 @@
    "serving": "355ml 캔 1개",
    "price": 2000,
    "image": "",
-   "tags": ["음료"],
+   "tags": [
+    "음료"
+   ],
    "allergens": [],
    "lines": [
     {
@@ -364,13 +459,25 @@
      "qty": 1,
      "unit": "개",
      "yield": 1,
-     "note": "개수로 계산되는 예시입니다"
+     "note": "개수로 계산되는 예시입니다",
+     "nameEn": "Cola (355ml can)",
+     "noteEn": "Example of costing by the piece"
     }
    ],
    "steps": [
     "차갑게 보관한 캔을 컵과 함께 낸다."
    ],
-   "garnish": "얼음을 채운 잔을 함께 낸다."
+   "garnish": "얼음을 채운 잔을 함께 낸다.",
+   "categoryEn": "Drinks",
+   "servingEn": "One 355ml can",
+   "timeEn": "",
+   "tagsEn": [
+    "Drink"
+   ],
+   "stepsEn": [
+    "Serve the chilled can together with a glass."
+   ],
+   "garnishEn": "Serve with a glass full of ice."
   },
   {
    "name": "런치 세트",
@@ -382,8 +489,13 @@
    "serving": "1인 세트",
    "price": 12000,
    "image": "",
-   "tags": ["세트"],
-   "allergens": ["우유", "대두"],
+   "tags": [
+    "세트"
+   ],
+   "allergens": [
+    "우유",
+    "대두"
+   ],
    "lines": [
     {
      "kind": "메뉴",
@@ -392,7 +504,9 @@
      "qty": 1,
      "unit": "개",
      "yield": 1,
-     "note": "단품 원가를 그대로 가져옵니다"
+     "note": "단품 원가를 그대로 가져옵니다",
+     "nameEn": "Chicken Fried Rice",
+     "noteEn": "Takes the à-la-carte cost as it is"
     },
     {
      "kind": "메뉴",
@@ -401,14 +515,31 @@
      "qty": 1,
      "unit": "개",
      "yield": 1,
-     "note": "단품 원가를 그대로 가져옵니다"
+     "note": "단품 원가를 그대로 가져옵니다",
+     "nameEn": "Potato Cream Soup",
+     "noteEn": "Takes the à-la-carte cost as it is"
     }
    ],
    "steps": [
     "치킨 볶음밥과 감자 크림 수프를 각각 조리한다.",
     "쟁반에 함께 담아 낸다."
    ],
-   "garnish": "수프는 왼쪽 앞, 볶음밥은 오른쪽 뒤에 배치한다."
+   "garnish": "수프는 왼쪽 앞, 볶음밥은 오른쪽 뒤에 배치한다.",
+   "categoryEn": "Set Menu",
+   "servingEn": "Set for one",
+   "timeEn": "",
+   "tagsEn": [
+    "Set"
+   ],
+   "stepsEn": [
+    "Cook the Chicken Fried Rice and the Potato Cream Soup separately.",
+    "Plate them together on one tray and serve."
+   ],
+   "garnishEn": "Soup front left, fried rice back right.",
+   "allergensEn": [
+    "Milk",
+    "Soy"
+   ]
   }
  ],
  "fixedCosts": [
@@ -454,7 +585,11 @@
   "warnFoodCostRate": 0.38,
   "vatIncluded": true,
   "vatRate": 0.1,
-  "admin": { "id": "admin", "salt": "", "passHash": "" }
+  "admin": {
+   "id": "admin",
+   "salt": "",
+   "passHash": ""
+  }
  },
  "issues": [
   {

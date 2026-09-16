@@ -20,7 +20,8 @@ function img(name) {
 const FIG = {};
 ['dash', 'menu', 'detail', 'detail2', 'set', 'prep', 'fix', 'issue', 'import',
  'm-dash', 'm-menu', 'm-detail',
- 'kitchen', 'recipe', 'recipe-cost', 'ing-basis', 'm-kitchen', 'm-recipe'].forEach((k) => { FIG[k] = img(k); });
+ 'kitchen', 'recipe', 'recipe-cost', 'ing-basis', 'm-kitchen', 'm-recipe',
+ 'en', 'm-en'].forEach((k) => { FIG[k] = img(k); });
 
 const figure = (key, caption, note) => FIG[key]
   ? `<figure class="fig${note ? ' fig-note' : ''}">
@@ -280,7 +281,31 @@ const HTML = `<!doctype html>
     <tr><td><b>조리 단계 체크</b></td><td>단계를 누르면 완료 표시가 됩니다. 어디까지 했는지 놓치지 않습니다.</td></tr>
     <tr><td><b>알레르기 빼고 보기</b></td><td>「우유」를 누르면 우유가 든 메뉴가 목록에서 빠집니다. 손님 문의에 바로 답할 수 있습니다.</td></tr>
     <tr><td><b>프렙 역참조</b></td><td>프렙 화면에서 이 소스를 쓰는 메뉴가 몇 개인지 보이고, 눌러서 바로 이동합니다.</td></tr>
+    <tr><td><b>한 / EN 전환</b></td><td>화면 위쪽 <b>한 · EN</b> 단추로 레시피 전체가 영어로 바뀝니다. 외국인 직원이 그대로 읽고 씁니다.</td></tr>
   </table></div>
+
+  <h3>한국어 · 영어 — 주방에 외국인 직원이 있다면</h3>
+  <p>주방 모드 화면 위쪽에 <b>한 | EN</b> 단추가 있습니다. 누르면 메뉴 이름·재료·조리법·가니쉬까지
+     <b>레시피 본문 전체가 영어로 바뀝니다.</b> 화면 글자(재료, 조리 방법, 목록으로…)도 함께 바뀝니다.</p>
+  <div class="tablewrap"><table>
+    <tr><th>항목</th><th>한국어</th><th>영어</th></tr>
+    <tr><td>메뉴 이름</td><td><code>name</code></td><td><code>nameEn</code></td></tr>
+    <tr><td>분류</td><td><code>category</code></td><td><code>categoryEn</code></td></tr>
+    <tr><td>기준 분량 · 조리시간</td><td><code>serving</code> · <code>time</code></td><td><code>servingEn</code> · <code>timeEn</code></td></tr>
+    <tr><td>태그</td><td><code>tags</code></td><td><code>tagsEn</code></td></tr>
+    <tr><td>조리 방법 · 가니쉬</td><td><code>steps</code> · <code>garnish</code></td><td><code>stepsEn</code> · <code>garnishEn</code></td></tr>
+    <tr><td>재료 이름 · 비고</td><td>재료 줄의 <code>name</code> · <code>note</code></td><td>재료 줄의 <code>nameEn</code> · <code>noteEn</code></td></tr>
+  </table></div>
+  <div class="note">
+    영어를 넣지 않은 항목은 <b>한국어가 그대로 보입니다.</b> 한 번에 다 번역하지 않아도 되고,
+    자주 쓰는 메뉴부터 채워 넣으면 그만큼만 영어로 바뀝니다.
+  </div>
+  <div class="note warn">
+    ⚠️ <b>사장 모드는 언제나 한국어입니다.</b> 원가율·공급가액·고정비 같은 말은 세무·회계 용어라
+    한국어로 두는 편이 정확합니다. 그래서 <b>💰 사장</b> 으로 넘어가면 한/EN 단추가 사라집니다.
+  </div>
+
+  ${figure('en', '같은 레시피 · EN 을 누른 뒤', '메뉴 이름 아래에 한국어 이름이 작게 남아 서로 가리키며 일할 수 있습니다')}
 
   ${figure('recipe', '레시피 상세 — 주방이 보는 화면', '원가는 보이지 않습니다. 직원이 볼 화면이기 때문입니다')}
 
@@ -300,6 +325,7 @@ const HTML = `<!doctype html>
   <div class="figrow">
     ${figure('m-kitchen', '휴대폰 — 레시피 목록')}
     ${figure('m-recipe', '휴대폰 — 레시피 상세')}
+    ${figure('m-en', '휴대폰 — EN 으로 본 화면')}
   </div>
   <p class="small">주방에 태블릿이나 휴대폰을 두고 쓰시면 됩니다. 인터넷이 없어도 동작합니다.</p>
 </section>

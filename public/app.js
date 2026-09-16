@@ -51,9 +51,10 @@ function recipeMatches(m, q) {
   const needle = q.toLowerCase().trim();
   if (!needle) return true;
   const hay = [
-    m.name, m.nameEn || m.en || '', m.category,
-    ...(m.tags || []),
+    m.name, m.nameEn || m.en || '', m.category, m.categoryEn || '',
+    ...(m.tags || []), ...(m.tagsEn || []),
     ...(m.lines || []).map((l) => l.name),
+    ...(m.lines || []).map((l) => l.nameEn || ''),
   ].join(' ');
   return hay.toLowerCase().includes(needle) || chosung(hay).includes(needle);
 }
@@ -73,6 +74,7 @@ const state = {
   base: null,          // 처음 들어 있던 원본 (되돌리기·변경표시 기준)
   data: null,          // 지금 편집 중인 데이터 (이걸 저장한다)
   mode: 'kitchen',     // kitchen(주방 · 레시피북) | owner(사장 · 원가)
+  lang: 'ko',          // ko | en — 주방 화면의 표시 언어 (외국인 직원용)
   view: 'recipe',
   recipeOpen: null,    // 주방 모드에서 펼쳐 놓은 레시피 이름
   scale: 1,            // 레시피 분량 배율 (×1 ~ ×4)
@@ -208,7 +210,14 @@ function paintAuth() {
   const side = $('#btnAuthSide');
   if (side) { side.textContent = authed ? '🔓 로그아웃 (관리자 모드)' : '🔒 관리자 로그인'; side.classList.toggle('authed', authed); }
   const banner = $('#viewLockBanner');
-  if (banner) banner.hidden = authed;
+  if (banner) {
+    banner.hidden = authed;
+    const b = banner.querySelector('b'), more = banner.querySelector('.viewlock-more'), btn = $('#viewLockBtn');
+    if (b)    b.textContent    = tx('보기 전용 모드입니다.', 'View-only mode.');
+    if (more) more.textContent = tx('레시피·원가를 수정하려면 관리자 로그인을 해 주세요.',
+                                    'Sign in as administrator to change recipes or costs.');
+    if (btn)  btn.textContent  = tx('관리자 로그인', 'Admin sign-in');
+  }
 }
 
 /* ── 되돌리기 / 다시 실행 ──────────────────────────────
@@ -397,8 +406,11 @@ function parseSaved(raw) {
    그래서 저장값에 비어 있는 내용 칸만 파일 쪽에서 채워 준다.
    (사장님이 직접 넣은 사진이나 일부러 뺀 사진은 건드리지 않는다) */
 const CONTENT_KEYS_MENU = ['image', 'tags', 'nameEn', 'time', 'cookTimeMin', 'cookTimeMax',
-                           'allergens', 'serving', 'icon', 'en'];
-const CONTENT_KEYS_PREP = ['image', 'tags', 'nameEn', 'time', 'steps'];
+                           'allergens', 'serving', 'icon', 'en',
+                           'categoryEn', 'servingEn', 'timeEn', 'tagsEn', 'stepsEn', 'garnishEn',
+                           'allergensEn'];
+const CONTENT_KEYS_PREP = ['image', 'tags', 'nameEn', 'time', 'steps', 'timeEn', 'stepsEn'];
+const CONTENT_KEYS_LINE = ['nameEn', 'noteEn'];
 
 /** 값이 「아직 채워지지 않은 칸」인가 — null 은 일부러 비운 것이라 건드리지 않는다 */
 function isBlank(v) {
@@ -421,8 +433,21 @@ function backfillContent(data, base) {
       }
     });
   };
-  (data.menus || []).forEach((m) => fill(m, bm.get(m.name), CONTENT_KEYS_MENU));
-  (data.preps || []).forEach((p) => fill(p, bp.get(p.name), CONTENT_KEYS_PREP));
+  /* 재료 줄의 영어 이름 — 줄 순서는 원본과 같다 */
+  const fillLines = (mine, theirs) => {
+    if (!mine || !theirs || mine.length !== theirs.length) return;
+    mine.forEach((l, ix) => fill(l, theirs[ix], CONTENT_KEYS_LINE));
+  };
+  (data.menus || []).forEach((m) => {
+    const src = bm.get(m.name);
+    fill(m, src, CONTENT_KEYS_MENU);
+    if (src) fillLines(m.lines, src.lines);
+  });
+  (data.preps || []).forEach((p) => {
+    const src = bp.get(p.name);
+    fill(p, src, CONTENT_KEYS_PREP);
+    if (src) fillLines(p.items, src.items);
+  });
   return filled;
 }
 
@@ -555,9 +580,11 @@ function pickData(base, serverSaved) {
    사장 모드 — 원가·마진·판정 (사장이 가끔 보는 화면)            */
 const VIEWS = [
   { id: 'recipe', mode: 'kitchen', icon: '🍳', label: '레시피', title: '레시피북',
-    desc: '메뉴를 누르면 재료와 조리법이 나옵니다' },
+    desc: '메뉴를 누르면 재료와 조리법이 나옵니다',
+    labelEn: 'Recipes', titleEn: 'Recipe Book', descEn: 'Tap a dish to see its ingredients and steps' },
   { id: 'cook',  mode: 'kitchen', icon: '🧪', label: '프렙',   title: '프렙(반제품)',
-    desc: '미리 만들어 두는 소스·반제품' },
+    desc: '미리 만들어 두는 소스·반제품',
+    labelEn: 'Prep', titleEn: 'Prep (sub-recipes)', descEn: 'Sauces and bases made ahead of service' },
 
   { id: 'dash',  mode: 'owner', icon: '📊', label: '대시보드', title: '대시보드',        desc: '전체 원가 현황 요약' },
   { id: 'menu',  mode: 'owner', icon: '🍽', label: '메뉴',     title: '메뉴 원가',       desc: '메뉴를 누르면 레시피와 원가 상세가 열립니다' },
@@ -576,7 +603,7 @@ function buildNav() {
   viewsFor(state.mode).forEach((v) => {
     const mk = () => {
       const b = el('button');
-      b.innerHTML = `<span class="ic">${esc(v.icon)}</span><span>${esc(v.label)}</span>`;
+      b.innerHTML = `<span class="ic">${esc(v.icon)}</span><span>${esc(EN() && v.labelEn ? v.labelEn : v.label)}</span>`;
       if (v.id === 'issue') b.appendChild(el('span', 'badge', String((state.data.issues || []).length)));
       b.onclick = () => go(v.id);
       b.dataset.id = v.id;
@@ -602,6 +629,7 @@ function setMode(mode) {
   location.hash = state.view;
   buildNav();
   paintMode();
+  paintLang();
   render();
 }
 function paintMode() {
@@ -628,8 +656,8 @@ function paintBrand() {
 
 function render(opts = {}) {
   const v = VIEWS.find((x) => x.id === state.view) || VIEWS[0];
-  $('#viewTitle').textContent = v.title;
-  $('#viewDesc').textContent = v.desc;
+  $('#viewTitle').textContent = (EN() && v.titleEn) ? v.titleEn : v.title;
+  $('#viewDesc').textContent = (EN() && v.descEn) ? v.descEn : v.desc;
   document.querySelectorAll('.nav button, .tabbar button')
     .forEach((b) => b.setAttribute('aria-current', String(b.dataset.id === state.view)));
   const root = $('#viewRoot');
@@ -791,6 +819,61 @@ function pickPhoto(menuName, kind = 'menu') {
 /* ═══════════════ 주방 모드 · 레시피북 ═══════════════
    직원이 매일 보는 화면이다. 원가는 사장이 볼 때만 겹쳐 보인다. */
 
+/* ── 한국어 / 영어 ──────────────────────────────────────
+   주방에 외국인 직원이 많다. 한국어로만 적혀 있으면 실제로는 안 읽힌다.
+   레시피 내용은 데이터에 영어가 함께 들어 있고, 화면 글자는 여기서 바꾼다.
+   사장 화면(원가·세무 용어)은 그대로 한국어로 둔다 — 쓰는 사람이 사장 본인이다. */
+const EN = () => state.lang === 'en' && state.mode === 'kitchen';
+const tx = (ko, en) => (EN() ? en : ko);
+
+const pick = (obj, key, enKey) => {
+  const v = EN() ? obj[enKey] : null;
+  if (Array.isArray(v)) return v.length ? v : (obj[key] || []);
+  return v || obj[key] || (Array.isArray(obj[key]) ? [] : '');
+};
+const mName    = (m) => (EN() && m.nameEn) ? m.nameEn : m.name;
+const mSub     = (m) => (EN() ? m.name : (m.nameEn || ''));      // 반대쪽 언어를 작게 보여 준다
+const mCat     = (m) => pick(m, 'category', 'categoryEn');
+const mServing = (m) => pick(m, 'serving', 'servingEn');
+const mTime    = (m) => pick(m, 'time', 'timeEn');
+const mTags    = (m) => pick(m, 'tags', 'tagsEn');
+const mSteps   = (m) => pick(m, 'steps', 'stepsEn');
+const mGarnish = (m) => pick(m, 'garnish', 'garnishEn');
+const lName    = (l) => (EN() && l.nameEn) ? l.nameEn : l.name;
+const lNote    = (l) => pick(l, 'note', 'noteEn');
+
+/** 카테고리 이름의 영어 짝 — 메뉴에 붙어 있는 것을 모아서 쓴다 */
+function catLabel(cat) {
+  if (!EN()) return cat;
+  const hit = (state.result.menus || []).find((m) => m.category === cat && m.categoryEn);
+  return hit ? hit.categoryEn : cat;
+}
+/** 같은 자리에 놓인 영어 낱말을 찾는다 — tags/tagsEn, allergens/allergensEn 은 순서가 같다 */
+function pairLabel(word, key, enKey) {
+  if (!EN()) return word;
+  for (const m of (state.result.menus || [])) {
+    const i = (m[key] || []).indexOf(word);
+    if (i >= 0 && (m[enKey] || [])[i]) return m[enKey][i];
+  }
+  return word;
+}
+const tagLabel = (t) => pairLabel(t, 'tags', 'tagsEn');
+const alLabel  = (a) => pairLabel(a, 'allergens', 'allergensEn');
+function setLang(l) {
+  if (state.lang === l) return;
+  state.lang = l;
+  store.set('ec-lang', l);
+  paintLang();
+  buildNav();          // 메뉴바 글자도 같이 바뀐다
+  render();
+}
+function paintLang() {
+  document.querySelectorAll('#langSwitch button').forEach((b) =>
+    b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang)));
+  const box = $('#langSwitch');
+  if (box) box.hidden = state.mode !== 'kitchen';   // 주방 화면에서만 쓴다
+}
+
 /** 조리 단계 체크 상태 — 이 기기에만 남는다 */
 function cookState() {
   try { return JSON.parse(store.get('ec-cook') || '{}') || {}; } catch (_) { return {}; }
@@ -820,7 +903,8 @@ function recipeList(root) {
   const bar = el('div', 'filters');
   const search = el('input', 'search');
   search.type = 'search';
-  search.placeholder = '메뉴 · 재료 · 초성으로 찾기 (예: 감자, ㅊㅋ, chicken)';
+  search.placeholder = tx('메뉴 · 재료 · 초성으로 찾기 (예: 감자, ㅊㅋ, chicken)',
+                          'Search dish or ingredient (e.g. chicken, potato)');
   search.value = f.rq;
   search.dataset.keep = '1';
   search.oninput = () => { f.rq = search.value; paint(); };
@@ -828,13 +912,14 @@ function recipeList(root) {
 
   const sort = el('select', 'sel');
   sort.dataset.keep = '1';
-  [['cat', '분류순 (메뉴판)'], ['name', '이름순'], ['time', '조리시간 짧은순'], ['few', '재료 적은순']]
+  [['cat', tx('분류순 (메뉴판)', 'By category')], ['name', tx('이름순', 'By name')],
+   ['time', tx('조리시간 짧은순', 'Fastest first')], ['few', tx('재료 적은순', 'Fewest ingredients')]]
     .forEach(([v, l]) => { const o = el('option', null, l); o.value = v; sort.appendChild(o); });
   sort.value = f.rsort;
   sort.onchange = () => { f.rsort = sort.value; paint(); };
   bar.appendChild(sort);
 
-  const pAll = el('button', 'btn', '🖨 전체 인쇄');
+  const pAll = el('button', 'btn', tx('🖨 전체 인쇄', '🖨 Print all'));
   pAll.dataset.keep = '1';
   pAll.onclick = () => printCards(list().map((m) => m.name));
   bar.appendChild(pAll);
@@ -848,7 +933,7 @@ function recipeList(root) {
     const n = c === 'all' ? r.menus.length : r.menus.filter((m) => m.category === c).length;
     const b = el('button', 'chip');
     b.dataset.keep = '1';
-    b.innerHTML = `${c === 'all' ? '전체' : `${esc(state.data.categoryIcon[c] || '')} ${esc(c)}`} <span class="chip-n">${n}</span>`;
+    b.innerHTML = `${c === 'all' ? tx('전체', 'All') : `${esc(state.data.categoryIcon[c] || '')} ${esc(catLabel(c))}`} <span class="chip-n">${n}</span>`;
     b.onclick = () => { f.rcat = c; paint(); };
     chips.appendChild(b);
   });
@@ -860,11 +945,11 @@ function recipeList(root) {
   const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([t]) => t);
   if (topTags.length) {
     const trow = el('div', 'chips tag-row');
-    trow.appendChild(el('span', 'l', '태그'));
+    trow.appendChild(el('span', 'l', tx('태그', 'Tags')));
     topTags.forEach((t) => {
       const b = el('button', 'chip chip-sm');
       b.dataset.keep = '1';
-      b.textContent = `${t} ${tagCount.get(t)}`;
+      b.textContent = `${tagLabel(t)} ${tagCount.get(t)}`;
       b.dataset.tag = t;
       b.onclick = () => { f.tag = (f.tag === t ? '' : t); paint(); };
       trow.appendChild(b);
@@ -876,11 +961,12 @@ function recipeList(root) {
   const allAl = [...new Set(r.menus.flatMap(allergensOf))].sort();
   if (allAl.length) {
     const arow = el('div', 'chips allergy-row');
-    arow.appendChild(el('span', 'l', '이 재료 빼고 보기'));
+    arow.appendChild(el('span', 'l', tx('이 재료 빼고 보기', 'Hide dishes containing')));
     allAl.forEach((a) => {
       const b = el('button', 'chip chip-sm');
       b.dataset.keep = '1';
-      b.textContent = a;
+      b.dataset.al = a;
+      b.textContent = alLabel(a);
       b.onclick = () => { f.noTag = (f.noTag === a ? '' : a); paint(); };
       arow.appendChild(b);
     });
@@ -898,7 +984,7 @@ function recipeList(root) {
       recipeMatches(m, f.rq));
     const cmp = {
       cat: null,
-      name: (a, b) => a.name.localeCompare(b.name, 'ko'),
+      name: (a, b) => mName(a).localeCompare(mName(b), EN() ? 'en' : 'ko'),
       time: (a, b) => (a.cookTimeMin || 99) - (b.cookTimeMin || 99),
       few: (a, b) => a.lines.length - b.lines.length,
     }[f.rsort];
@@ -911,16 +997,19 @@ function recipeList(root) {
     root.querySelectorAll('.tag-row .chip').forEach((b) =>
       b.setAttribute('aria-pressed', String(b.dataset.tag === f.tag)));
     root.querySelectorAll('.allergy-row .chip').forEach((b) =>
-      b.setAttribute('aria-pressed', String(b.textContent === f.noTag)));
+      b.setAttribute('aria-pressed', String(b.dataset.al === f.noTag)));
     host.innerHTML = '';
     const rows = list();
 
     const cnt = el('div', 'rcount');
-    cnt.textContent = `${rows.length}가지${f.rq || f.tag || f.noTag || f.rcat !== 'all' ? ' (조건에 맞는 것)' : ''}`;
+    const filtered = f.rq || f.tag || f.noTag || f.rcat !== 'all';
+    cnt.textContent = EN()
+      ? `${rows.length} dish${rows.length === 1 ? '' : 'es'}${filtered ? ' (matching)' : ''}`
+      : `${rows.length}가지${filtered ? ' (조건에 맞는 것)' : ''}`;
     host.appendChild(cnt);
 
     if (!rows.length) {
-      host.appendChild(el('div', 'empty', '조건에 맞는 레시피가 없습니다.'));
+      host.appendChild(el('div', 'empty', tx('조건에 맞는 레시피가 없습니다.', 'No recipe matches these filters.')));
       return;
     }
 
@@ -930,21 +1019,25 @@ function recipeList(root) {
       const img = el('div', 'rcard-img');
       if (m.image) {
         const i = el('img');
-        i.src = m.image; i.alt = m.name; i.loading = 'lazy';
+        i.src = m.image; i.alt = mName(m); i.loading = 'lazy';
         img.appendChild(i);
       } else {
         img.classList.add('noimg');
         img.textContent = m.icon || '🍽';
       }
-      const badge = el('span', 'rcard-cat', `${m.icon || ''} ${m.category}`);
+      const badge = el('span', 'rcard-cat', `${m.icon || ''} ${catLabel(m.category)}`);
       img.appendChild(badge);
-      if (m.time) img.appendChild(el('span', 'rcard-time', '⏱ ' + m.time));
+      const tm = mTime(m);
+      if (tm) img.appendChild(el('span', 'rcard-time', '⏱ ' + tm));
       card.appendChild(img);
 
       const body = el('div', 'rcard-body');
-      body.appendChild(el('b', null, m.name));
-      if (m.nameEn || m.en) body.appendChild(el('span', 'en', m.nameEn || m.en));
-      body.appendChild(el('span', 'meta', `재료 ${m.lines.length} · 단계 ${(m.steps || []).length}`));
+      body.appendChild(el('b', null, mName(m)));
+      const sub = mSub(m) || m.en || '';
+      if (sub) body.appendChild(el('span', 'en', sub));
+      body.appendChild(el('span', 'meta', EN()
+        ? `${m.lines.length} ingredients · ${mSteps(m).length} steps`
+        : `재료 ${m.lines.length} · 단계 ${(m.steps || []).length}`));
       if (showCost()) {
         const c = el('span', 'rcard-cost');
         c.innerHTML = m.hasPrice
@@ -982,14 +1075,14 @@ function recipeDetail(root, name) {
   const top = el('div', 'rdetail-top');
   const back = el('button', 'btn btn-ghost');
   back.dataset.keep = '1';
-  back.textContent = '← 목록으로';
+  back.textContent = tx('← 목록으로', '← Back to list');
   back.onclick = () => { state.recipeOpen = null; render(); };
   top.appendChild(back);
   top.appendChild(el('span', 'dim', `${ix + 1} / ${all.length}`));
   const sp = el('div', 'spacer'); top.appendChild(sp);
   const prt = el('button', 'btn');
   prt.dataset.keep = '1';
-  prt.textContent = '🖨 인쇄';
+  prt.textContent = tx('🖨 인쇄', '🖨 Print');
   prt.onclick = () => printCards([m.name]);
   top.appendChild(prt);
   root.appendChild(top);
@@ -1001,13 +1094,14 @@ function recipeDetail(root, name) {
 
   const head = el('div', 'rhead');
   const chip = el('div', 'chips');
-  chip.appendChild(el('span', 'chip chip-sm', `${m.icon || ''} ${m.category}`));
-  (m.tags || []).forEach((t) => chip.appendChild(el('span', 'chip chip-sm', t)));
+  chip.appendChild(el('span', 'chip chip-sm', `${m.icon || ''} ${catLabel(m.category)}`));
+  mTags(m).forEach((t) => chip.appendChild(el('span', 'chip chip-sm', t)));
   head.appendChild(chip);
-  head.appendChild(el('h2', null, m.name));
-  if (m.nameEn || m.en) head.appendChild(el('p', 'en', m.nameEn || m.en));
+  head.appendChild(el('h2', null, mName(m)));
+  const hsub = mSub(m) || m.en || '';
+  if (hsub) head.appendChild(el('p', 'en', hsub));
   const al = allergensOf(m);
-  if (al.length) head.appendChild(el('div', 'allergy', '알레르기 · ' + al.join(', ')));
+  if (al.length) head.appendChild(el('div', 'allergy', tx('알레르기 · ', 'Allergens · ') + al.map(alLabel).join(', ')));
   main.appendChild(head);
 
   /* 원가 (사장/로그인 시에만) */
@@ -1020,13 +1114,13 @@ function recipeDetail(root, name) {
       return d;
     };
     cost.append(
-      cell('식재료 원가', won1(m.foodCost) + '원'),
-      cell('원가율', m.hasPrice ? pct(m.foodRate) : '–', 'g-' + m.grade.key),
-      cell('총원가', won(m.totalCost) + '원'),
-      cell('마진', m.hasPrice ? won(m.margin) + '원' : '–'),
+      cell(tx('식재료 원가', 'Food cost'), won1(m.foodCost) + tx('원', ' KRW')),
+      cell(tx('원가율', 'Cost ratio'), m.hasPrice ? pct(m.foodRate) : '–', 'g-' + m.grade.key),
+      cell(tx('총원가', 'Total cost'), won(m.totalCost) + tx('원', ' KRW')),
+      cell(tx('마진', 'Margin'), m.hasPrice ? won(m.margin) + tx('원', ' KRW') : '–'),
     );
     const edit = el('button', 'btn btn-add');
-    edit.textContent = '✎ 이 레시피 고치기';
+    edit.textContent = tx('✎ 이 레시피 고치기', '✎ Edit this recipe');
     edit.onclick = () => { if (!requireAuth()) return; openMenu(m.name); };
     cost.appendChild(edit);
     main.appendChild(cost);
@@ -1035,7 +1129,7 @@ function recipeDetail(root, name) {
   /* 재료 */
   const secIng = el('div', 'rsec');
   const ih = el('div', 'rsec-head');
-  ih.appendChild(el('h3', null, '🥣 재료'));
+  ih.appendChild(el('h3', null, tx('🥣 재료', '🥣 Ingredients')));
   const scales = el('div', 'scales');
   [1, 2, 3, 4].forEach((n) => {
     const b = el('button', 'scale-btn');
@@ -1047,49 +1141,52 @@ function recipeDetail(root, name) {
   });
   ih.appendChild(scales);
   secIng.appendChild(ih);
+  const serving = mServing(m) || tx('1인분 기준', 'Per 1 serving');
   secIng.appendChild(el('div', 'rsub', state.scale === 1
-    ? (m.serving || '1인분 기준')
-    : `${m.serving || '1인분 기준'} · ×${state.scale} 로 환산했습니다`));
+    ? serving
+    : tx(`${serving} · ×${state.scale} 로 환산했습니다`, `${serving} · scaled ×${state.scale}`)));
 
   const ings = el('ol', 'ringredients');
   m.lines.forEach((l) => {
     const li = el('li');
     const nm = el('div', 'ri-name');
-    if (l.kind === '프렙') nm.appendChild(el('span', 'kindtag', '프렙'));
-    if (l.kind === '메뉴') nm.appendChild(el('span', 'kindtag', '메뉴'));
-    if (l.kind === '무료') nm.appendChild(el('span', 'kindtag free', '무료'));
-    nm.appendChild(el('span', 'n', l.name));
-    if (l.note) nm.appendChild(el('span', 'note', l.note));
+    if (l.kind === '프렙') nm.appendChild(el('span', 'kindtag', tx('프렙', 'Prep')));
+    if (l.kind === '메뉴') nm.appendChild(el('span', 'kindtag', tx('메뉴', 'Dish')));
+    if (l.kind === '무료') nm.appendChild(el('span', 'kindtag free', tx('무료', 'Free')));
+    nm.appendChild(el('span', 'n', lName(l)));
+    const note = lNote(l);
+    if (note) nm.appendChild(el('span', 'note', note));
     li.appendChild(nm);
-    const unit = l.unit || (l.byCount ? '개' : 'g');
+    const unit = l.unit || (l.byCount ? tx('개', ' pc') : 'g');
     li.appendChild(el('div', 'ri-amt', `${won3(num(l.qty) * state.scale)}${unit}`));
-    if (showCost() && l.kind !== '무료') li.appendChild(el('div', 'ri-cost', won1(l.cost * state.scale) + '원'));
+    if (showCost() && l.kind !== '무료') li.appendChild(el('div', 'ri-cost', won1(l.cost * state.scale) + tx('원', '')));
     ings.appendChild(li);
   });
   secIng.appendChild(ings);
   if (showCost()) {
     const sum = el('div', 'ri-sum');
-    sum.innerHTML = `<span>합계</span><b>${won1(m.foodCost * state.scale)}원</b>`;
+    sum.innerHTML = `<span>${tx('합계', 'Total')}</span><b>${won1(m.foodCost * state.scale)}${tx('원', '')}</b>`;
     secIng.appendChild(sum);
   }
   main.appendChild(secIng);
 
   /* 조리 방법 */
-  const steps = m.steps || [];
+  const steps = mSteps(m);
   if (steps.length) {
     const done = new Set(cookState()[m.name] || []);
     const secStep = el('div', 'rsec');
     const sh = el('div', 'rsec-head');
-    sh.appendChild(el('h3', null, '👨‍🍳 조리 방법'));
+    sh.appendChild(el('h3', null, tx('👨‍🍳 조리 방법', '👨‍🍳 Method')));
     const prog = el('span', 'prog', `${done.size} / ${steps.length}`);
     sh.appendChild(prog);
     const reset = el('button', 'btn btn-ghost btn-xs');
     reset.dataset.keep = '1';
-    reset.textContent = '체크 지우기';
+    reset.textContent = tx('체크 지우기', 'Clear checks');
     reset.onclick = () => { setCooked(m.name, []); render(); };
     sh.appendChild(reset);
     secStep.appendChild(sh);
-    secStep.appendChild(el('div', 'rsub', '단계를 눌러 완료 표시를 할 수 있습니다. 이 기기에만 저장됩니다.'));
+    secStep.appendChild(el('div', 'rsub', tx('단계를 눌러 완료 표시를 할 수 있습니다. 이 기기에만 저장됩니다.',
+                                             'Tap a step to tick it off. Saved on this device only.')));
 
     const ol = el('ol', 'rsteps');
     steps.forEach((s, i) => {
@@ -1109,10 +1206,11 @@ function recipeDetail(root, name) {
     main.appendChild(secStep);
   }
 
-  if (m.garnish) {
+  const garnish = mGarnish(m);
+  if (garnish) {
     const g = el('div', 'rsec');
-    g.appendChild(el('h3', null, '✨ 가니쉬 · 플레이팅'));
-    g.appendChild(el('div', 'garnish', m.garnish));
+    g.appendChild(el('h3', null, tx('✨ 가니쉬 · 플레이팅', '✨ Garnish · Plating')));
+    g.appendChild(el('div', 'garnish', garnish));
     main.appendChild(g);
   }
 
@@ -1122,15 +1220,15 @@ function recipeDetail(root, name) {
   const side = el('div', 'rdetail-side');
   const ph = el('div', 'rphoto');
   if (m.image) {
-    const i = el('img'); i.src = m.image; i.alt = m.name;
+    const i = el('img'); i.src = m.image; i.alt = mName(m);
     ph.appendChild(i);
   } else {
     ph.classList.add('noimg');
     ph.appendChild(el('div', 'ic', m.icon || '🍽'));
-    ph.appendChild(el('div', 'tx', '사진이 없습니다'));
+    ph.appendChild(el('div', 'tx', tx('사진이 없습니다', 'No photo yet')));
     if (state.authed) {
       const up = el('button', 'btn btn-add');
-      up.textContent = '＋ 사진 넣기';
+      up.textContent = tx('＋ 사진 넣기', '＋ Add photo');
       up.onclick = () => pickPhoto(m.name);
       ph.appendChild(up);
     }
@@ -1138,9 +1236,9 @@ function recipeDetail(root, name) {
   side.appendChild(ph);
   if (m.image && state.authed) {
     const row = el('div', 'row-2');
-    const ch = el('button', 'btn btn-ghost', '사진 바꾸기');
+    const ch = el('button', 'btn btn-ghost', tx('사진 바꾸기', 'Replace photo'));
     ch.onclick = () => pickPhoto(m.name);
-    const rm = el('button', 'btn btn-ghost btn-danger', '사진 빼기');
+    const rm = el('button', 'btn btn-ghost btn-danger', tx('사진 빼기', 'Remove photo'));
     rm.onclick = () => {
       const d = state.data.menus.find((x) => x.name === m.name);
       if (!d || !requireAuth()) return;
@@ -1154,9 +1252,9 @@ function recipeDetail(root, name) {
   const facts = el('div', 'rfacts');
   const fact = (v, l) => { const d = el('div'); d.appendChild(el('b', null, v)); d.appendChild(el('span', null, l)); return d; };
   facts.append(
-    fact(m.time || '–', '조리 시간'),
-    fact(String(m.lines.length), '재료'),
-    fact(String(steps.length), '조리 단계'),
+    fact(mTime(m) || '–', tx('조리 시간', 'Cook time')),
+    fact(String(m.lines.length), tx('재료', 'Ingredients')),
+    fact(String(steps.length), tx('조리 단계', 'Steps')),
   );
   side.appendChild(facts);
   wrap.appendChild(side);
@@ -1167,30 +1265,40 @@ function recipeDetail(root, name) {
 /* ─────────── 주방 모드 · 프렙 ─────────── */
 function viewCook(root) {
   const r = state.result;
-  if (!r.preps.length) { root.appendChild(el('div', 'empty', '등록된 프렙(반제품)이 없습니다.')); return; }
-  root.appendChild(el('div', 'rsub', '미리 만들어 두는 소스·반제품입니다. 여기서 만든 것이 메뉴로 나갑니다.'));
+  if (!r.preps.length) {
+    root.appendChild(el('div', 'empty', tx('등록된 프렙(반제품)이 없습니다.', 'No prep items registered yet.')));
+    return;
+  }
+  root.appendChild(el('div', 'rsub', tx('미리 만들어 두는 소스·반제품입니다. 여기서 만든 것이 메뉴로 나갑니다.',
+                                        'Sauces and bases prepared ahead. These go into the dishes on the menu.')));
 
   r.preps.forEach((p) => {
     const used = state.data.menus.filter((mm) => mm.lines.some((l) => l.kind === '프렙' && l.name === p.name));
-    const c = card(p.name, `완성 ${won(p.yield_g)}g · 투입 ${won(p.inputG)}g${showCost() ? ` · g당 ${won3(p.unitCost)}원` : ''}`);
+    const sub = EN()
+      ? `Yield ${won(p.yield_g)}g · Input ${won(p.inputG)}g${showCost() ? ` · ${won3(p.unitCost)}/g` : ''}`
+      : `완성 ${won(p.yield_g)}g · 투입 ${won(p.inputG)}g${showCost() ? ` · g당 ${won3(p.unitCost)}원` : ''}`;
+    const c = card(mName(p), sub);
     const ol = el('ol', 'ringredients');
     p.items.forEach((it) => {
       const li = el('li');
       const nm = el('div', 'ri-name');
-      if (it.kind === '프렙') nm.appendChild(el('span', 'kindtag', '프렙'));
-      nm.appendChild(el('span', 'n', it.name));
+      if (it.kind === '프렙') nm.appendChild(el('span', 'kindtag', tx('프렙', 'Prep')));
+      nm.appendChild(el('span', 'n', lName(it)));
+      const inote = lNote(it);
+      if (inote) nm.appendChild(el('span', 'note', inote));
       li.appendChild(nm);
       li.appendChild(el('div', 'ri-amt', `${won3(num(it.qty) * state.scale)}g`));
-      if (showCost()) li.appendChild(el('div', 'ri-cost', won1(it.cost * state.scale) + '원'));
+      if (showCost()) li.appendChild(el('div', 'ri-cost', won1(it.cost * state.scale) + tx('원', '')));
       ol.appendChild(li);
     });
     c.body.appendChild(ol);
 
     const d = state.data.preps.find((x) => x.name === p.name);
-    if (d && (d.steps || []).length) {
-      c.body.appendChild(el('div', 'sec-title', '만드는 법'));
+    const dsteps = d ? mSteps(d) : [];
+    if (dsteps.length) {
+      c.body.appendChild(el('div', 'sec-title', tx('만드는 법', 'How to make')));
       const sol = el('ol', 'rsteps plain');
-      d.steps.forEach((s, i) => {
+      dsteps.forEach((s, i) => {
         const li = el('li');
         li.appendChild(el('span', 'no', String(i + 1)));
         li.appendChild(el('span', 'tx', s));
@@ -1829,7 +1937,7 @@ function printCards(names) {
     if (wmText) card.dataset.wmtext = wmText;
     const rows = m.lines.map((l) => `
       <tr>
-        <td>${l.kind === '식재료' ? '' : `<span class="pk">${esc(l.kind)}</span> `}${esc(l.name)}</td>
+        <td>${l.kind === '식재료' ? '' : `<span class="pk">${esc(l.kind)}</span> `}${esc(lName(l))}</td>
         <td class="r">${l.kind === '메뉴' ? `${l.qty}개` : `${won1(l.qty)}g`}</td>
         <td class="r">${l.kind === '식재료' || l.kind === '프렙' ? pct(l.yield || 1, 0) : '–'}</td>
         <td class="r">${l.kind === '무료' ? '0' : won3(l.unitCost)}</td>
@@ -1839,8 +1947,8 @@ function printCards(names) {
     card.innerHTML = `
       <header class="ph">
         <div>
-          <h1>${esc(m.name)}</h1>
-          <p>${esc([m.icon + ' ' + m.category, m.en, m.serving, m.time].filter(Boolean).join(' · '))}</p>
+          <h1>${esc(mName(m))}</h1>
+          <p>${esc([m.icon + ' ' + catLabel(m.category), mSub(m) || m.en, mServing(m), mTime(m)].filter(Boolean).join(' · '))}</p>
         </div>
         <div class="pbrand">${esc(brand)}</div>
       </header>
@@ -1854,17 +1962,17 @@ function printCards(names) {
         <div><span>마진</span><b>${m.hasPrice ? won(m.margin) : '–'}</b></div>
       </div>
 
-      <h2>재료</h2>
+      <h2>${tx('재료', 'Ingredients')}</h2>
       <table class="ptab">
-        <thead><tr><th>재료 / 구성</th><th class="r">사용량</th><th class="r">수율</th>
-                   <th class="r">g당 단가</th><th class="r">재료비</th></tr></thead>
+        <thead><tr><th>${tx('재료 / 구성', 'Ingredient')}</th><th class="r">${tx('사용량', 'Qty')}</th><th class="r">${tx('수율', 'Yield')}</th>
+                   <th class="r">${tx('g당 단가', 'Unit cost')}</th><th class="r">${tx('재료비', 'Cost')}</th></tr></thead>
         <tbody>${rows}
-          <tr class="psum"><td>합 계</td><td></td><td></td><td></td><td class="r b">${won1(m.foodCost)}</td></tr>
+          <tr class="psum"><td>${tx('합 계', 'Total')}</td><td></td><td></td><td></td><td class="r b">${won1(m.foodCost)}</td></tr>
         </tbody>
       </table>
 
-      ${m.steps && m.steps.length ? `<h2>조리 방법</h2><ol class="psteps">${m.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
-      ${m.garnish ? `<h2>가니쉬 · 플레이팅</h2><p class="pgar">${esc(m.garnish)}</p>` : ''}
+      ${mSteps(m).length ? `<h2>${tx('조리 방법', 'Method')}</h2><ol class="psteps">${mSteps(m).map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+      ${mGarnish(m) ? `<h2>${tx('가니쉬 · 플레이팅', 'Garnish · Plating')}</h2><p class="pgar">${esc(mGarnish(m))}</p>` : ''}
 
       <footer class="pf">
         <span>${esc(brand)}${brand ? ' · ' : ''}${new Date().toLocaleDateString('ko-KR')} 기준</span>
@@ -2750,9 +2858,11 @@ async function boot() {
   const hashed = viewById(hashView);
   state.mode = hashed ? hashed.mode : (store.get('ec-mode') === 'owner' ? 'owner' : 'kitchen');
   state.view = hashed ? hashed.id : viewsFor(state.mode)[0].id;
+  state.lang = store.get('ec-lang') === 'en' ? 'en' : 'ko';
 
   buildNav();
   paintMode();
+  paintLang();
   render();
 
   $('#boot').hidden = true;
@@ -2783,6 +2893,9 @@ async function boot() {
 
   document.querySelectorAll('.modeswitch button').forEach((b) => {
     b.onclick = () => setMode(b.dataset.mode);
+  });
+  document.querySelectorAll('#langSwitch button').forEach((b) => {
+    b.onclick = () => setLang(b.dataset.lang);
   });
 
   const toggleAuth = () => { if (state.authed) logout(); else openLogin(); };

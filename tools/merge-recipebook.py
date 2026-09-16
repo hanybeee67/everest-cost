@@ -50,7 +50,10 @@ def trim_white(im):
 
 
 def shrink(data_uri):
-    """PNG data URI → 여백을 자른 WebP data URI"""
+    """PNG data URI → 여백을 자른 WebP data URI (이미 WebP 면 그대로 둔다)"""
+    if data_uri.startswith('data:image/webp'):
+        n = len(base64.b64decode(data_uri.split(',', 1)[1]))
+        return data_uri, n, n
     raw = base64.b64decode(data_uri.split(',', 1)[1])
     im = Image.open(io.BytesIO(raw)).convert('RGB')
     im = trim_white(im)
@@ -73,11 +76,11 @@ def main():
 
     by_name = {r['name']: r for r in rb}
     before = after = 0
-    photos = tagged = timed = stepped = 0
+    photos = tagged = timed = stepped = englished = 0
     missing = []
 
     def enrich(target, rec, is_prep=False):
-        nonlocal before, after, photos, tagged, timed, stepped
+        nonlocal before, after, photos, tagged, timed, stepped, englished
         if rec.get('image'):
             uri, b, a = shrink(rec['image'])
             target['image'] = uri
@@ -102,6 +105,34 @@ def main():
             target['steps'] = rec['steps']
             stepped += 1
 
+        # ── 영어 본문 — 외국인 직원이 읽을 수 있도록 ──
+        en = rec.get('en') or {}
+        if en:
+            if en.get('serving'):
+                target['servingEn'] = en['serving']
+            if en.get('cookTime'):
+                target['timeEn'] = re.sub(r'^\s*(Total\s*)?(Cook(ing)?\s*)?time\s*[:·]?\s*', '',
+                                          en['cookTime'], flags=re.I).strip()
+            if en.get('tags'):
+                target['tagsEn'] = [t for t in en['tags'] if t.lower() != 'prep']
+            if en.get('category'):
+                target['categoryEn'] = en['category']
+            if en.get('steps'):
+                target['stepsEn'] = en['steps']
+            if en.get('garnish'):
+                target['garnishEn'] = en['garnish']
+            englished += 1
+
+            # 재료 줄의 영어 이름 — 한글 재료와 순서가 같다
+            en_ing = en.get('ingredients') or []
+            lines = target.get('lines') if not is_prep else target.get('items')
+            if lines and len(lines) == len(en_ing):
+                for line, e in zip(lines, en_ing):
+                    if e.get('name'):
+                        line['nameEn'] = e['name']
+                    if e.get('note'):
+                        line['noteEn'] = e['note']
+
     for m in ds['menus']:
         rec = by_name.get(m['name'])
         if rec:
@@ -123,6 +154,7 @@ def main():
     print(f'태그      {tagged}건')
     print(f'조리시간  {timed}건')
     print(f'프렙 조리법 {stepped}건')
+    print(f'영어 본문  {englished}건')
     if missing:
         print('짝을 못 찾음:', ', '.join(missing))
     print(f'저장 완료: {ds_path}  {os.path.getsize(ds_path) // 1024}KB')
