@@ -8,8 +8,8 @@
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzBmMTcyYSIvPgogIDxwYXRoIGQ9Ik05NiAzNzIgTDIwMCAxODggTDI1NiAyODggTDMwMCAyMjAgTDQxNiAzNzIgWiIgZmlsbD0iIzJkZDRiZiIvPgogIDxwYXRoIGQ9Ik0yMDAgMTg4IEwxNjYgMjQ4IEwyMzQgMjQ4IFoiIGZpbGw9IiNjY2ZiZjEiLz4KICA8Y2lyY2xlIGN4PSIzODYiIGN5PSIxNDAiIHI9IjMwIiBmaWxsPSIjZmJiZjI0Ii8+Cjwvc3ZnPgo=">
 <!--
   ═══════════════════════════════════════════════════════════════
-   우리 매장 · 메뉴 원가 분석서  (단일 파일 버전)
-   생성일 2026-08-31
+   우리 매장 · 레시피 · 원가 관리  (단일 파일 버전)
+   생성일 2026-09-16
 
    · 이 파일 하나면 끝입니다. 인터넷도, 설치도, 서버도 필요 없습니다.
    · 파일을 더블클릭하면 브라우저에서 바로 열립니다.
@@ -340,6 +340,146 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
 }
 .chip[aria-pressed="true"]{background:var(--accent);border-color:transparent;color:#04211d;font-weight:700}
 
+.chip-sm{padding:4px 10px;font-size:11.5px}
+.chip-n{opacity:.6;font-variant-numeric:tabular-nums;margin-left:3px}
+.chip[aria-pressed="true"] .chip-n{opacity:.75}
+
+/* ══════════════ 주방 모드 · 레시피북 ══════════════ */
+.modeswitch{display:flex;gap:2px;padding:3px;background:var(--surface-2);border-radius:999px;flex:0 0 auto}
+.modeswitch button{
+  display:flex;align-items:center;gap:5px;border:0;background:transparent;cursor:pointer;
+  padding:6px 13px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--muted);
+}
+.modeswitch button .ic{font-size:14px;line-height:1}
+.modeswitch button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+.rcount{font-size:12.5px;color:var(--muted);font-weight:600;margin:2px 0 12px}
+.allergy-row{align-items:center;margin-bottom:12px}
+.allergy-row .l{font-size:11.5px;color:var(--muted);font-weight:700;margin-right:2px}
+
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:14px}
+.rcard{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+  cursor:pointer;box-shadow:var(--shadow);transition:transform .08s, box-shadow .15s;display:flex;flex-direction:column;
+}
+.rcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.rcard-img{position:relative;aspect-ratio:4/3;background:var(--surface-2);display:grid;place-items:center;overflow:hidden}
+.rcard-img img{width:100%;height:100%;object-fit:cover;display:block}
+.rcard-img.noimg{font-size:44px;opacity:.5}
+.rcard-cat{
+  position:absolute;top:8px;left:8px;padding:4px 9px;border-radius:999px;
+  background:rgba(15,23,42,.72);color:#fff;font-size:11px;font-weight:700;backdrop-filter:blur(4px);
+}
+.rcard-time{
+  position:absolute;bottom:8px;right:8px;padding:3px 8px;border-radius:999px;
+  background:rgba(15,23,42,.72);color:#fff;font-size:10.5px;font-weight:650;
+}
+.rcard-body{padding:11px 13px 13px;display:flex;flex-direction:column;gap:2px;flex:1}
+.rcard-body b{font-size:15px;font-weight:750;line-height:1.3}
+.rcard-body .en{font-size:11.5px;color:var(--muted)}
+.rcard-body .meta{font-size:11px;color:var(--muted);margin-top:3px}
+.rcard-cost{
+  margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);
+  font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;
+}
+.rcard-cost b{font-size:12.5px}
+.g-good{color:var(--good)} .g-warn{color:var(--warn)} .g-bad{color:var(--bad)} .g-none{color:var(--muted)}
+
+/* 레시피 상세 */
+.rdetail-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.rdetail-top .dim{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rdetail{display:grid;grid-template-columns:1fr 300px;gap:22px;align-items:start}
+.rdetail-main{min-width:0}
+.rdetail-side{display:flex;flex-direction:column;gap:10px;position:sticky;top:78px}
+
+.rhead{margin-bottom:16px}
+.rhead h2{font-size:27px;font-weight:800;margin:9px 0 2px;line-height:1.2}
+.rhead .en{margin:0;font-size:14px;color:var(--muted)}
+.allergy{
+  margin-top:9px;display:inline-block;padding:5px 11px;border-radius:8px;
+  background:var(--warn-bg);color:var(--warn);font-size:12px;font-weight:700;
+}
+
+.rcost{
+  display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:18px;padding:12px 15px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);
+}
+.rcost > div{display:flex;flex-direction:column;gap:1px}
+.rcost .l{font-size:10.5px;color:var(--muted);font-weight:650}
+.rcost b{font-size:16px;font-weight:780;font-variant-numeric:tabular-nums}
+.rcost .btn{margin-left:auto}
+
+.rsec{margin-bottom:26px}
+.rsec-head{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.rsec-head h3{font-size:16.5px;font-weight:750;flex:1}
+.rsec-head .prog{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700}
+.rsec h3{font-size:16.5px;font-weight:750;margin-bottom:8px}
+.rsub{font-size:12px;color:var(--muted);margin-bottom:11px}
+.btn-xs{padding:4px 9px;font-size:11.5px}
+
+.scales{display:flex;gap:3px;padding:3px;background:var(--surface-2);border-radius:999px}
+.scale-btn{
+  border:0;background:transparent;cursor:pointer;padding:5px 12px;border-radius:999px;
+  font-size:12.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;
+}
+.scale-btn[aria-pressed="true"]{background:var(--accent);color:#04211d}
+
+.ringredients{list-style:none;padding:0;margin:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ringredients li{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);
+  background:var(--surface);
+}
+.ringredients li:nth-child(even){background:var(--surface-2)}
+.ringredients li:last-child{border-bottom:0}
+.ri-name{flex:1;min-width:0;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ri-name .n{font-size:14px;font-weight:650}
+.ri-name .note{font-size:11.5px;color:var(--muted)}
+.kindtag{
+  padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--accent-ink);
+  font-size:10px;font-weight:800;flex:0 0 auto;
+}
+.kindtag.free{background:var(--surface-3);color:var(--muted)}
+.ri-amt{font-size:15px;font-weight:780;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ri-cost{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:66px;text-align:right}
+.ri-sum{
+  display:flex;justify-content:space-between;align-items:center;padding:11px 14px;margin-top:-1px;
+  border:1px solid var(--line);border-top:0;border-radius:0 0 var(--r) var(--r);background:var(--surface-2);
+}
+.ri-sum span{font-size:12.5px;color:var(--muted);font-weight:700}
+.ri-sum b{font-size:16px;font-weight:800;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+
+.rsteps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px}
+.rsteps li{
+  display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border-radius:11px;
+  background:var(--surface);border:1px solid var(--line);cursor:pointer;transition:background .12s;
+}
+.rsteps li:hover{background:var(--surface-2)}
+.rsteps.plain li{cursor:default}
+.rsteps li .no{
+  flex:0 0 auto;width:23px;height:23px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);
+  font-size:11.5px;font-weight:800;display:grid;place-items:center;margin-top:1px;
+}
+.rsteps li .tx{font-size:14.5px;line-height:1.55;color:var(--ink-2)}
+.rsteps li.done{background:var(--good-bg);border-color:transparent}
+.rsteps li.done .tx{text-decoration:line-through;opacity:.55}
+.rsteps li.done .no{background:var(--good);color:#fff}
+
+.rphoto{
+  border-radius:var(--r);overflow:hidden;background:var(--surface-2);border:1px solid var(--line);
+  aspect-ratio:1/1;display:grid;place-items:center;
+}
+.rphoto img{width:100%;height:100%;object-fit:cover;display:block}
+.rphoto.noimg{gap:7px;padding:18px;text-align:center}
+.rphoto .ic{font-size:52px;opacity:.45}
+.rphoto .tx{font-size:12px;color:var(--muted)}
+.rfacts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.rfacts div{background:var(--surface-2);border-radius:10px;padding:10px 6px;text-align:center}
+.rfacts b{display:block;font-size:14.5px;font-weight:780}
+.rfacts span{font-size:10.5px;color:var(--muted)}
+
+.usedby{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.usedby .l{font-size:11.5px;color:var(--muted);font-weight:700;width:100%;margin-bottom:2px}
+
 /* ── 진행바 ───────────────────────────────────────── */
 .bar{height:6px;border-radius:99px;background:var(--surface-3);overflow:hidden;min-width:60px}
 .bar > i{display:block;height:100%;border-radius:99px;background:var(--accent)}
@@ -553,6 +693,28 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .tbl-stack .sel{max-width:100%}
   .tbl-stack .switch{gap:7px}
   .tbl-stack tr.sumrow{background:var(--surface-2);gap:6px 10px}
+
+  /* 레시피북 — 휴대폰 */
+  .modeswitch button{padding:6px 9px}
+  .modeswitch button .tx{display:none}       /* 좁으면 아이콘만 */
+  .rgrid{grid-template-columns:1fr 1fr;gap:10px}
+  .rcard-body{padding:9px 10px 11px}
+  .rcard-body b{font-size:13.5px}
+  .rcard-body .en{font-size:10.5px}
+  .rdetail{grid-template-columns:1fr;gap:16px}
+  .rdetail-side{position:static;order:-1}     /* 사진을 맨 위로 */
+  .rphoto{aspect-ratio:16/10}
+  .rhead h2{font-size:22px}
+  .rcost{gap:9px 14px;padding:11px 13px}
+  .rcost b{font-size:14.5px}
+  .rcost .btn{margin-left:0;width:100%}
+  .ringredients li{padding:10px 12px;gap:9px}
+  .ri-name{flex:1 1 100%}
+  .ri-amt{font-size:14.5px}
+  .rsteps li .tx{font-size:14px}
+}
+@media (max-width:480px){
+  .rgrid{grid-template-columns:1fr}
 }
 @media (min-width:861px){ .cards{display:none} .mobile-only{display:none} }
 
@@ -632,7 +794,7 @@ body.printing #printRoot{display:block}
 </head>
 <body>
 
-<div id="boot" class="boot"><div class="spinner"></div><p>원가 데이터를 불러오는 중…</p></div>
+<div id="boot" class="boot"><div class="spinner"></div><p>레시피와 원가를 불러오는 중…</p></div>
 
 <div id="app" hidden>
 
@@ -642,7 +804,7 @@ body.printing #printRoot{display:block}
       <div class="brand-mark">🏔️</div>
       <div>
         <strong id="brandName">–</strong>
-        <span>메뉴 원가 분석</span>
+        <span>레시피 · 원가 관리</span>
       </div>
     </div>
     <nav class="nav" id="navDesktop"></nav>
@@ -665,10 +827,14 @@ body.printing #printRoot{display:block}
   <main class="main">
     <header class="topbar">
       <div class="topbar-title">
-        <h1 id="viewTitle">대시보드</h1>
+        <h1 id="viewTitle">레시피북</h1>
         <p id="viewDesc"></p>
       </div>
       <div class="topbar-actions">
+        <div class="modeswitch" id="modeSwitch" role="group" aria-label="화면 모드">
+          <button data-mode="kitchen" aria-pressed="true"><span class="ic">🍳</span><span class="tx">주방</span></button>
+          <button data-mode="owner" aria-pressed="false"><span class="ic">💰</span><span class="tx">사장</span></button>
+        </div>
         <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
         <button class="icon-btn" id="btnAuth" title="관리자 로그인">🔒</button>
         <button class="icon-btn no-mobile" id="btnUndo" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
@@ -680,7 +846,7 @@ body.printing #printRoot{display:block}
 
     <div class="viewlock" id="viewLockBanner" hidden>
       🔒 <b>보기 전용 모드입니다.</b>
-      <span class="viewlock-more">메뉴·식재료·고정비를 수정하려면 관리자 로그인을 해 주세요.</span>
+      <span class="viewlock-more">레시피·원가를 수정하려면 관리자 로그인을 해 주세요.</span>
       <button class="viewlock-btn" id="viewLockBtn">관리자 로그인</button>
     </div>
     <div class="savewarn" id="saveWarn" hidden>
@@ -743,7 +909,7 @@ body.printing #printRoot{display:block}
 <div id="printRoot" aria-hidden="true"></div>
 
 <script id="ovData" type="application/json">null</script>
-<script>window.LICENSE_INFO = {"licensee":"","licenseId":"","issuedAt":"2026-08-31"};</script>
+<script>window.LICENSE_INFO = {"licensee":"","licenseId":"","issuedAt":"2026-09-16"};</script>
 
 <!-- ═══════════════════════════════════════════════════════════════
      오픈소스 라이선스 고지 (Third-Party Notice)
@@ -818,7 +984,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
  * @copyright Louis-Dominique Dubeau
  */function i(e){return e>=65&&e<=90||95===e||e>=97&&e<=122||e>=192&&e<=214||e>=216&&e<=246||e>=248&&e<=767||e>=880&&e<=893||e>=895&&e<=8191||e>=8204&&e<=8205||e>=8304&&e<=8591||e>=11264&&e<=12271||e>=12289&&e<=55295||e>=63744&&e<=64975||e>=65008&&e<=65533||e>=65536&&e<=983039}Object.defineProperty(r,"__esModule",{value:!0}),r.NC_NAME_START_CHAR="A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd\ud800\udc00-\udb7f\udfff",r.NC_NAME_CHAR="-"+r.NC_NAME_START_CHAR+".0-9\xb7\u0300-\u036f\u203f-\u2040",r.NC_NAME_START_CHAR_RE=new RegExp("^["+r.NC_NAME_START_CHAR+"]$","u"),r.NC_NAME_CHAR_RE=new RegExp("^["+r.NC_NAME_CHAR+"]$","u"),r.NC_NAME_RE=new RegExp("^["+r.NC_NAME_START_CHAR+"]["+r.NC_NAME_CHAR+"]*$","u"),r.isNCNameStartChar=i,r.isNCNameChar=function(e){return i(e)||45===e||46===e||e>=48&&e<=57||183===e||e>=768&&e<=879||e>=8255&&e<=8256}},{}]},{},[15])(15)}));
 //# sourceMappingURL=exceljs.bare.min.js.map</script>
-<script>window.EMBEDDED_DATASET = {"meta":{"brand":"우리 매장","title":"메뉴 원가 분석서","source":"원가 분석 템플릿 · 예시 데이터가 들어 있습니다","version":"1.0","template":true},"categoryOrder":["메인 요리","사이드","음료","세트메뉴"],"categoryIcon":{"메인 요리":"🍳","사이드":"🥗","음료":"🥤","세트메뉴":"🍽"},"ingredients":[{"name":"닭가슴살","price":12000,"pack_qty":1,"unit":"kg","weight_g":1000},{"name":"쌀","price":62000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"양파","price":14000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"당근","price":16500,"pack_qty":3,"unit":"kg","weight_g":3000},{"name":"감자","price":35000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"우유","price":1650,"pack_qty":1,"unit":"L","weight_g":1000},{"name":"버터","price":14500,"pack_qty":13.1,"unit":"kg","weight_g":13100},{"name":"식용유","price":49500,"pack_qty":18,"unit":"L","weight_g":18000},{"name":"간장","price":5500,"pack_qty":1.8,"unit":"L","weight_g":1800},{"name":"소금","price":15000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"후추","price":9000,"pack_qty":0.4,"unit":"kg","weight_g":400},{"name":"대파","price":4980,"pack_qty":0.5,"unit":"kg","weight_g":500}],"preps":[{"name":"기본 볶음 소스","yield_g":1200,"yield_rate":0.8,"items":[{"kind":"식재료","name":"양파","raw":"","qty":1000},{"kind":"식재료","name":"간장","raw":"","qty":300},{"kind":"식재료","name":"식용유","raw":"","qty":200},{"kind":"식재료","name":"소금","raw":"","qty":50}]}],"menus":[{"name":"치킨 볶음밥","category":"메인 요리","icon":"🍳","en":"Chicken Fried Rice","time":"총 조리시간: 약 10분","serving":"1인분 기준","price":9000,"lines":[{"kind":"식재료","name":"쌀","raw":"","qty":200,"unit":"g","yield":1,"note":"지은 밥 기준"},{"kind":"식재료","name":"닭가슴살","raw":"","qty":100,"unit":"g","yield":0.9,"note":"손질 손실 10% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"당근","raw":"","qty":20,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"식용유","raw":"","qty":15,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"후추","raw":"","qty":1,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"대파","raw":"","qty":10,"unit":"g","yield":1,"note":"고명"},{"kind":"프렙","name":"기본 볶음 소스","raw":"","qty":40,"unit":"g","yield":1,"note":"미리 만들어 둔 소스"}],"steps":["닭가슴살을 사방 1cm 크기로 썰고 소금·후추로 밑간한다.","달군 팬에 식용유를 두르고 닭고기를 넣어 겉면이 익을 때까지 볶는다.","양파와 당근을 넣어 2분간 함께 볶는다.","밥을 넣고 기본 볶음 소스를 둘러 센불에서 고루 볶는다.","소금·후추로 간을 맞추고 대파를 올려 마무리한다."],"garnish":"대파 흰 부분을 얇게 썰어 가운데 올리고, 접시 가장자리를 닦아 낸다."},{"name":"감자 크림 수프","category":"사이드","icon":"🥗","en":"Potato Cream Soup","time":"총 조리시간: 약 15분","serving":"1인분 기준","price":5000,"lines":[{"kind":"식재료","name":"감자","raw":"","qty":150,"unit":"g","yield":0.85,"note":"껍질 손실 15% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"우유","raw":"","qty":120,"unit":"g","yield":1,"note":"120ml ≈ 120g"},{"kind":"식재료","name":"버터","raw":"","qty":10,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"무료","name":"물","raw":"","qty":100,"unit":"g","yield":1,"note":"수돗물 — 원가 0원 처리"}],"steps":["감자는 껍질을 벗겨 얇게 썰고, 양파도 채 썬다.","냄비에 버터를 녹이고 양파를 투명해질 때까지 볶는다.","감자와 물을 넣어 감자가 완전히 무를 때까지 끓인다.","우유를 붓고 곱게 갈아 소금으로 간을 맞춘다."],"garnish":"가운데에 크림을 한 방울 떨어뜨리고 후추를 살짝 뿌린다."},{"name":"런치 세트","category":"세트메뉴","icon":"🍽","en":"Lunch Set","time":"","serving":"1인 세트","price":12000,"lines":[{"kind":"메뉴","name":"치킨 볶음밥","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"},{"kind":"메뉴","name":"감자 크림 수프","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"}],"steps":["치킨 볶음밥과 감자 크림 수프를 각각 조리한다.","쟁반에 함께 담아 낸다."],"garnish":"수프는 왼쪽 앞, 볶음밥은 오른쪽 뒤에 배치한다."}],"fixedCosts":[{"name":"인건비","amount":8000000,"include":true,"note":"급여 · 4대보험 사용자 부담분","reason":""},{"name":"임대료","amount":3000000,"include":true,"note":"월 임대료 · 관리비","reason":""},{"name":"공과금","amount":800000,"include":true,"note":"수도 · 전기 · 가스","reason":""},{"name":"배달·광고 수수료","amount":1500000,"include":true,"note":"배달앱 수수료 · 마케팅비","reason":""},{"name":"식재료 매입비","amount":6000000,"include":false,"note":"","reason":"메뉴별 식재료 원가에 이미 반영 → 고정비 배분에서 제외 (이중 계산 방지)"}],"settings":{"monthlyRevenue":30000000,"targetFoodCostRate":0.3,"warnFoodCostRate":0.38,"vatIncluded":true,"vatRate":0.1,"admin":{"id":"admin","salt":"","passHash":""}},"issues":[{"type":"시작하기","menu":"-","name":"① 회사 이름 바꾸기","note":"[고정비] 화면 맨 아래 「기본 정보」에서 회사·매장 이름을 입력하세요. 화면과 엑셀 제목에 반영됩니다."},{"type":"시작하기","menu":"-","name":"② 식재료 등록","note":"[식재료] 화면에서 「＋ 식재료 추가」로 우리 매장이 쓰는 재료와 구매가격·규격을 넣으세요."},{"type":"시작하기","menu":"-","name":"③ 고정비 입력","note":"[고정비] 화면에서 우리 매장의 월 고정비와 월 추정매출을 실제 값으로 바꾸세요."},{"type":"시작하기","menu":"-","name":"④ 메뉴 등록","note":"[메뉴] 화면 아래 입력칸에 메뉴 이름·카테고리·판매가를 넣고 「＋ 메뉴 추가」를 누르면 상세가 열립니다."},{"type":"시작하기","menu":"-","name":"⑤ 예시 데이터 정리","note":"치킨 볶음밥 · 감자 크림 수프 · 런치 세트는 사용법을 보여주기 위한 예시입니다. 다 익히셨으면 지우세요."},{"type":"시작하기","menu":"-","name":"⑥ 관리자 로그인 등록","note":"화면 위쪽의 🔒 아이콘(또는 왼쪽 「관리자 로그인」)을 눌러 원하는 아이디·비밀번호를 등록하세요. 등록 전까지는 아무 아이디·비밀번호로나 로그인하면 그 값으로 등록됩니다 — 반드시 직접 한 번 등록해 두세요."},{"type":"예시 데이터","menu":"치킨 볶음밥","name":"식재료 + 프렙 사용 예시","note":"일반 식재료와 미리 만들어 둔 프렙(반제품)을 함께 쓰는 메뉴의 예시입니다."},{"type":"예시 데이터","menu":"감자 크림 수프","name":"수율 · 무료 항목 예시","note":"껍질을 벗겨 버리는 손실(수율 85%)과 원가가 들지 않는 수돗물(무료) 처리 예시입니다."},{"type":"예시 데이터","menu":"런치 세트","name":"세트메뉴 예시","note":"다른 메뉴를 구성품으로 넣으면 그 메뉴의 식재료 원가가 자동으로 합산됩니다."}]};</script>
+<script>window.EMBEDDED_DATASET = {"meta":{"brand":"우리 매장","title":"레시피 · 원가 관리","source":"예시 데이터가 들어 있습니다 — 지우고 우리 가게 것으로 채우세요","version":"2.0","template":true},"categoryOrder":["메인 요리","사이드","음료","세트메뉴"],"categoryIcon":{"메인 요리":"🍳","사이드":"🥗","음료":"🥤","세트메뉴":"🍽"},"ingredients":[{"name":"닭가슴살","price":12000,"pack_qty":1,"unit":"kg","weight_g":1000},{"name":"쌀","price":62000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"양파","price":14000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"당근","price":16500,"pack_qty":3,"unit":"kg","weight_g":3000},{"name":"감자","price":35000,"pack_qty":20,"unit":"kg","weight_g":20000},{"name":"우유","price":1650,"pack_qty":1,"unit":"L","weight_g":1000},{"name":"버터","price":14500,"pack_qty":13.1,"unit":"kg","weight_g":13100},{"name":"식용유","price":49500,"pack_qty":18,"unit":"L","weight_g":18000},{"name":"간장","price":5500,"pack_qty":1.8,"unit":"L","weight_g":1800},{"name":"소금","price":15000,"pack_qty":15,"unit":"kg","weight_g":15000},{"name":"후추","price":9000,"pack_qty":0.4,"unit":"kg","weight_g":400},{"name":"대파","price":4980,"pack_qty":0.5,"unit":"kg","weight_g":500},{"name":"콜라 (355ml 캔)","price":21000,"pack_qty":24,"unit":"개","weight_g":0,"byCount":true,"note":"개수로 사는 품목 — 한 박스 24개에 21,000원"},{"name":"배달 용기 (중)","price":60000,"pack_qty":500,"unit":"개","weight_g":0,"byCount":true,"note":"배달하신다면 반드시 메뉴 원가에 넣으세요"}],"preps":[{"name":"기본 볶음 소스","nameEn":"Basic Stir-fry Sauce","yield_g":1200,"yield_rate":0.8,"image":"","time":"약 20분","items":[{"kind":"식재료","name":"양파","raw":"","qty":1000},{"kind":"식재료","name":"간장","raw":"","qty":300},{"kind":"식재료","name":"식용유","raw":"","qty":200},{"kind":"식재료","name":"소금","raw":"","qty":50}],"steps":["양파를 잘게 썰어 기름에 갈색이 돌 때까지 볶는다.","간장과 소금을 넣고 약불에서 10분간 졸인다.","식혀서 밀폐용기에 담아 냉장 보관한다. (3일 이내 사용)"]}],"menus":[{"name":"치킨 볶음밥","nameEn":"Chicken Fried Rice","category":"메인 요리","icon":"🍳","en":"Chicken Fried Rice","time":"약 10분","serving":"1인분 기준","price":9000,"image":"","tags":["닭고기","밥류"],"allergens":["대두"],"lines":[{"kind":"식재료","name":"쌀","raw":"","qty":200,"unit":"g","yield":1,"note":"지은 밥 기준"},{"kind":"식재료","name":"닭가슴살","raw":"","qty":100,"unit":"g","yield":0.9,"note":"손질 손실 10% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"당근","raw":"","qty":20,"unit":"g","yield":1,"note":"잘게 썰기"},{"kind":"식재료","name":"식용유","raw":"","qty":15,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"후추","raw":"","qty":1,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"대파","raw":"","qty":10,"unit":"g","yield":1,"note":"고명"},{"kind":"프렙","name":"기본 볶음 소스","raw":"","qty":40,"unit":"g","yield":1,"note":"미리 만들어 둔 소스"}],"steps":["닭가슴살을 사방 1cm 크기로 썰고 소금·후추로 밑간한다.","달군 팬에 식용유를 두르고 닭고기를 넣어 겉면이 익을 때까지 볶는다.","양파와 당근을 넣어 2분간 함께 볶는다.","밥을 넣고 기본 볶음 소스를 둘러 센불에서 고루 볶는다.","소금·후추로 간을 맞추고 대파를 올려 마무리한다."],"garnish":"대파 흰 부분을 얇게 썰어 가운데 올리고, 접시 가장자리를 닦아 낸다."},{"name":"감자 크림 수프","nameEn":"Potato Cream Soup","category":"사이드","icon":"🥗","en":"Potato Cream Soup","time":"약 15분","serving":"1인분 기준","price":5000,"image":"","tags":["채식","부드러움"],"allergens":["우유"],"lines":[{"kind":"식재료","name":"감자","raw":"","qty":150,"unit":"g","yield":0.85,"note":"껍질 손실 15% 반영"},{"kind":"식재료","name":"양파","raw":"","qty":30,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"우유","raw":"","qty":120,"unit":"g","yield":1,"note":"120ml ≈ 120g"},{"kind":"식재료","name":"버터","raw":"","qty":10,"unit":"g","yield":1,"note":""},{"kind":"식재료","name":"소금","raw":"","qty":3,"unit":"g","yield":1,"note":""},{"kind":"무료","name":"물","raw":"","qty":100,"unit":"g","yield":1,"note":"수돗물 — 원가 0원 처리"}],"steps":["감자는 껍질을 벗겨 얇게 썰고, 양파도 채 썬다.","냄비에 버터를 녹이고 양파를 투명해질 때까지 볶는다.","감자와 물을 넣어 감자가 완전히 무를 때까지 끓인다.","우유를 붓고 곱게 갈아 소금으로 간을 맞춘다."],"garnish":"가운데에 크림을 한 방울 떨어뜨리고 후추를 살짝 뿌린다."},{"name":"콜라","nameEn":"Cola","category":"음료","icon":"🥤","en":"Cola","time":"","serving":"355ml 캔 1개","price":2000,"image":"","tags":["음료"],"allergens":[],"lines":[{"kind":"식재료","name":"콜라 (355ml 캔)","raw":"","qty":1,"unit":"개","yield":1,"note":"개수로 계산되는 예시입니다"}],"steps":["차갑게 보관한 캔을 컵과 함께 낸다."],"garnish":"얼음을 채운 잔을 함께 낸다."},{"name":"런치 세트","nameEn":"Lunch Set","category":"세트메뉴","icon":"🍽","en":"Lunch Set","time":"","serving":"1인 세트","price":12000,"image":"","tags":["세트"],"allergens":["우유","대두"],"lines":[{"kind":"메뉴","name":"치킨 볶음밥","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"},{"kind":"메뉴","name":"감자 크림 수프","raw":"","qty":1,"unit":"개","yield":1,"note":"단품 원가를 그대로 가져옵니다"}],"steps":["치킨 볶음밥과 감자 크림 수프를 각각 조리한다.","쟁반에 함께 담아 낸다."],"garnish":"수프는 왼쪽 앞, 볶음밥은 오른쪽 뒤에 배치한다."}],"fixedCosts":[{"name":"인건비","amount":8000000,"include":true,"note":"급여 · 4대보험 사용자 부담분","reason":""},{"name":"임대료","amount":3000000,"include":true,"note":"월 임대료 · 관리비","reason":""},{"name":"공과금","amount":800000,"include":true,"note":"수도 · 전기 · 가스","reason":""},{"name":"배달·광고 수수료","amount":1500000,"include":true,"note":"배달앱 수수료 · 마케팅비","reason":""},{"name":"식재료 매입비","amount":6000000,"include":false,"note":"","reason":"메뉴별 식재료 원가에 이미 반영 → 고정비 배분에서 제외 (이중 계산 방지)"}],"settings":{"monthlyRevenue":30000000,"targetFoodCostRate":0.3,"warnFoodCostRate":0.38,"vatIncluded":true,"vatRate":0.1,"admin":{"id":"admin","salt":"","passHash":""}},"issues":[{"type":"시작하기","menu":"-","name":"① 관리자 로그인 등록","note":"화면 위 🔒 을 눌러 원하는 아이디·비밀번호를 정하세요. 등록 전에는 아무 값으로나 로그인되니, 직원에게 파일을 주기 전에 먼저 등록해 두세요."},{"type":"시작하기","menu":"-","name":"② 가게 이름 바꾸기","note":"[고정비] 화면 맨 아래 「기본 정보」에서 가게 이름을 입력하세요. 화면과 엑셀 제목에 반영됩니다."},{"type":"시작하기","menu":"-","name":"③ 식재료 등록","note":"[식재료] 화면에서 사 오는 재료와 구매가격·규격을 넣으세요. 엑셀을 쓰고 계시면 「📋 엑셀에서 일괄 등록」으로 한 번에 넣을 수 있습니다."},{"type":"시작하기","menu":"-","name":"④ 고정비·월매출 입력","note":"[고정비] 화면에서 인건비·임대료와 월 추정매출을 우리 가게 값으로 바꾸세요. 이 둘로 메뉴마다 붙는 고정비가 정해집니다."},{"type":"시작하기","menu":"-","name":"⑤ 메뉴와 레시피 등록","note":"[메뉴] 화면에서 메뉴를 추가하고, 메뉴를 눌러 재료·조리법·사진을 채우세요. 주방 화면에 그대로 나갑니다."},{"type":"시작하기","menu":"-","name":"⑥ 배달하신다면 포장용기를 꼭 넣으세요","note":"포장용기·수저·비닐봉투는 개수로 사는 품목이라 빠뜨리기 쉽습니다. [식재료]에 「개수」 단위로 등록한 뒤 배달 메뉴에 재료로 넣으면 원가에 반영됩니다. 예시로 「배달 용기 (중)」을 넣어 두었습니다."},{"type":"시작하기","menu":"-","name":"⑦ 예시 데이터 정리","note":"치킨 볶음밥 · 감자 크림 수프 · 콜라 · 런치 세트는 사용법을 보여주기 위한 예시입니다. 다 익히셨으면 지우세요."},{"type":"예시 데이터","menu":"치킨 볶음밥","name":"식재료 + 프렙 사용 예시","note":"일반 식재료와 미리 만들어 둔 프렙(반제품)을 함께 쓰는 메뉴입니다. 수율 90%도 함께 보여줍니다."},{"type":"예시 데이터","menu":"감자 크림 수프","name":"수율 · 무료 항목 예시","note":"껍질을 벗겨 버리는 손실(수율 85%)과 원가가 들지 않는 수돗물(무료) 처리 예시입니다."},{"type":"예시 데이터","menu":"콜라","name":"개수 단위 예시","note":"캔·병·포장용기처럼 무게가 아니라 개수로 사는 품목의 원가 계산 예시입니다. 24개 21,000원 → 1개 875원."},{"type":"예시 데이터","menu":"런치 세트","name":"세트메뉴 예시","note":"다른 메뉴를 구성품으로 넣으면 그 메뉴의 식재료 원가가 자동으로 합산됩니다."}]};</script>
 <script>/* =====================================================================
  *  원가 계산 엔진  (브라우저 / Node 공용)
  *  엑셀 수식과 1:1 로 동일한 로직 — 어디서 계산해도 같은 값이 나온다.
@@ -838,11 +1004,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
    * @returns {object} 계산 결과가 채워진 뷰모델
    */
   function compute(data) {
-    /* ── 1. 식재료 g당 단가 ────────────────────────────── */
+    /* ── 1. 식재료 단가 ────────────────────────────────
+       무게로 사는 것은 원/g, 개수로 사는 것(캔·포장용기 등)은 원/개.
+       개수 품목은 총중량이 없어 예전에는 원가가 0원으로 잡혔다. */
     const ingByName = new Map();
     const ingredients = data.ingredients.map((i) => {
-      const unitCost = div(i.price, i.weight_g);          // 원/g
-      const row = { ...i, unitCost, valid: num(i.weight_g) > 0 && num(i.price) > 0 };
+      const byCount  = i.byCount === true;
+      const basis    = byCount ? num(i.pack_qty) : num(i.weight_g);   // 나눌 기준량
+      const unitCost = div(i.price, basis);                            // 원/g 또는 원/개
+      const row = { ...i, byCount, basis, unitCost, valid: basis > 0 && num(i.price) > 0 };
       ingByName.set(i.name, row);
       return row;
     });
@@ -901,23 +1071,26 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       menuStack.add(name);
       let food = 0;
       const lines = m.lines.map((l) => {
-        let unitCost = 0, cost = 0, basis = '';
+        let unitCost = 0, cost = 0, basis = '', byCount = false;
         if (l.kind === '무료') { basis = '무상(수돗물 등)'; }
         else if (l.kind === '메뉴') {
           unitCost = menuFoodCost(l.name);
           cost = num(l.qty) * unitCost;
           basis = '단품 메뉴 원가 × 수량';
+          byCount = true;                       // 세트 구성품은 「개」 단위
         } else if (l.kind === '프렙') {
           unitCost = prepCache.get(l.name)?.unitCost ?? 0;
           cost = div(num(l.qty), num(l.yield)) * unitCost;
           basis = '프렙 g당 원가';
         } else if (l.kind === '식재료') {
-          unitCost = ingByName.get(l.name)?.unitCost ?? 0;
+          const ing = ingByName.get(l.name);
+          unitCost = ing?.unitCost ?? 0;
+          byCount  = ing?.byCount === true;
           cost = div(num(l.qty), num(l.yield)) * unitCost;
-          basis = '식재료 g당 단가';
+          basis = byCount ? '식재료 개당 단가' : '식재료 g당 단가';
         }
         food += cost;
-        return { ...l, unitCost, cost, basis };
+        return { ...l, unitCost, cost, basis, byCount };
       });
       menuStack.delete(name);
 
@@ -1175,9 +1348,9 @@ function build(data) {
     { width: 6 }, { width: 34 }, { width: 14 }, { width: 10 },
     { width: 8 }, { width: 12 }, { width: 13 }, { width: 30 },
   ];
-  sheetTitle(wsI, '① 식재료 단가', '노란 셀(구매가격·규격)만 수정하세요. g당 단가와 전체 메뉴 원가가 자동으로 다시 계산됩니다.', 8);
-  noteBar(wsI, 3, '💡  g당 단가 = 구매가격 ÷ 총중량(g).  총중량이 0이면 0원으로 처리되어 오류가 나지 않습니다(개당 판매 품목 등).', 8);
-  headerRow(wsI, 5, ['No.', '식재료명', '구매가격(원)', '규격수량', '단위', '총중량(g)', 'g당 단가(원)', '비고']);
+  sheetTitle(wsI, '① 식재료 단가', '노란 셀(구매가격·규격)만 수정하세요. 단가와 전체 메뉴 원가가 자동으로 다시 계산됩니다.', 8);
+  noteBar(wsI, 3, '💡  무게로 사는 것은 단가 = 구매가격 ÷ 총중량(g).  캔·포장용기처럼 개수로 사는 것은 단가 = 구매가격 ÷ 규격수량(원/개).', 8);
+  headerRow(wsI, 5, ['No.', '식재료명', '구매가격(원)', '규격수량', '단위', '총중량(g)', '단가 (원/g·원/개)', '비고']);
 
   const ING_FIRST = 6;
   data.ingredients.forEach((it, i) => {
@@ -1189,9 +1362,13 @@ function build(data) {
     row.getCell(4).value = Number(it.pack_qty) || 0;
     row.getCell(5).value = it.unit || 'kg';
     row.getCell(6).value = Number(it.weight_g) || 0;
-    row.getCell(7).value = { formula: `IF(F${r}>0,C${r}/F${r},0)` };
+    // 개수로 사는 품목은 규격수량(D)으로, 무게로 사는 품목은 총중량(F)으로 나눈다
+    row.getCell(7).value = it.byCount === true
+      ? { formula: `IF(D${r}>0,C${r}/D${r},0)` }
+      : { formula: `IF(F${r}>0,C${r}/F${r},0)` };
     row.getCell(8).value = !Number(it.price) ? '⚠ 구매가격 입력 필요'
-                        : !Number(it.weight_g) ? '⚠ 중량(g) 입력 필요 · 개당 품목'
+                        : it.byCount === true ? (Number(it.pack_qty) ? '개수 단위 (원/개)' : '⚠ 규격수량 입력 필요')
+                        : !Number(it.weight_g) ? '⚠ 총중량(g) 입력 필요 — 개수 품목이면 「개수 단위」로 바꾸세요'
                         : '';
     for (let c = 1; c <= 8; c++) asText(row.getCell(c));
     [3, 4, 6].forEach((c) => asInput(row.getCell(c)));
@@ -1725,7 +1902,7 @@ function build(data) {
   const HINT = {
     '판매가 없음': '④ 메뉴 원가표에서 판매가를 입력하세요. 입력 전까지 원가율은 계산되지 않습니다.',
     '식재료 단가 미입력': '① 식재료 단가에서 구매가격을 입력하세요.',
-    '식재료 규격 미입력': '① 식재료 단가에서 총중량(g)을 입력하세요. (개당 판매 품목이면 그대로 두어도 됩니다.)',
+    '식재료 규격 미입력': '① 식재료 단가에서 총중량(g)을 입력하세요. 캔·포장용기처럼 개수로 사는 품목이면 「개수 단위」로 등록하면 규격수량으로 계산됩니다.',
   };
   (data.issues || []).forEach((it, i) => {
     const r = 5 + i;
@@ -1786,7 +1963,7 @@ function build(data) {
   g++;
 
   gSec('▸  계산 방식');
-  gRow('g당 단가', '구매가격 ÷ 총중량(g)');
+  gRow('단가', '무게 품목: 구매가격 ÷ 총중량(g) → 원/g   ·   개수 품목: 구매가격 ÷ 규격수량 → 원/개');
   gRow('재료비', '사용량 ÷ 수율 × g당 단가   (수율 100% 면 사용량 × 단가)');
   gRow('프렙 g당 원가', '프렙 총 재료비 ÷ 완성중량(g)');
   gRow('식재료 원가', '해당 메뉴의 재료비 전부 합계 (⑤ 시트 SUMIF)');
@@ -1895,10 +2072,33 @@ function esc(v) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+/* 한글 초성 뽑기 — 「ㅊㅋ」로 치킨을 찾을 수 있게 한다.
+   바쁜 주방에서 글자를 다 치기 어렵다는 점을 생각한 것이다. */
+const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function chosung(s) {
+  return String(s == null ? '' : s).split('').map((ch) => {
+    const c = ch.charCodeAt(0) - 0xac00;
+    return (c >= 0 && c <= 11171) ? CHO[Math.floor(c / 588)] : ch;
+  }).join('');
+}
+/** 메뉴명·영문명·재료명·초성 어디에든 걸리면 참 */
+function recipeMatches(m, q) {
+  if (!q) return true;
+  const needle = q.toLowerCase().trim();
+  if (!needle) return true;
+  const hay = [
+    m.name, m.nameEn || m.en || '', m.category,
+    ...(m.tags || []),
+    ...(m.lines || []).map((l) => l.name),
+  ].join(' ');
+  return hay.toLowerCase().includes(needle) || chosung(hay).includes(needle);
+}
+
 const $  = (s, r = document) => r.querySelector(s);
 const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
 
 /* ── 포맷 ───────────────────────────────────────────── */
+const num  = (v) => { const n = typeof v === 'number' ? v : parseFloat(v); return isFinite(n) ? n : 0; };
 const won  = (v) => (isFinite(v) ? Math.round(v).toLocaleString('ko-KR') : '–');
 const won1 = (v) => (isFinite(v) ? (Math.round(v * 10) / 10).toLocaleString('ko-KR', { maximumFractionDigits: 1 }) : '–');
 const won3 = (v) => (isFinite(v) ? v.toLocaleString('ko-KR', { maximumFractionDigits: 3 }) : '–');
@@ -1908,9 +2108,12 @@ const pct  = (v, d = 1) => (isFinite(v) ? (v * 100).toFixed(d) + '%' : '–');
 const state = {
   base: null,          // 처음 들어 있던 원본 (되돌리기·변경표시 기준)
   data: null,          // 지금 편집 중인 데이터 (이걸 저장한다)
-  view: 'dash',
+  mode: 'kitchen',     // kitchen(주방 · 레시피북) | owner(사장 · 원가)
+  view: 'recipe',
+  recipeOpen: null,    // 주방 모드에서 펼쳐 놓은 레시피 이름
+  scale: 1,            // 레시피 분량 배율 (×1 ~ ×4)
   result: null,
-  filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '' },
+  filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '', rq: '', rcat: 'all', rsort: 'cat', noTag: '' },
   sync: 'synced',
   savedAt: null,
   loadedFromFile: false,
@@ -2340,39 +2543,66 @@ function pickData(base, serverSaved) {
   return clone(base);
 }
 
-/* ── 화면 정의 ──────────────────────────────────────── */
+/* ── 화면 정의 ──────────────────────────────────────────
+   같은 데이터를 두 가지 얼굴로 본다.
+   주방 모드 — 사진과 조리법 중심의 레시피북 (직원이 매일 보는 화면)
+   사장 모드 — 원가·마진·판정 (사장이 가끔 보는 화면)            */
 const VIEWS = [
-  { id: 'dash',  icon: '📊', label: '대시보드', title: '대시보드',        desc: '전체 원가 현황 요약' },
-  { id: 'menu',  icon: '🍽', label: '메뉴',     title: '메뉴 원가',       desc: '메뉴를 누르면 레시피와 원가 상세가 열립니다' },
-  { id: 'ing',   icon: '🥬', label: '식재료',   title: '식재료 단가',     desc: '구매가격을 고치면 모든 메뉴 원가가 즉시 반영됩니다' },
-  { id: 'prep',  icon: '🧪', label: '프렙',     title: '프렙(반제품) 원가', desc: '소스·반제품의 g당 원가' },
-  { id: 'fix',   icon: '💰', label: '고정비',   title: '고정비 설정',     desc: '고정비 배분율을 결정합니다' },
-  { id: 'issue', icon: '⚠️', label: '점검',     title: '확인 필요 항목',  desc: '값이 비었거나 추정한 부분' },
+  { id: 'recipe', mode: 'kitchen', icon: '🍳', label: '레시피', title: '레시피북',
+    desc: '메뉴를 누르면 재료와 조리법이 나옵니다' },
+  { id: 'cook',  mode: 'kitchen', icon: '🧪', label: '프렙',   title: '프렙(반제품)',
+    desc: '미리 만들어 두는 소스·반제품' },
+
+  { id: 'dash',  mode: 'owner', icon: '📊', label: '대시보드', title: '대시보드',        desc: '전체 원가 현황 요약' },
+  { id: 'menu',  mode: 'owner', icon: '🍽', label: '메뉴',     title: '메뉴 원가',       desc: '메뉴를 누르면 레시피와 원가 상세가 열립니다' },
+  { id: 'ing',   mode: 'owner', icon: '🥬', label: '식재료',   title: '식재료 단가',     desc: '구매가격을 고치면 모든 메뉴 원가가 즉시 반영됩니다' },
+  { id: 'prep',  mode: 'owner', icon: '🧪', label: '프렙',     title: '프렙(반제품) 원가', desc: '소스·반제품의 g당 원가' },
+  { id: 'fix',   mode: 'owner', icon: '💰', label: '고정비',   title: '고정비 설정',     desc: '고정비 배분율을 결정합니다' },
+  { id: 'issue', mode: 'owner', icon: '⚠️', label: '점검',     title: '확인 필요 항목',  desc: '값이 비었거나 추정한 부분' },
 ];
+const viewsFor = (mode) => VIEWS.filter((v) => v.mode === mode);
+const viewById = (id) => VIEWS.find((v) => v.id === id);
 
 /* ── 네비게이션 ─────────────────────────────────────── */
 function buildNav() {
   const d = $('#navDesktop'), m = $('#navMobile');
   d.innerHTML = ''; m.innerHTML = '';
-  VIEWS.forEach((v) => {
-    const b = el('button');
-    b.innerHTML = `<span class="ic">${v.icon}</span><span>${v.label}</span>`;
-    if (v.id === 'issue') { const n = el('span', 'badge', String((state.data.issues || []).length)); b.appendChild(n); }
-    b.onclick = () => go(v.id);
-    b.dataset.id = v.id;
-    d.appendChild(b);
-
-    const t = el('button');
-    t.innerHTML = `<span class="ic">${v.icon}</span><span>${v.label}</span>`;
-    t.onclick = () => go(v.id);
-    t.dataset.id = v.id;
-    m.appendChild(t);
+  viewsFor(state.mode).forEach((v) => {
+    const mk = () => {
+      const b = el('button');
+      b.innerHTML = `<span class="ic">${esc(v.icon)}</span><span>${esc(v.label)}</span>`;
+      if (v.id === 'issue') b.appendChild(el('span', 'badge', String((state.data.issues || []).length)));
+      b.onclick = () => go(v.id);
+      b.dataset.id = v.id;
+      return b;
+    };
+    d.appendChild(mk());
+    m.appendChild(mk());
   });
 }
 function go(id) {
   state.view = id;
+  state.recipeOpen = null;          // 다른 화면으로 가면 열려 있던 레시피는 닫는다
   location.hash = id;
   render();
+}
+/** 주방 ↔ 사장 전환 */
+function setMode(mode) {
+  if (state.mode === mode) return;
+  state.mode = mode;
+  state.recipeOpen = null;
+  store.set('ec-mode', mode);
+  state.view = viewsFor(mode)[0].id;
+  location.hash = state.view;
+  buildNav();
+  paintMode();
+  render();
+}
+function paintMode() {
+  document.querySelectorAll('.modeswitch button').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode));
+  });
+  document.body.dataset.mode = state.mode;
 }
 
 /* ── 렌더 ───────────────────────────────────────────── */
@@ -2386,7 +2616,7 @@ function paintLicense() {
 function paintBrand() {
   const b = $('#brandName');
   if (b) b.textContent = (state.data.meta.brand || '우리 매장');
-  const t = state.data.meta.brand ? `${state.data.meta.brand} · 메뉴 원가 분석` : '메뉴 원가 분석';
+  const t = state.data.meta.brand ? `${state.data.meta.brand} · 레시피 · 원가 관리` : '레시피 · 원가 관리';
   if (document.title !== t) document.title = t;
 }
 
@@ -2399,7 +2629,9 @@ function render(opts = {}) {
   const root = $('#viewRoot');
   const keep = opts.keepScroll ? root.scrollTop : 0;
   root.innerHTML = '';
-  ({ dash: viewDash, menu: viewMenu, ing: viewIng, prep: viewPrep, fix: viewFix, issue: viewIssue }[state.view] || viewDash)(root);
+  ({ recipe: viewRecipe, cook: viewCook,
+     dash: viewDash, menu: viewMenu, ing: viewIng, prep: viewPrep, fix: viewFix, issue: viewIssue
+   }[state.view] || viewDash)(root);
   root.scrollTop = keep;
   applyLock(root);
   paintSync();
@@ -2496,6 +2728,462 @@ function bar(rate, warn, bad) {
   i.style.width = Math.min(100, Math.max(0, rate * 100 / Math.max(bad * 1.6, .5) * 1)) + '%';
   w.appendChild(i);
   return w;
+}
+
+/* ═══════════════ 사진 ═══════════════
+   사진은 파일 안에 그대로 담기므로, 넣기 전에 크기를 줄인다.
+   원본 그대로 넣으면 파일이 수십 MB 로 불어나 열리지 않는다. */
+function shrinkImage(file, max = 900) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('읽기 실패'));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('형식을 알 수 없음'));
+      img.onload = () => {
+        try {
+          const k = Math.min(1, max / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * k));
+          const h = Math.max(1, Math.round(img.height * k));
+          const cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(cv.toDataURL('image/jpeg', 0.82));
+        } catch (e) { reject(e); }
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+function pickPhoto(menuName, kind = 'menu') {
+  if (!requireAuth()) return;
+  const inp = el('input');
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    toast('사진을 줄이는 중…');
+    try {
+      const url = await shrinkImage(f);
+      const list = kind === 'prep' ? state.data.preps : state.data.menus;
+      const d = list.find((x) => x.name === menuName);
+      if (!d) { toast('대상을 찾지 못했습니다'); return; }
+      d.image = url;
+      commit('사진 등록');
+      render();
+      toast('사진을 넣었습니다');
+    } catch (_) {
+      toast('사진을 읽지 못했습니다 — 다른 파일로 해 보세요');
+    }
+  };
+  inp.click();
+}
+
+/* ═══════════════ 주방 모드 · 레시피북 ═══════════════
+   직원이 매일 보는 화면이다. 원가는 사장이 볼 때만 겹쳐 보인다. */
+
+/** 조리 단계 체크 상태 — 이 기기에만 남는다 */
+function cookState() {
+  try { return JSON.parse(store.get('ec-cook') || '{}') || {}; } catch (_) { return {}; }
+}
+function setCooked(menu, list) {
+  const all = cookState();
+  if (list && list.length) all[menu] = list; else delete all[menu];
+  store.set('ec-cook', JSON.stringify(all));
+}
+
+/** 이 메뉴에 붙는 알레르기 표시 */
+const allergensOf = (m) => (m.allergens || []).filter(Boolean);
+
+function viewRecipe(root) {
+  if (state.recipeOpen && state.result.menus.some((m) => m.name === state.recipeOpen)) {
+    recipeDetail(root, state.recipeOpen);
+  } else {
+    state.recipeOpen = null;
+    recipeList(root);
+  }
+}
+
+function recipeList(root) {
+  const r = state.result, f = state.filter;
+
+  /* 검색 */
+  const bar = el('div', 'filters');
+  const search = el('input', 'search');
+  search.type = 'search';
+  search.placeholder = '메뉴 · 재료 · 초성으로 찾기 (예: 감자, ㅊㅋ, chicken)';
+  search.value = f.rq;
+  search.dataset.keep = '1';
+  search.oninput = () => { f.rq = search.value; paint(); };
+  bar.appendChild(search);
+
+  const sort = el('select', 'sel');
+  sort.dataset.keep = '1';
+  [['cat', '분류순 (메뉴판)'], ['name', '이름순'], ['time', '조리시간 짧은순'], ['few', '재료 적은순']]
+    .forEach(([v, l]) => { const o = el('option', null, l); o.value = v; sort.appendChild(o); });
+  sort.value = f.rsort;
+  sort.onchange = () => { f.rsort = sort.value; paint(); };
+  bar.appendChild(sort);
+
+  const pAll = el('button', 'btn', '🖨 전체 인쇄');
+  pAll.dataset.keep = '1';
+  pAll.onclick = () => printCards(list().map((m) => m.name));
+  bar.appendChild(pAll);
+  root.appendChild(bar);
+
+  /* 카테고리 칩 */
+  const cats = ['all', ...state.data.categoryOrder.filter((c) => r.menus.some((m) => m.category === c))];
+  const chips = el('div', 'chips');
+  chips.style.marginBottom = '10px';
+  cats.forEach((c) => {
+    const n = c === 'all' ? r.menus.length : r.menus.filter((m) => m.category === c).length;
+    const b = el('button', 'chip');
+    b.dataset.keep = '1';
+    b.innerHTML = `${c === 'all' ? '전체' : `${esc(state.data.categoryIcon[c] || '')} ${esc(c)}`} <span class="chip-n">${n}</span>`;
+    b.onclick = () => { f.rcat = c; paint(); };
+    chips.appendChild(b);
+  });
+  root.appendChild(chips);
+
+  /* 알레르기 빼기 */
+  const allAl = [...new Set(r.menus.flatMap(allergensOf))].sort();
+  if (allAl.length) {
+    const arow = el('div', 'chips allergy-row');
+    arow.appendChild(el('span', 'l', '이 재료 빼고 보기'));
+    allAl.forEach((a) => {
+      const b = el('button', 'chip chip-sm');
+      b.dataset.keep = '1';
+      b.textContent = a;
+      b.onclick = () => { f.noTag = (f.noTag === a ? '' : a); paint(); };
+      arow.appendChild(b);
+    });
+    root.appendChild(arow);
+  }
+
+  const host = el('div');
+  root.appendChild(host);
+
+  function list() {
+    let out = r.menus.filter((m) =>
+      (f.rcat === 'all' || m.category === f.rcat) &&
+      (!f.noTag || !allergensOf(m).includes(f.noTag)) &&
+      recipeMatches(m, f.rq));
+    const cmp = {
+      cat: null,
+      name: (a, b) => a.name.localeCompare(b.name, 'ko'),
+      time: (a, b) => (a.cookTimeMin || 99) - (b.cookTimeMin || 99),
+      few: (a, b) => a.lines.length - b.lines.length,
+    }[f.rsort];
+    if (cmp) out = [...out].sort(cmp);
+    return out;
+  }
+
+  function paint() {
+    chips.querySelectorAll('.chip').forEach((b, i) => b.setAttribute('aria-pressed', String(cats[i] === f.rcat)));
+    root.querySelectorAll('.allergy-row .chip').forEach((b) =>
+      b.setAttribute('aria-pressed', String(b.textContent === f.noTag)));
+    host.innerHTML = '';
+    const rows = list();
+
+    const cnt = el('div', 'rcount');
+    cnt.textContent = `${rows.length}가지${f.rq || f.noTag || f.rcat !== 'all' ? ' (조건에 맞는 것)' : ''}`;
+    host.appendChild(cnt);
+
+    if (!rows.length) {
+      host.appendChild(el('div', 'empty', '조건에 맞는 레시피가 없습니다.'));
+      return;
+    }
+
+    const grid = el('div', 'rgrid');
+    rows.forEach((m) => {
+      const card = el('article', 'rcard');
+      const img = el('div', 'rcard-img');
+      if (m.image) {
+        const i = el('img');
+        i.src = m.image; i.alt = m.name; i.loading = 'lazy';
+        img.appendChild(i);
+      } else {
+        img.classList.add('noimg');
+        img.textContent = m.icon || '🍽';
+      }
+      const badge = el('span', 'rcard-cat', `${m.icon || ''} ${m.category}`);
+      img.appendChild(badge);
+      if (m.time) img.appendChild(el('span', 'rcard-time', '⏱ ' + m.time));
+      card.appendChild(img);
+
+      const body = el('div', 'rcard-body');
+      body.appendChild(el('b', null, m.name));
+      if (m.nameEn || m.en) body.appendChild(el('span', 'en', m.nameEn || m.en));
+      body.appendChild(el('span', 'meta', `재료 ${m.lines.length} · 단계 ${(m.steps || []).length}`));
+      if (showCost()) {
+        const c = el('span', 'rcard-cost');
+        c.innerHTML = m.hasPrice
+          ? `${won(m.foodCost)}원 <b class="g-${esc(m.grade.key)}">${pct(m.foodRate)}</b>`
+          : '판매가 미입력';
+        body.appendChild(c);
+      }
+      card.appendChild(body);
+      card.onclick = () => openRecipe(m.name);
+      grid.appendChild(card);
+    });
+    host.appendChild(grid);
+  }
+  paint();
+}
+
+/** 원가를 보여줄 상황인가 — 사장 모드이거나 관리자로 로그인했을 때 */
+function showCost() { return state.mode === 'owner' || state.authed; }
+
+function openRecipe(name) {
+  state.recipeOpen = name;
+  state.scale = 1;
+  render();
+  const sc = $('#viewRoot'); if (sc) sc.scrollTop = 0;
+}
+
+function recipeDetail(root, name) {
+  const r = state.result;
+  const m = r.menus.find((x) => x.name === name);
+  if (!m) { state.recipeOpen = null; recipeList(root); return; }
+  const all = r.menus;
+  const ix = all.findIndex((x) => x.name === name);
+
+  /* 상단 - 목록으로 */
+  const top = el('div', 'rdetail-top');
+  const back = el('button', 'btn btn-ghost');
+  back.dataset.keep = '1';
+  back.textContent = '← 목록으로';
+  back.onclick = () => { state.recipeOpen = null; render(); };
+  top.appendChild(back);
+  top.appendChild(el('span', 'dim', `${ix + 1} / ${all.length}`));
+  const sp = el('div', 'spacer'); top.appendChild(sp);
+  const prt = el('button', 'btn');
+  prt.dataset.keep = '1';
+  prt.textContent = '🖨 인쇄';
+  prt.onclick = () => printCards([m.name]);
+  top.appendChild(prt);
+  root.appendChild(top);
+
+  const wrap = el('div', 'rdetail');
+
+  /* 왼쪽 - 본문 */
+  const main = el('div', 'rdetail-main');
+
+  const head = el('div', 'rhead');
+  const chip = el('div', 'chips');
+  chip.appendChild(el('span', 'chip chip-sm', `${m.icon || ''} ${m.category}`));
+  (m.tags || []).forEach((t) => chip.appendChild(el('span', 'chip chip-sm', t)));
+  head.appendChild(chip);
+  head.appendChild(el('h2', null, m.name));
+  if (m.nameEn || m.en) head.appendChild(el('p', 'en', m.nameEn || m.en));
+  const al = allergensOf(m);
+  if (al.length) head.appendChild(el('div', 'allergy', '알레르기 · ' + al.join(', ')));
+  main.appendChild(head);
+
+  /* 원가 (사장/로그인 시에만) */
+  if (showCost()) {
+    const cost = el('div', 'rcost');
+    const cell = (l, v, cls) => {
+      const d = el('div');
+      d.appendChild(el('span', 'l', l));
+      d.appendChild(el('b', cls || null, v));
+      return d;
+    };
+    cost.append(
+      cell('식재료 원가', won1(m.foodCost) + '원'),
+      cell('원가율', m.hasPrice ? pct(m.foodRate) : '–', 'g-' + m.grade.key),
+      cell('총원가', won(m.totalCost) + '원'),
+      cell('마진', m.hasPrice ? won(m.margin) + '원' : '–'),
+    );
+    const edit = el('button', 'btn btn-add');
+    edit.textContent = '✎ 이 레시피 고치기';
+    edit.onclick = () => { if (!requireAuth()) return; openMenu(m.name); };
+    cost.appendChild(edit);
+    main.appendChild(cost);
+  }
+
+  /* 재료 */
+  const secIng = el('div', 'rsec');
+  const ih = el('div', 'rsec-head');
+  ih.appendChild(el('h3', null, '🥣 재료'));
+  const scales = el('div', 'scales');
+  [1, 2, 3, 4].forEach((n) => {
+    const b = el('button', 'scale-btn');
+    b.dataset.keep = '1';
+    b.textContent = '×' + n;
+    b.setAttribute('aria-pressed', String(state.scale === n));
+    b.onclick = () => { state.scale = n; render(); };
+    scales.appendChild(b);
+  });
+  ih.appendChild(scales);
+  secIng.appendChild(ih);
+  secIng.appendChild(el('div', 'rsub', state.scale === 1
+    ? (m.serving || '1인분 기준')
+    : `${m.serving || '1인분 기준'} · ×${state.scale} 로 환산했습니다`));
+
+  const ings = el('ol', 'ringredients');
+  m.lines.forEach((l) => {
+    const li = el('li');
+    const nm = el('div', 'ri-name');
+    if (l.kind === '프렙') nm.appendChild(el('span', 'kindtag', '프렙'));
+    if (l.kind === '메뉴') nm.appendChild(el('span', 'kindtag', '메뉴'));
+    if (l.kind === '무료') nm.appendChild(el('span', 'kindtag free', '무료'));
+    nm.appendChild(el('span', 'n', l.name));
+    if (l.note) nm.appendChild(el('span', 'note', l.note));
+    li.appendChild(nm);
+    const unit = l.unit || (l.byCount ? '개' : 'g');
+    li.appendChild(el('div', 'ri-amt', `${won3(num(l.qty) * state.scale)}${unit}`));
+    if (showCost() && l.kind !== '무료') li.appendChild(el('div', 'ri-cost', won1(l.cost * state.scale) + '원'));
+    ings.appendChild(li);
+  });
+  secIng.appendChild(ings);
+  if (showCost()) {
+    const sum = el('div', 'ri-sum');
+    sum.innerHTML = `<span>합계</span><b>${won1(m.foodCost * state.scale)}원</b>`;
+    secIng.appendChild(sum);
+  }
+  main.appendChild(secIng);
+
+  /* 조리 방법 */
+  const steps = m.steps || [];
+  if (steps.length) {
+    const done = new Set(cookState()[m.name] || []);
+    const secStep = el('div', 'rsec');
+    const sh = el('div', 'rsec-head');
+    sh.appendChild(el('h3', null, '👨‍🍳 조리 방법'));
+    const prog = el('span', 'prog', `${done.size} / ${steps.length}`);
+    sh.appendChild(prog);
+    const reset = el('button', 'btn btn-ghost btn-xs');
+    reset.dataset.keep = '1';
+    reset.textContent = '체크 지우기';
+    reset.onclick = () => { setCooked(m.name, []); render(); };
+    sh.appendChild(reset);
+    secStep.appendChild(sh);
+    secStep.appendChild(el('div', 'rsub', '단계를 눌러 완료 표시를 할 수 있습니다. 이 기기에만 저장됩니다.'));
+
+    const ol = el('ol', 'rsteps');
+    steps.forEach((s, i) => {
+      const li = el('li', done.has(i) ? 'done' : null);
+      li.dataset.keep = '1';
+      li.appendChild(el('span', 'no', String(i + 1)));
+      li.appendChild(el('span', 'tx', s));
+      li.onclick = () => {
+        const cur = new Set(cookState()[m.name] || []);
+        cur.has(i) ? cur.delete(i) : cur.add(i);
+        setCooked(m.name, [...cur]);
+        render();
+      };
+      ol.appendChild(li);
+    });
+    secStep.appendChild(ol);
+    main.appendChild(secStep);
+  }
+
+  if (m.garnish) {
+    const g = el('div', 'rsec');
+    g.appendChild(el('h3', null, '✨ 가니쉬 · 플레이팅'));
+    g.appendChild(el('div', 'garnish', m.garnish));
+    main.appendChild(g);
+  }
+
+  wrap.appendChild(main);
+
+  /* 오른쪽 - 사진과 요약 */
+  const side = el('div', 'rdetail-side');
+  const ph = el('div', 'rphoto');
+  if (m.image) {
+    const i = el('img'); i.src = m.image; i.alt = m.name;
+    ph.appendChild(i);
+  } else {
+    ph.classList.add('noimg');
+    ph.appendChild(el('div', 'ic', m.icon || '🍽'));
+    ph.appendChild(el('div', 'tx', '사진이 없습니다'));
+    if (state.authed) {
+      const up = el('button', 'btn btn-add');
+      up.textContent = '＋ 사진 넣기';
+      up.onclick = () => pickPhoto(m.name);
+      ph.appendChild(up);
+    }
+  }
+  side.appendChild(ph);
+  if (m.image && state.authed) {
+    const row = el('div', 'row-2');
+    const ch = el('button', 'btn btn-ghost', '사진 바꾸기');
+    ch.onclick = () => pickPhoto(m.name);
+    const rm = el('button', 'btn btn-ghost btn-danger', '사진 빼기');
+    rm.onclick = () => {
+      const d = state.data.menus.find((x) => x.name === m.name);
+      if (!d || !requireAuth()) return;
+      d.image = ''; commit('사진 삭제'); render();
+    };
+    row.append(ch, rm);
+    side.appendChild(row);
+  }
+
+  const facts = el('div', 'rfacts');
+  const fact = (v, l) => { const d = el('div'); d.appendChild(el('b', null, v)); d.appendChild(el('span', null, l)); return d; };
+  facts.append(
+    fact(m.time || '–', '조리 시간'),
+    fact(String(m.lines.length), '재료'),
+    fact(String(steps.length), '조리 단계'),
+  );
+  side.appendChild(facts);
+  wrap.appendChild(side);
+
+  root.appendChild(wrap);
+}
+
+/* ─────────── 주방 모드 · 프렙 ─────────── */
+function viewCook(root) {
+  const r = state.result;
+  if (!r.preps.length) { root.appendChild(el('div', 'empty', '등록된 프렙(반제품)이 없습니다.')); return; }
+  root.appendChild(el('div', 'rsub', '미리 만들어 두는 소스·반제품입니다. 여기서 만든 것이 메뉴로 나갑니다.'));
+
+  r.preps.forEach((p) => {
+    const used = state.data.menus.filter((mm) => mm.lines.some((l) => l.kind === '프렙' && l.name === p.name));
+    const c = card(p.name, `완성 ${won(p.yield_g)}g · 투입 ${won(p.inputG)}g${showCost() ? ` · g당 ${won3(p.unitCost)}원` : ''}`);
+    const ol = el('ol', 'ringredients');
+    p.items.forEach((it) => {
+      const li = el('li');
+      const nm = el('div', 'ri-name');
+      if (it.kind === '프렙') nm.appendChild(el('span', 'kindtag', '프렙'));
+      nm.appendChild(el('span', 'n', it.name));
+      li.appendChild(nm);
+      li.appendChild(el('div', 'ri-amt', `${won3(num(it.qty) * state.scale)}g`));
+      if (showCost()) li.appendChild(el('div', 'ri-cost', won1(it.cost * state.scale) + '원'));
+      ol.appendChild(li);
+    });
+    c.body.appendChild(ol);
+
+    const d = state.data.preps.find((x) => x.name === p.name);
+    if (d && (d.steps || []).length) {
+      c.body.appendChild(el('div', 'sec-title', '만드는 법'));
+      const sol = el('ol', 'rsteps plain');
+      d.steps.forEach((s, i) => {
+        const li = el('li');
+        li.appendChild(el('span', 'no', String(i + 1)));
+        li.appendChild(el('span', 'tx', s));
+        sol.appendChild(li);
+      });
+      c.body.appendChild(sol);
+    }
+    if (used.length) {
+      const u = el('div', 'usedby');
+      u.appendChild(el('span', 'l', `이 프렙을 쓰는 메뉴 ${used.length}개`));
+      used.forEach((mm) => {
+        const b = el('button', 'chip chip-sm');
+        b.dataset.keep = '1';
+        b.textContent = mm.name;
+        b.onclick = () => { state.view = 'recipe'; openRecipe(mm.name); };
+        u.appendChild(b);
+      });
+      c.body.appendChild(u);
+    }
+    root.appendChild(c.card);
+  });
 }
 
 /* ═══════════════ 대시보드 ═══════════════ */
@@ -3951,9 +4639,15 @@ async function boot() {
 
   recalc();
   takeSnapshot();
+
+  /* 어떤 모드로 열 것인가 — 주소(#)가 먼저, 없으면 지난번에 쓰던 모드 */
+  const hashView = (location.hash || '').replace('#', '');
+  const hashed = viewById(hashView);
+  state.mode = hashed ? hashed.mode : (store.get('ec-mode') === 'owner' ? 'owner' : 'kitchen');
+  state.view = hashed ? hashed.id : viewsFor(state.mode)[0].id;
+
   buildNav();
-  state.view = (location.hash || '').replace('#', '') || 'dash';
-  if (!VIEWS.some((v) => v.id === state.view)) state.view = 'dash';
+  paintMode();
   render();
 
   $('#boot').hidden = true;
@@ -3981,6 +4675,10 @@ async function boot() {
   });
   $('#btnUndo').onclick = undo;
   $('#btnRedo').onclick = redo;
+
+  $('#modeSwitch').querySelectorAll('button').forEach((b) => {
+    b.onclick = () => setMode(b.dataset.mode);
+  });
 
   const toggleAuth = () => { if (state.authed) logout(); else openLogin(); };
   $('#btnAuth').onclick = toggleAuth;
@@ -4020,7 +4718,13 @@ async function boot() {
 
   addEventListener('hashchange', () => {
     const id = location.hash.replace('#', '');
-    if (id && id !== state.view && VIEWS.some((v) => v.id === id)) { state.view = id; render({ keepScroll: true }); }
+    const v = viewById(id);
+    if (!v || id === state.view) return;
+    if (v.mode !== state.mode) { setMode(v.mode); }   // 주소로 다른 모드 화면을 열면 모드까지 따라간다
+    state.view = id;
+    state.recipeOpen = null;
+    buildNav();
+    render({ keepScroll: true });
   });
   addEventListener('beforeunload', () => { if (state.sync === 'dirty') save(); });
 }

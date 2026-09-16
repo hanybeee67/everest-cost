@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
-<title>메뉴 원가 분석</title>
+<title>레시피 · 원가 관리</title>
 <link rel="stylesheet" href="/app.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
 <link rel="manifest" href="/manifest.webmanifest">
 </head>
 <body>
 
-<div id="boot" class="boot"><div class="spinner"></div><p>원가 데이터를 불러오는 중…</p></div>
+<div id="boot" class="boot"><div class="spinner"></div><p>레시피와 원가를 불러오는 중…</p></div>
 
 <div id="app" hidden>
 
@@ -21,7 +21,7 @@
       <div class="brand-mark">🏔️</div>
       <div>
         <strong id="brandName">–</strong>
-        <span>메뉴 원가 분석</span>
+        <span>레시피 · 원가 관리</span>
       </div>
     </div>
     <nav class="nav" id="navDesktop"></nav>
@@ -44,10 +44,14 @@
   <main class="main">
     <header class="topbar">
       <div class="topbar-title">
-        <h1 id="viewTitle">대시보드</h1>
+        <h1 id="viewTitle">레시피북</h1>
         <p id="viewDesc"></p>
       </div>
       <div class="topbar-actions">
+        <div class="modeswitch" id="modeSwitch" role="group" aria-label="화면 모드">
+          <button data-mode="kitchen" aria-pressed="true"><span class="ic">🍳</span><span class="tx">주방</span></button>
+          <button data-mode="owner" aria-pressed="false"><span class="ic">💰</span><span class="tx">사장</span></button>
+        </div>
         <span class="sync-pill only-mobile-inline" id="syncMobile">저장됨</span>
         <button class="icon-btn" id="btnAuth" title="관리자 로그인">🔒</button>
         <button class="icon-btn no-mobile" id="btnUndo" title="되돌리기 (Ctrl+Z)" disabled>↶</button>
@@ -59,7 +63,7 @@
 
     <div class="viewlock" id="viewLockBanner" hidden>
       🔒 <b>보기 전용 모드입니다.</b>
-      <span class="viewlock-more">메뉴·식재료·고정비를 수정하려면 관리자 로그인을 해 주세요.</span>
+      <span class="viewlock-more">레시피·원가를 수정하려면 관리자 로그인을 해 주세요.</span>
       <button class="viewlock-btn" id="viewLockBtn">관리자 로그인</button>
     </div>
     <div class="savewarn" id="saveWarn" hidden>
