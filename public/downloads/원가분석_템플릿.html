@@ -790,6 +790,8 @@ body.printing #printRoot{display:block}
 }
 @media (max-width:860px){ .desktop-only{display:none !important} }
 
+.unit-suffix{font-size:10.5px;color:var(--muted);font-weight:600;margin-left:3px}
+
 </style>
 </head>
 <body>
@@ -2227,7 +2229,14 @@ function applyLock(container) {
   const locked = !state.authed;
   container.querySelectorAll('input, select, textarea, button').forEach((elx) => {
     if (elx.dataset.keep === '1') return;
-    elx.disabled = locked;
+    if (locked) {
+      if (!elx.disabled) elx.dataset.lockedBy = '1';   // 잠금 때문에 끈 것만 표시
+      elx.disabled = true;
+    } else if (elx.dataset.lockedBy === '1') {
+      // 잠금이 끈 것만 되살린다 — 화면이 일부러 꺼 둔 버튼(등록하기 등)은 그대로 둔다
+      delete elx.dataset.lockedBy;
+      elx.disabled = false;
+    }
   });
 }
 function paintAuth() {
@@ -3687,7 +3696,7 @@ function viewIng(root) {
     const c = card(null, null, true);
     const t = table([
       { label: '식재료명' }, { label: '구매가격(원)', num: true }, { label: '규격', num: true },
-      { label: '단위' }, { label: '총중량(g)', num: true }, { label: 'g당 단가', num: true },
+      { label: '단위' }, { label: '계산 기준' }, { label: '총중량(g)', num: true }, { label: '단가', num: true },
       { label: '상태' }, { label: '' },
     ]);
     rows.forEach((it) => {
@@ -3723,15 +3732,31 @@ function viewIng(root) {
       u.appendChild(us);
       tr.appendChild(u);
 
+      /* 무게로 사는가, 개수로 사는가 — 캔·포장용기는 총중량이 없어 개수로 계산해야 한다 */
+      const bm = el('td');
+      bm.dataset.l = '계산 기준';
+      const bsel = el('select', 'sel');
+      bsel.style.cssText = 'padding:6px 8px;font-size:12.5px';
+      [['g', '무게 (원/g)'], ['ea', '개수 (원/개)']].forEach(([v, l]) => {
+        const o = el('option', null, l); o.value = v; bsel.appendChild(o);
+      });
+      bsel.value = d.byCount ? 'ea' : 'g';
+      bsel.onchange = () => { d.byCount = bsel.value === 'ea'; commit('계산 기준 변경'); render({ keepScroll: true }); };
+      bm.appendChild(bsel);
+      tr.appendChild(bm);
+
       const w = el('td', 'num');
       w.dataset.l = '총중량(g)';
-      w.appendChild(numInput(d.weight_g, (v) => { d.weight_g = v; commit(); render({ keepScroll: true }); },
-        { changed: diff(d.weight_g, was && was.weight_g), step: 'any' }));
+      const wIn = numInput(d.weight_g, (v) => { d.weight_g = v; commit(); render({ keepScroll: true }); },
+        { changed: diff(d.weight_g, was && was.weight_g), step: 'any' });
+      if (it.byCount) { wIn.style.opacity = '.4'; wIn.title = '개수 기준이라 쓰이지 않습니다'; }
+      w.appendChild(wIn);
       tr.appendChild(w);
 
-      const uc = el('td', 'num', won3(it.unitCost));
-      uc.dataset.l = 'g당 단가';
+      const uc = el('td', 'num');
+      uc.dataset.l = '단가';
       uc.style.cssText = 'font-weight:750;color:var(--accent-ink)';
+      uc.innerHTML = `${esc(won3(it.unitCost))}<span class="unit-suffix">원/${it.byCount ? '개' : 'g'}</span>`;
       tr.appendChild(uc);
 
       const st = el('td');
@@ -3748,7 +3773,7 @@ function viewIng(root) {
       tr.appendChild(act);
       t.tbody.appendChild(tr);
     });
-    if (!rows.length) t.tbody.appendChild(Object.assign(el('tr'), { innerHTML: '<td colspan="8" class="dim" style="text-align:center;padding:28px">해당하는 식재료가 없습니다.</td>' }));
+    if (!rows.length) t.tbody.appendChild(Object.assign(el('tr'), { innerHTML: '<td colspan="9" class="dim" style="text-align:center;padding:28px">해당하는 식재료가 없습니다.</td>' }));
     t.wrap.querySelector('table').classList.add('tbl-stack');   // 좁은 화면에서는 행마다 카드로 쌓인다
     c.body.appendChild(t.wrap);
     const bar2 = el('div', 'addbar');
@@ -3882,7 +3907,7 @@ const IMPORT_SPECS = {
     title: '식재료 일괄 등록',
     cols: '식재료명 · 구매가격 · 규격수량 · 단위 · 총중량(g)',
     sample: '닭가슴살\t12000\t1\tkg\t1000\n양파\t14000\t15\tkg\t15000\n소금\t15000\t15\tkg\t15000',
-    hint: '엑셀에서 5개 열을 그대로 복사해 붙여넣으세요. 총중량은 "한 포장에 몇 g" 입니다.',
+    hint: '「📗 엑셀 파일 열기」로 쓰시던 파일을 그대로 불러오거나, 엑셀에서 5개 열을 복사해 붙여넣으세요. 총중량은 "한 포장에 몇 g" 입니다. 캔·용기처럼 개수로 사는 것은 총중량을 0으로 두고 나중에 「개수 단위」로 바꾸세요.',
     parse(cells) {
       const [name, price, qty, unit, weight] = cells;
       if (!name) return null;
@@ -3910,7 +3935,7 @@ const IMPORT_SPECS = {
     title: '메뉴 일괄 등록',
     cols: '메뉴명 · 카테고리 · 판매가',
     sample: '치킨 볶음밥\t메인 요리\t9000\n감자 크림 수프\t사이드\t5000',
-    hint: '없는 카테고리는 자동으로 만들어집니다. 레시피는 등록 후 메뉴를 눌러 채우세요.',
+    hint: '「📗 엑셀 파일 열기」로 쓰시던 파일을 그대로 불러올 수 있습니다. 없는 카테고리는 자동으로 만들어집니다. 레시피와 사진은 등록 후 메뉴를 눌러 채우세요.',
     parse(cells) {
       const [name, cat, price] = cells;
       if (!name) return null;
@@ -3940,10 +3965,59 @@ const IMPORT_SPECS = {
   },
 };
 
+/** 엑셀 파일(.xlsx)을 열어 첫 시트를 행×열 배열로 돌려준다.
+    쓰던 엑셀을 그대로 불러올 수 있게 하기 위한 것 — 붙여넣기와 같은 경로로 처리된다. */
+async function readXlsxRows() {
+  return new Promise((resolve) => {
+    const inp = el('input');
+    inp.type = 'file';
+    inp.accept = '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0];
+      if (!f) { resolve(null); return; }
+      toast('엑셀을 읽는 중…');
+      try {
+        await loadScript('vendor/exceljs.min.js', () => self.ExcelJS);
+        const wb = new self.ExcelJS.Workbook();
+        await wb.xlsx.load(await f.arrayBuffer());
+        const ws = wb.worksheets.find((w) => w.rowCount > 1) || wb.worksheets[0];
+        if (!ws) { toast('시트를 찾지 못했습니다'); resolve(null); return; }
+        const rows = [];
+        ws.eachRow((row) => {
+          const cells = [];
+          row.eachCell({ includeEmpty: true }, (c) => cells.push(cellText(c)));
+          while (cells.length && cells[cells.length - 1] === '') cells.pop();
+          if (cells.some((x) => x !== '')) rows.push(cells);
+        });
+        if (!rows.length) { toast('내용이 있는 줄이 없습니다'); resolve(null); return; }
+        resolve(rows);
+      } catch (err) {
+        console.error(err);
+        toast('엑셀을 읽지 못했습니다 — .xlsx 파일인지 확인해 주세요');
+        resolve(null);
+      }
+    };
+    inp.click();
+  });
+}
+/** 수식·서식이 섞인 셀에서 사람이 보는 값만 뽑는다 */
+function cellText(c) {
+  const v = c && c.value;
+  if (v == null) return '';
+  if (typeof v === 'object') {
+    if (v.result != null) return String(v.result);           // 수식 셀 → 계산된 값
+    if (v.text != null) return String(v.text);               // 하이퍼링크 등
+    if (Array.isArray(v.richText)) return v.richText.map((t) => t.text).join('');
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    return '';
+  }
+  return String(v);
+}
+
 function openImport(kind) {
   const spec = IMPORT_SPECS[kind];
   $('#sheetTitle').textContent = spec.title;
-  $('#sheetSub').textContent = '엑셀 · 구글시트에서 복사해 붙여넣거나 직접 입력하세요';
+  $('#sheetSub').textContent = '엑셀 파일을 열거나, 복사해 붙여넣거나, 직접 입력하세요';
   const body = $('#sheetBody');
   body.innerHTML = '';
 
@@ -3959,11 +4033,19 @@ function openImport(kind) {
 
   const bar = el('div', 'newform');
   bar.style.cssText = 'border-top:0;padding:12px 0 0';
+  const btnFile = el('button', 'btn', '📗 엑셀 파일 열기');
+  btnFile.onclick = async () => {
+    const rows = await readXlsxRows();
+    if (!rows) return;
+    ta.value = rows.map((r) => r.join('\t')).join('\n');
+    preview();
+    toast(`엑셀에서 ${rows.length}줄을 읽었습니다`);
+  };
   const btnSample = el('button', 'btn', '예시 채우기');
   btnSample.onclick = () => { ta.value = spec.sample; preview(); };
   const btnApply = el('button', 'btn btn-primary', '등록하기');
   btnApply.disabled = true;
-  bar.append(btnSample, btnApply);
+  bar.append(btnFile, btnSample, btnApply);
   body.appendChild(bar);
 
   const out = el('div');

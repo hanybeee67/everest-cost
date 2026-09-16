@@ -767,3 +767,5 @@ body.printing #printRoot{display:block}
   .ptab,.psteps,.pkpi{page-break-inside:avoid;break-inside:avoid}
 }
 @media (max-width:860px){ .desktop-only{display:none !important} }
+
+.unit-suffix{font-size:10.5px;color:var(--muted);font-weight:600;margin-left:3px}
