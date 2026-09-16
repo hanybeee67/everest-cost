@@ -176,9 +176,9 @@ function build(data) {
     { width: 6 }, { width: 34 }, { width: 14 }, { width: 10 },
     { width: 8 }, { width: 12 }, { width: 13 }, { width: 30 },
   ];
-  sheetTitle(wsI, '① 식재료 단가', '노란 셀(구매가격·규격)만 수정하세요. g당 단가와 전체 메뉴 원가가 자동으로 다시 계산됩니다.', 8);
-  noteBar(wsI, 3, '💡  g당 단가 = 구매가격 ÷ 총중량(g).  총중량이 0이면 0원으로 처리되어 오류가 나지 않습니다(개당 판매 품목 등).', 8);
-  headerRow(wsI, 5, ['No.', '식재료명', '구매가격(원)', '규격수량', '단위', '총중량(g)', 'g당 단가(원)', '비고']);
+  sheetTitle(wsI, '① 식재료 단가', '노란 셀(구매가격·규격)만 수정하세요. 단가와 전체 메뉴 원가가 자동으로 다시 계산됩니다.', 8);
+  noteBar(wsI, 3, '💡  무게로 사는 것은 단가 = 구매가격 ÷ 총중량(g).  캔·포장용기처럼 개수로 사는 것은 단가 = 구매가격 ÷ 규격수량(원/개).', 8);
+  headerRow(wsI, 5, ['No.', '식재료명', '구매가격(원)', '규격수량', '단위', '총중량(g)', '단가 (원/g·원/개)', '비고']);
 
   const ING_FIRST = 6;
   data.ingredients.forEach((it, i) => {
@@ -190,9 +190,13 @@ function build(data) {
     row.getCell(4).value = Number(it.pack_qty) || 0;
     row.getCell(5).value = it.unit || 'kg';
     row.getCell(6).value = Number(it.weight_g) || 0;
-    row.getCell(7).value = { formula: `IF(F${r}>0,C${r}/F${r},0)` };
+    // 개수로 사는 품목은 규격수량(D)으로, 무게로 사는 품목은 총중량(F)으로 나눈다
+    row.getCell(7).value = it.byCount === true
+      ? { formula: `IF(D${r}>0,C${r}/D${r},0)` }
+      : { formula: `IF(F${r}>0,C${r}/F${r},0)` };
     row.getCell(8).value = !Number(it.price) ? '⚠ 구매가격 입력 필요'
-                        : !Number(it.weight_g) ? '⚠ 중량(g) 입력 필요 · 개당 품목'
+                        : it.byCount === true ? (Number(it.pack_qty) ? '개수 단위 (원/개)' : '⚠ 규격수량 입력 필요')
+                        : !Number(it.weight_g) ? '⚠ 총중량(g) 입력 필요 — 개수 품목이면 「개수 단위」로 바꾸세요'
                         : '';
     for (let c = 1; c <= 8; c++) asText(row.getCell(c));
     [3, 4, 6].forEach((c) => asInput(row.getCell(c)));
@@ -726,7 +730,7 @@ function build(data) {
   const HINT = {
     '판매가 없음': '④ 메뉴 원가표에서 판매가를 입력하세요. 입력 전까지 원가율은 계산되지 않습니다.',
     '식재료 단가 미입력': '① 식재료 단가에서 구매가격을 입력하세요.',
-    '식재료 규격 미입력': '① 식재료 단가에서 총중량(g)을 입력하세요. (개당 판매 품목이면 그대로 두어도 됩니다.)',
+    '식재료 규격 미입력': '① 식재료 단가에서 총중량(g)을 입력하세요. 캔·포장용기처럼 개수로 사는 품목이면 「개수 단위」로 등록하면 규격수량으로 계산됩니다.',
   };
   (data.issues || []).forEach((it, i) => {
     const r = 5 + i;
@@ -787,7 +791,7 @@ function build(data) {
   g++;
 
   gSec('▸  계산 방식');
-  gRow('g당 단가', '구매가격 ÷ 총중량(g)');
+  gRow('단가', '무게 품목: 구매가격 ÷ 총중량(g) → 원/g   ·   개수 품목: 구매가격 ÷ 규격수량 → 원/개');
   gRow('재료비', '사용량 ÷ 수율 × g당 단가   (수율 100% 면 사용량 × 단가)');
   gRow('프렙 g당 원가', '프렙 총 재료비 ÷ 완성중량(g)');
   gRow('식재료 원가', '해당 메뉴의 재료비 전부 합계 (⑤ 시트 SUMIF)');

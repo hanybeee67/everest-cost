@@ -2,7 +2,8 @@
 const fs = require('fs');
 const Calc = require('../shared/calc.js');
 const { ordering } = require('./build-xlsx.js');
-const data = JSON.parse(fs.readFileSync(__dirname + '/../data/dataset.json', 'utf8'));
+const DATASET = process.env.DATASET || 'data/dataset.json';
+const data = JSON.parse(fs.readFileSync(__dirname + '/../' + DATASET, 'utf8'));
 const r = Calc.compute(data);
 const exp = {};
 const S = { ing: "'① 식재료 단가'", prep: "'② 프렙 원가'", fixed: "'③ 고정비 설정'",
