@@ -472,11 +472,13 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
 .rsteps li.done .tx{text-decoration:line-through;opacity:.55}
 .rsteps li.done .no{background:var(--good);color:#fff}
 
+/* 사진 상자는 사진 크기에 맞춰 줄었다 늘었다 한다.
+   원본보다 크게 늘리지 않으므로(작은 사진을 억지로 키우면 뭉개진다) 빈 상자가 남지 않는다. */
 .rphoto{
   border-radius:var(--r);overflow:hidden;background:var(--surface-2);border:1px solid var(--line);
-  aspect-ratio:1/1;display:grid;place-items:center;
+  display:grid;place-items:center;padding:10px;min-height:96px;
 }
-.rphoto img{width:100%;height:100%;object-fit:cover;display:block}
+.rphoto img{max-width:100%;width:auto;height:auto;display:block;border-radius:8px}
 .rphoto.noimg{gap:7px;padding:18px;text-align:center}
 .rphoto .ic{font-size:52px;opacity:.45}
 .rphoto .tx{font-size:12px;color:var(--muted)}
@@ -712,7 +714,6 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .rcard-body .en{font-size:10.5px}
   .rdetail{grid-template-columns:1fr;gap:16px}
   .rdetail-side{position:static;order:-1}     /* 사진을 맨 위로 */
-  .rphoto{aspect-ratio:16/10}
   /* 사진이 없으면 자리만 차지하므로 최소 높이로 줄인다 */
   .rphoto.noimg{aspect-ratio:auto;min-height:0;padding:14px;flex-direction:row;justify-content:center;
                 display:flex;align-items:center;gap:10px}
@@ -809,6 +810,9 @@ body.printing #printRoot{display:block}
 @media (max-width:860px){ .desktop-only{display:none !important} }
 
 .unit-suffix{font-size:10.5px;color:var(--muted);font-weight:600;margin-left:3px}
+
+.tag-row{align-items:center;margin-bottom:10px}
+.tag-row .l{font-size:11.5px;color:var(--muted);font-weight:700;margin-right:2px}
 
 </style>
 </head>
@@ -2137,7 +2141,7 @@ const state = {
   recipeOpen: null,    // 주방 모드에서 펼쳐 놓은 레시피 이름
   scale: 1,            // 레시피 분량 배율 (×1 ~ ×4)
   result: null,
-  filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '', rq: '', rcat: 'all', rsort: 'cat', noTag: '' },
+  filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '', rq: '', rcat: 'all', rsort: 'cat', tag: '', noTag: '' },
   sync: 'synced',
   savedAt: null,
   loadedFromFile: false,
@@ -2879,6 +2883,24 @@ function recipeList(root) {
   });
   root.appendChild(chips);
 
+  /* 태그로 좁혀 보기 — 채식 손님, 매운 것 못 드시는 손님 응대에 쓴다 */
+  const tagCount = new Map();
+  r.menus.forEach((m) => (m.tags || []).forEach((t) => tagCount.set(t, (tagCount.get(t) || 0) + 1)));
+  const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([t]) => t);
+  if (topTags.length) {
+    const trow = el('div', 'chips tag-row');
+    trow.appendChild(el('span', 'l', '태그'));
+    topTags.forEach((t) => {
+      const b = el('button', 'chip chip-sm');
+      b.dataset.keep = '1';
+      b.textContent = `${t} ${tagCount.get(t)}`;
+      b.dataset.tag = t;
+      b.onclick = () => { f.tag = (f.tag === t ? '' : t); paint(); };
+      trow.appendChild(b);
+    });
+    root.appendChild(trow);
+  }
+
   /* 알레르기 빼기 */
   const allAl = [...new Set(r.menus.flatMap(allergensOf))].sort();
   if (allAl.length) {
@@ -2900,6 +2922,7 @@ function recipeList(root) {
   function list() {
     let out = r.menus.filter((m) =>
       (f.rcat === 'all' || m.category === f.rcat) &&
+      (!f.tag || (m.tags || []).includes(f.tag)) &&
       (!f.noTag || !allergensOf(m).includes(f.noTag)) &&
       recipeMatches(m, f.rq));
     const cmp = {
@@ -2914,13 +2937,15 @@ function recipeList(root) {
 
   function paint() {
     chips.querySelectorAll('.chip').forEach((b, i) => b.setAttribute('aria-pressed', String(cats[i] === f.rcat)));
+    root.querySelectorAll('.tag-row .chip').forEach((b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.tag === f.tag)));
     root.querySelectorAll('.allergy-row .chip').forEach((b) =>
       b.setAttribute('aria-pressed', String(b.textContent === f.noTag)));
     host.innerHTML = '';
     const rows = list();
 
     const cnt = el('div', 'rcount');
-    cnt.textContent = `${rows.length}가지${f.rq || f.noTag || f.rcat !== 'all' ? ' (조건에 맞는 것)' : ''}`;
+    cnt.textContent = `${rows.length}가지${f.rq || f.tag || f.noTag || f.rcat !== 'all' ? ' (조건에 맞는 것)' : ''}`;
     host.appendChild(cnt);
 
     if (!rows.length) {

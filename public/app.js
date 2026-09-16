@@ -77,7 +77,7 @@ const state = {
   recipeOpen: null,    // 주방 모드에서 펼쳐 놓은 레시피 이름
   scale: 1,            // 레시피 분량 배율 (×1 ~ ×4)
   result: null,
-  filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '', rq: '', rcat: 'all', rsort: 'cat', noTag: '' },
+  filter: { q: '', cat: 'all', grade: 'all', sort: 'cat', ingQ: '', rq: '', rcat: 'all', rsort: 'cat', tag: '', noTag: '' },
   sync: 'synced',
   savedAt: null,
   loadedFromFile: false,
@@ -819,6 +819,24 @@ function recipeList(root) {
   });
   root.appendChild(chips);
 
+  /* 태그로 좁혀 보기 — 채식 손님, 매운 것 못 드시는 손님 응대에 쓴다 */
+  const tagCount = new Map();
+  r.menus.forEach((m) => (m.tags || []).forEach((t) => tagCount.set(t, (tagCount.get(t) || 0) + 1)));
+  const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([t]) => t);
+  if (topTags.length) {
+    const trow = el('div', 'chips tag-row');
+    trow.appendChild(el('span', 'l', '태그'));
+    topTags.forEach((t) => {
+      const b = el('button', 'chip chip-sm');
+      b.dataset.keep = '1';
+      b.textContent = `${t} ${tagCount.get(t)}`;
+      b.dataset.tag = t;
+      b.onclick = () => { f.tag = (f.tag === t ? '' : t); paint(); };
+      trow.appendChild(b);
+    });
+    root.appendChild(trow);
+  }
+
   /* 알레르기 빼기 */
   const allAl = [...new Set(r.menus.flatMap(allergensOf))].sort();
   if (allAl.length) {
@@ -840,6 +858,7 @@ function recipeList(root) {
   function list() {
     let out = r.menus.filter((m) =>
       (f.rcat === 'all' || m.category === f.rcat) &&
+      (!f.tag || (m.tags || []).includes(f.tag)) &&
       (!f.noTag || !allergensOf(m).includes(f.noTag)) &&
       recipeMatches(m, f.rq));
     const cmp = {
@@ -854,13 +873,15 @@ function recipeList(root) {
 
   function paint() {
     chips.querySelectorAll('.chip').forEach((b, i) => b.setAttribute('aria-pressed', String(cats[i] === f.rcat)));
+    root.querySelectorAll('.tag-row .chip').forEach((b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.tag === f.tag)));
     root.querySelectorAll('.allergy-row .chip').forEach((b) =>
       b.setAttribute('aria-pressed', String(b.textContent === f.noTag)));
     host.innerHTML = '';
     const rows = list();
 
     const cnt = el('div', 'rcount');
-    cnt.textContent = `${rows.length}가지${f.rq || f.noTag || f.rcat !== 'all' ? ' (조건에 맞는 것)' : ''}`;
+    cnt.textContent = `${rows.length}가지${f.rq || f.tag || f.noTag || f.rcat !== 'all' ? ' (조건에 맞는 것)' : ''}`;
     host.appendChild(cnt);
 
     if (!rows.length) {
