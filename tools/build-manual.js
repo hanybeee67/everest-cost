@@ -18,7 +18,7 @@ function img(name) {
   return 'data:image/webp;base64,' + fs.readFileSync(f).toString('base64');
 }
 const FIG = {};
-['dash', 'menu', 'detail', 'detail2', 'set', 'ing', 'prep', 'fix', 'issue', 'import',
+['dash', 'menu', 'detail', 'detail2', 'set', 'prep', 'fix', 'issue', 'import',
  'm-dash', 'm-menu', 'm-detail',
  'kitchen', 'recipe', 'recipe-cost', 'ing-basis', 'm-kitchen', 'm-recipe'].forEach((k) => { FIG[k] = img(k); });
 
@@ -197,7 +197,7 @@ const HTML = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0f172a">
-<title>메뉴 원가 분석 템플릿 · 사용설명서</title>
+<title>레시피북 · 원가 관리 템플릿 — 사용설명서</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
 <style>${CSS}</style>
 </head>
@@ -205,9 +205,9 @@ const HTML = `<!doctype html>
 
 <header class="cover">
   <div class="badge">사용설명서 · MANUAL</div>
-  <h1>메뉴 원가 분석 템플릿</h1>
-  <p>식재료 값만 넣으면 메뉴별 원가·원가율·마진이 자동으로 계산됩니다.<br>
-     설치도, 인터넷도, 엑셀 수식 지식도 필요 없습니다.</p>
+  <h1>레시피북 · 원가 관리 템플릿</h1>
+  <p>주방이 보는 레시피북과 사장이 보는 원가계산서가 한 덩어리입니다.<br>
+     레시피를 고치면 원가가 그 자리에서 다시 계산됩니다. 설치도, 인터넷도 필요 없습니다.</p>
   <div class="meta">HTML 파일 1개 · PC / 휴대폰 겸용 · 오프라인 동작 · ${new Date().toISOString().slice(0, 10)}</div>
 </header>
 
@@ -243,7 +243,7 @@ const HTML = `<!doctype html>
     <a href="#recipe"><i>📋</i>레시피와 원가 상세</a>
     <a href="#calc"><i>🧮</i>원가 계산 방식</a>
     <a href="#vat"><i>🧾</i>부가세 설정 (중요)</a>
-    <a href="#bulk"><i>📋</i>엑셀에서 일괄 등록</a>
+    <a href="#bulk"><i>📗</i>엑셀에서 불러오기</a>
     <a href="#examples"><i>💡</i>예시 4개가 보여주는 것</a>
     <a href="#save"><i>💾</i>저장 · 백업 · 기기 이동</a>
     <a href="#excel"><i>📊</i>엑셀로 내보내기</a>
@@ -263,7 +263,12 @@ const HTML = `<!doctype html>
     <div class="tile"><b>💰 사장 모드</b><span>원가율·마진·고정비를 보는 화면입니다. 엑셀로 내보내는 것도 여기서 합니다.</span></div>
   </div>
 
-  <p>화면 오른쪽 위 <b>🍳 주방 / 💰 사장</b> 단추로 언제든 오갈 수 있습니다.</p>
+  <p><b>PC</b> 는 왼쪽 맨 위, <b>휴대폰</b> 은 화면 위쪽의 <b>🍳 주방 / 💰 사장</b> 단추로 언제든 오갈 수 있습니다.</p>
+
+  <div class="note warn">
+    ⚠️ <b>대시보드·식재료·고정비가 안 보인다면</b> 지금 주방 모드를 보고 계신 것입니다.
+    주방 모드에는 <b>레시피·프렙 두 개</b>만 있습니다. <b>💰 사장</b> 을 누르면 여섯 개가 모두 나옵니다.
+  </div>
 
   ${figure('kitchen', '주방 모드 — 레시피 목록', '사진 카드로 한눈에 보이고, 카테고리·조리시간으로 걸러 볼 수 있습니다')}
 
@@ -353,7 +358,7 @@ const HTML = `<!doctype html>
         <tr><td><b>무게</b></td><td>구매가격 ÷ 총중량(g)</td><td>쌀 20kg 62,000원 → <b>3.1원/g</b></td></tr>
         <tr><td><b>개수</b></td><td>구매가격 ÷ 규격수량</td><td>콜라 24캔 21,000원 → <b>875원/개</b></td></tr>
       </table></div>
-      ${figure('ing-basis', '식재료 화면', '「계산 기준」을 개수로 바꾸면 단가가 원/개로 계산됩니다')}
+      ${figure('ing-basis', '식재료 화면', '맨 오른쪽 「계산 기준」을 개수로 바꾸면 단가가 원/개로 계산됩니다 (콜라 24캔 21,000원 → 875원/개)')}
 
       <div class="note warn">
         ⚠️ <b>배달하신다면 포장용기를 꼭 넣으세요.</b> 용기 하나에 500~1,500원인데
@@ -409,7 +414,13 @@ const HTML = `<!doctype html>
 <section id="screens">
   <div class="eyebrow">화면 안내</div>
   <h2>화면별 사용법</h2>
-  <p class="lead">왼쪽 메뉴(휴대폰은 아래쪽 탭)로 6개 화면을 오갑니다.</p>
+  <p class="lead">아래 화면들은 모두 <b>💰 사장 모드</b>에 있습니다.
+     왼쪽 맨 위(휴대폰은 화면 위쪽)의 <b>🍳 주방 / 💰 사장</b> 으로 전환하세요.</p>
+
+  <div class="note info">
+    <b>화면이 두 개만 보인다면 주방 모드입니다.</b> 주방 모드에는 레시피·프렙만 있습니다.
+    대시보드·식재료·고정비·점검은 <b>💰 사장</b> 으로 바꾸면 나옵니다.
+  </div>
 
   <h3>📊 대시보드 — 전체 현황</h3>
   <p>평균 원가율 · 마진율, 판정 현황, 카테고리별 분석, 그리고
@@ -424,11 +435,11 @@ const HTML = `<!doctype html>
   <h3>🥬 식재료 · 🧪 프렙 · 💰 고정비</h3>
   <div class="tablewrap"><table>
     <tr><th>화면</th><th>넣는 값</th><th>자동으로 나오는 값</th></tr>
-    <tr><td><b>식재료</b></td><td>구매가격 · 규격 · 총중량(g)</td><td>g당 단가</td></tr>
+    <tr><td><b>식재료</b></td><td>구매가격 · 규격 · 총중량(g) · 계산 기준</td><td>단가 (원/g 또는 원/개)</td></tr>
     <tr><td><b>프렙</b></td><td>투입 재료와 투입량 · 완성중량(g)</td><td>총 재료비 · g당 원가</td></tr>
     <tr><td><b>고정비</b></td><td>항목별 월 금액 · 월 추정매출</td><td>고정비 배분율</td></tr>
   </table></div>
-  ${figure('prep', '프렙(반제품) 화면', '소스처럼 한 번에 많이 만들어 두는 것은 여기에 등록하면 g당 원가가 계산됩니다')}
+  ${figure('prep', '프렙(반제품) 화면', '소스처럼 한 번에 많이 만들어 두는 것을 등록하면 g당 원가가 계산됩니다. 주방 모드에서는 만드는 법도 함께 보입니다')}
 
   <h3>⚠️ 점검 — 빠진 값 찾기</h3>
   <p>판매가가 비었거나 단가가 0원인 항목을 모아 보여줍니다.
@@ -437,7 +448,8 @@ const HTML = `<!doctype html>
 
   <h3>📱 휴대폰에서는</h3>
   <p>같은 파일이 화면 크기에 맞춰 <b>표 대신 카드</b>, <b>왼쪽 메뉴 대신 아래쪽 탭</b>으로 바뀝니다.
-     보기만 하는 게 아니라 <b>값 수정도 그대로 됩니다.</b></p>
+     보기만 하는 게 아니라 <b>값 수정도 그대로 됩니다.</b>
+     주방에 태블릿을 두고 쓰시기 좋습니다.</p>
   <div class="figrow">
     ${figure('m-dash', '휴대폰 · 대시보드')}
     ${figure('m-menu', '휴대폰 · 메뉴 목록')}
@@ -647,7 +659,7 @@ const HTML = `<!doctype html>
     <tr><td>계란</td><td>9000</td><td>30</td><td>개</td><td>1800</td></tr>
   </table></div>
 
-  ${figure('import', '일괄 등록 미리보기', '등록 전에 몇 건이 추가되고 몇 건이 갱신되는지 먼저 보여 줍니다')}
+  ${figure('import', '일괄 등록 미리보기', '「📗 엑셀 파일 열기」로 쓰던 파일을 그대로 불러올 수 있고, 등록 전에 몇 건이 추가·갱신되는지 먼저 보여 줍니다')}
 
   <div class="cards">
     <div class="tile"><b>맨 윗줄 제목 자동 인식</b><span>「식재료명·구매가격…」 같은 제목 줄은 알아서 건너뜁니다.</span></div>
@@ -679,6 +691,8 @@ const HTML = `<!doctype html>
     <tr><td><b>${ex[1].name}</b></td><td>${money(ex[1].price)}원</td>
         <td>껍질을 벗겨 버리는 <b>수율 85%</b> 처리와, 돈이 들지 않는 수돗물의 <b>무료</b> 처리</td></tr>
     <tr><td><b>${ex[2].name}</b></td><td>${money(ex[2].price)}원</td>
+        <td><b>개수로 사는 품목</b> — 24캔 21,000원짜리 한 박스에서 1캔 875원이 계산됩니다</td></tr>
+    <tr><td><b>${ex[3].name}</b></td><td>${money(ex[3].price)}원</td>
         <td>다른 메뉴를 구성품으로 넣는 <b>세트메뉴</b> — 단품 원가가 자동 합산됩니다</td></tr>
   </table></div>
 
@@ -687,6 +701,12 @@ const HTML = `<!doctype html>
   <div class="note tip">
     💡 <b>세트메뉴의 장점</b> — 나중에 ${ex[0].name}의 재료값이 오르면,
     세트 원가도 자동으로 함께 올라갑니다. 따로 고칠 필요가 없습니다.
+  </div>
+
+  <div class="note warn">
+    ⚠️ <b>${ex[2].name} 를 눈여겨보세요.</b> 판매가 ${money(ex[2].price)}원에 원가가 875원이라
+    원가율이 <b>48%</b> 입니다. 예전 방식대로 총중량으로만 계산했다면 이 메뉴의 원가는
+    <b>0원</b>으로 잡혔을 것입니다. 캔음료·포장용기가 바로 그런 품목입니다.
   </div>
 </section>
 
@@ -842,7 +862,7 @@ const HTML = `<!doctype html>
 </div>
 
 <footer>
-  메뉴 원가 분석 템플릿 · 사용설명서<br>
+  레시피북 · 원가 관리 템플릿 — 사용설명서<br>
   이 문서는 파일 하나로 되어 있어 인터넷 없이도 그림까지 그대로 보입니다.
 </footer>
 
