@@ -2720,7 +2720,7 @@ async function boot() {
   $('#btnUndo').onclick = undo;
   $('#btnRedo').onclick = redo;
 
-  $('#modeSwitch').querySelectorAll('button').forEach((b) => {
+  document.querySelectorAll('.modeswitch button').forEach((b) => {
     b.onclick = () => setMode(b.dataset.mode);
   });
 
