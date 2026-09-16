@@ -17,11 +17,15 @@
    * @returns {object} 계산 결과가 채워진 뷰모델
    */
   function compute(data) {
-    /* ── 1. 식재료 g당 단가 ────────────────────────────── */
+    /* ── 1. 식재료 단가 ────────────────────────────────
+       무게로 사는 것은 원/g, 개수로 사는 것(캔·포장용기 등)은 원/개.
+       개수 품목은 총중량이 없어 예전에는 원가가 0원으로 잡혔다. */
     const ingByName = new Map();
     const ingredients = data.ingredients.map((i) => {
-      const unitCost = div(i.price, i.weight_g);          // 원/g
-      const row = { ...i, unitCost, valid: num(i.weight_g) > 0 && num(i.price) > 0 };
+      const byCount  = i.byCount === true;
+      const basis    = byCount ? num(i.pack_qty) : num(i.weight_g);   // 나눌 기준량
+      const unitCost = div(i.price, basis);                            // 원/g 또는 원/개
+      const row = { ...i, byCount, basis, unitCost, valid: basis > 0 && num(i.price) > 0 };
       ingByName.set(i.name, row);
       return row;
     });
@@ -80,23 +84,26 @@
       menuStack.add(name);
       let food = 0;
       const lines = m.lines.map((l) => {
-        let unitCost = 0, cost = 0, basis = '';
+        let unitCost = 0, cost = 0, basis = '', byCount = false;
         if (l.kind === '무료') { basis = '무상(수돗물 등)'; }
         else if (l.kind === '메뉴') {
           unitCost = menuFoodCost(l.name);
           cost = num(l.qty) * unitCost;
           basis = '단품 메뉴 원가 × 수량';
+          byCount = true;                       // 세트 구성품은 「개」 단위
         } else if (l.kind === '프렙') {
           unitCost = prepCache.get(l.name)?.unitCost ?? 0;
           cost = div(num(l.qty), num(l.yield)) * unitCost;
           basis = '프렙 g당 원가';
         } else if (l.kind === '식재료') {
-          unitCost = ingByName.get(l.name)?.unitCost ?? 0;
+          const ing = ingByName.get(l.name);
+          unitCost = ing?.unitCost ?? 0;
+          byCount  = ing?.byCount === true;
           cost = div(num(l.qty), num(l.yield)) * unitCost;
-          basis = '식재료 g당 단가';
+          basis = byCount ? '식재료 개당 단가' : '식재료 g당 단가';
         }
         food += cost;
-        return { ...l, unitCost, cost, basis };
+        return { ...l, unitCost, cost, basis, byCount };
       });
       menuStack.delete(name);
 

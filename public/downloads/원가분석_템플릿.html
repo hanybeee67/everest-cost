@@ -698,12 +698,19 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .modeswitch button{padding:6px 9px}
   .modeswitch button .tx{display:none}       /* 좁으면 아이콘만 */
   .rgrid{grid-template-columns:1fr 1fr;gap:10px}
+  .rcard-img{aspect-ratio:16/11}          /* 휴대폰에서 사진이 화면을 다 먹지 않게 */
+  .rcard-img.noimg{font-size:34px}
   .rcard-body{padding:9px 10px 11px}
   .rcard-body b{font-size:13.5px}
   .rcard-body .en{font-size:10.5px}
   .rdetail{grid-template-columns:1fr;gap:16px}
   .rdetail-side{position:static;order:-1}     /* 사진을 맨 위로 */
   .rphoto{aspect-ratio:16/10}
+  /* 사진이 없으면 자리만 차지하므로 최소 높이로 줄인다 */
+  .rphoto.noimg{aspect-ratio:auto;min-height:0;padding:14px;flex-direction:row;justify-content:center;
+                display:flex;align-items:center;gap:10px}
+  .rphoto.noimg .ic{font-size:26px}
+  .rphoto.noimg .tx{font-size:12.5px}
   .rhead h2{font-size:22px}
   .rcost{gap:9px 14px;padding:11px 13px}
   .rcost b{font-size:14.5px}
@@ -713,8 +720,11 @@ select.sel{padding:9px 11px;border-radius:var(--r-sm);border:1px solid var(--lin
   .ri-amt{font-size:14.5px}
   .rsteps li .tx{font-size:14px}
 }
-@media (max-width:480px){
-  .rgrid{grid-template-columns:1fr}
+@media (max-width:420px){
+  .rgrid{gap:8px}
+  .rcard-body b{font-size:12.5px}
+  .rcard-body .en{display:none}          /* 아주 좁으면 영문명은 접는다 */
+  .rcard-cat{font-size:10px;padding:3px 7px}
 }
 @media (min-width:861px){ .cards{display:none} .mobile-only{display:none} }
 

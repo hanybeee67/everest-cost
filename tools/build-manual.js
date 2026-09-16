@@ -19,7 +19,8 @@ function img(name) {
 }
 const FIG = {};
 ['dash', 'menu', 'detail', 'detail2', 'set', 'ing', 'prep', 'fix', 'issue', 'import',
- 'm-dash', 'm-menu', 'm-detail'].forEach((k) => { FIG[k] = img(k); });
+ 'm-dash', 'm-menu', 'm-detail',
+ 'kitchen', 'recipe', 'recipe-cost', 'ing-basis', 'm-kitchen', 'm-recipe'].forEach((k) => { FIG[k] = img(k); });
 
 const figure = (key, caption, note) => FIG[key]
   ? `<figure class="fig${note ? ' fig-note' : ''}">
@@ -236,18 +237,66 @@ const HTML = `<!doctype html>
 
   <h3>목차</h3>
   <nav class="toc">
+    <a href="#modes"><i>🍳</i>주방 모드와 사장 모드</a>
     <a href="#start"><i>🚀</i>5분 만에 시작하기</a>
     <a href="#screens"><i>🗂</i>화면별 사용법</a>
     <a href="#recipe"><i>📋</i>레시피와 원가 상세</a>
     <a href="#calc"><i>🧮</i>원가 계산 방식</a>
     <a href="#vat"><i>🧾</i>부가세 설정 (중요)</a>
     <a href="#bulk"><i>📋</i>엑셀에서 일괄 등록</a>
-    <a href="#examples"><i>💡</i>예시 3개가 보여주는 것</a>
+    <a href="#examples"><i>💡</i>예시 4개가 보여주는 것</a>
     <a href="#save"><i>💾</i>저장 · 백업 · 기기 이동</a>
     <a href="#excel"><i>📊</i>엑셀로 내보내기</a>
     <a href="#faq"><i>❓</i>자주 묻는 질문</a>
     <a href="#checklist"><i>✅</i>도입 체크리스트</a>
   </nav>
+</section>
+
+<section id="modes">
+  <div class="eyebrow">이 프로그램의 구조</div>
+  <h2>주방 모드와 사장 모드</h2>
+  <p class="lead">레시피북과 원가계산서를 따로 쓰면 시간이 갈수록 서로 어긋납니다.
+     이 프로그램은 <b>같은 내용을 두 가지 얼굴로</b> 보여줍니다.</p>
+
+  <div class="cards">
+    <div class="tile"><b>🍳 주방 모드</b><span>직원이 매일 보는 화면입니다. 사진·재료·조리법만 크게 나오고 돈 이야기는 나오지 않습니다.</span></div>
+    <div class="tile"><b>💰 사장 모드</b><span>원가율·마진·고정비를 보는 화면입니다. 엑셀로 내보내는 것도 여기서 합니다.</span></div>
+  </div>
+
+  <p>화면 오른쪽 위 <b>🍳 주방 / 💰 사장</b> 단추로 언제든 오갈 수 있습니다.</p>
+
+  ${figure('kitchen', '주방 모드 — 레시피 목록', '사진 카드로 한눈에 보이고, 카테고리·조리시간으로 걸러 볼 수 있습니다')}
+
+  <h3>주방 모드에서 되는 것</h3>
+  <div class="tablewrap"><table>
+    <tr><th>기능</th><th>설명</th></tr>
+    <tr><td><b>초성 검색</b></td><td><code>ㅊㅋ</code> 만 쳐도 치킨이 나옵니다. 재료 이름이나 영문명으로도 찾아집니다.</td></tr>
+    <tr><td><b>분량 배율</b></td><td>×1 ×2 ×3 ×4 를 누르면 재료 양이 그만큼 자동으로 곱해집니다. 단체 손님 받을 때 계산할 필요가 없습니다.</td></tr>
+    <tr><td><b>조리 단계 체크</b></td><td>단계를 누르면 완료 표시가 됩니다. 어디까지 했는지 놓치지 않습니다.</td></tr>
+    <tr><td><b>알레르기 빼고 보기</b></td><td>「우유」를 누르면 우유가 든 메뉴가 목록에서 빠집니다. 손님 문의에 바로 답할 수 있습니다.</td></tr>
+    <tr><td><b>프렙 역참조</b></td><td>프렙 화면에서 이 소스를 쓰는 메뉴가 몇 개인지 보이고, 눌러서 바로 이동합니다.</td></tr>
+  </table></div>
+
+  ${figure('recipe', '레시피 상세 — 주방이 보는 화면', '원가는 보이지 않습니다. 직원이 볼 화면이기 때문입니다')}
+
+  <h3>사장이 로그인하면 달라지는 것</h3>
+  <p>같은 화면에 <b>원가가 겹쳐 보입니다.</b> 식재료 원가·원가율·총원가·마진이 위에 뜨고,
+     재료마다 얼마짜리인지 오른쪽에 붙습니다.</p>
+
+  ${figure('recipe-cost', '같은 화면 · 사장이 로그인한 뒤', '재료마다 원가가 붙고, 맨 아래 합계가 나옵니다')}
+
+  <div class="note tip">
+    💡 <b>여기가 이 프로그램의 핵심입니다.</b> 「✎ 이 레시피 고치기」로 재료 양을 바꾸면
+    <b>그 자리에서 원가와 마진이 다시 계산됩니다.</b> 레시피북 따로, 원가표 따로 관리하다
+    숫자가 어긋나는 일이 생길 수 없습니다.
+  </div>
+
+  <h3>휴대폰에서도 같습니다</h3>
+  <div class="figrow">
+    ${figure('m-kitchen', '휴대폰 — 레시피 목록')}
+    ${figure('m-recipe', '휴대폰 — 레시피 상세')}
+  </div>
+  <p class="small">주방에 태블릿이나 휴대폰을 두고 쓰시면 됩니다. 인터넷이 없어도 동작합니다.</p>
 </section>
 
 <section id="start">
@@ -295,10 +344,26 @@ const HTML = `<!doctype html>
         <b>총중량은 "포장 하나에 몇 g이 들었나"</b>입니다.<br>
         예) 20kg 쌀 한 포대 62,000원 → 구매가격 <code>62000</code>, 총중량 <code>20000</code> → g당 3.1원
       </div>
-      ${figure('ing', '식재료 화면', '노란 칸만 채우면 오른쪽 g당 단가가 자동으로 나옵니다')}
+
+      <h4 style="margin:18px 0 6px;font-size:15.5px">무게로 사는 것 · 개수로 사는 것</h4>
+      <p>캔음료, 배달 포장용기, 계란처럼 <b>개수로 사는 품목은 무게로 계산할 수 없습니다.</b>
+         이럴 때는 <b>「계산 기준」</b>을 <b>개수</b>로 바꾸면 됩니다.</p>
+      <div class="tablewrap"><table>
+        <tr><th>계산 기준</th><th>나누는 값</th><th>예시</th></tr>
+        <tr><td><b>무게</b></td><td>구매가격 ÷ 총중량(g)</td><td>쌀 20kg 62,000원 → <b>3.1원/g</b></td></tr>
+        <tr><td><b>개수</b></td><td>구매가격 ÷ 규격수량</td><td>콜라 24캔 21,000원 → <b>875원/개</b></td></tr>
+      </table></div>
+      ${figure('ing-basis', '식재료 화면', '「계산 기준」을 개수로 바꾸면 단가가 원/개로 계산됩니다')}
+
+      <div class="note warn">
+        ⚠️ <b>배달하신다면 포장용기를 꼭 넣으세요.</b> 용기 하나에 500~1,500원인데
+        이걸 빼놓고 계산하는 가게가 많습니다. 용기·수저·비닐봉투를 <b>개수</b> 기준으로 등록한 뒤
+        배달 메뉴의 재료로 넣으면 원가에 제대로 반영됩니다.
+      </div>
+
       <div class="note tip">
-        💡 <b>재료가 많다면 하나씩 넣지 마세요.</b> 아래쪽 <b>「📋 엑셀에서 일괄 등록」</b> 으로
-        엑셀에서 복사해 한 번에 넣을 수 있습니다. (<a href="#bulk">자세히</a>)
+        💡 <b>재료가 많다면 하나씩 넣지 마세요.</b> <b>「📋 엑셀에서 일괄 등록」</b> 안의
+        <b>「📗 엑셀 파일 열기」</b>로 쓰시던 엑셀을 통째로 불러올 수 있습니다. (<a href="#bulk">자세히</a>)
       </div>
     </li>
 
